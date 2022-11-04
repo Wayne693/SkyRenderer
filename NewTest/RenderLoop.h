@@ -44,9 +44,9 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 	dataTruck->WIDTH = WIDTH;
 	dataTruck->HEIGHT = HEIGHT;
 
-	for (int i = 0; i < models->size(); i++)//遍历所有模型
+	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)//遍历所有模型
 	{
-		auto model = (*models)[i];	
+		auto model = (*models)[modelIdx];
 		model->UpdateModelMatrix();
 		camera->UpdateVPMatrix();
 		Eigen::Matrix4f matrixM = model->GetModelMatrix();
@@ -55,85 +55,89 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 		dataTruck->matrixM = matrixM;
 		dataTruck->matrixVP = matrixVP;
 		dataTruck->model = model;
-		
 
-		auto pFace = model->GetPositionFaces();
-		auto nFace = model->GetNormalFaces();
-		auto vtFace = model->GetUVFaces();
-		for (int i = 0; i < pFace->size(); i++)//处理每个三角
+		auto meshes = model->GetMeshes();
+
+		for (int meshIdx = 0; meshIdx < meshes->size(); meshIdx++)
 		{
-			shader->Clear();
-			//Eigen::Vector4f a, b, c;
-			Face positionFace = (*pFace)[i];
-			Face normalFace = (*nFace)[i];
-			Face uvFace = (*vtFace)[i];
-			
-			
-			//加载顶点position
-			dataTruck->DTpositionOS.push_back((*model->GetPositions())[positionFace.A - 1]);
-			dataTruck->DTpositionOS.push_back((*model->GetPositions())[positionFace.B - 1]);
-			dataTruck->DTpositionOS.push_back((*model->GetPositions())[positionFace.C - 1]);
-			//加载顶点normal
-			dataTruck->DTnormalOS.push_back((*model->GetNormals())[normalFace.A - 1]);
-			dataTruck->DTnormalOS.push_back((*model->GetNormals())[normalFace.B - 1]);
-			dataTruck->DTnormalOS.push_back((*model->GetNormals())[normalFace.C - 1]);
-			//加载顶点uv
-			dataTruck->DTuv.push_back((*model->GetTexcoords())[uvFace.A - 1]);
-			dataTruck->DTuv.push_back((*model->GetTexcoords())[uvFace.B - 1]);
-			dataTruck->DTuv.push_back((*model->GetTexcoords())[uvFace.C - 1]);
-
-			//运行顶点着色器
-			shader->Vert();
-
-			//背面剔除
-			auto positionWS = dataTruck->DTpositionWS;
-			Eigen::Vector3f worldPos = (positionWS[0].head(3) + positionWS[1].head(3) + positionWS[2].head(3)) / 3;
-			Eigen::Vector3f worldViewDir = camera->GetPosition() - worldPos;
-			worldViewDir.normalize();
-			Eigen::Vector3f v1 = (positionWS[1] - positionWS[0]).head(3);
-			Eigen::Vector3f v2 = (positionWS[2] - positionWS[0]).head(3);
-			Eigen::Vector3f vNormal = v1.cross(v2);
-			vNormal.normalize();
-			if (worldViewDir.dot(vNormal) < 0)
+			auto mesh = (*meshes)[meshIdx];
+			auto pFace = mesh->GetPositionFaces();
+			auto nFace = mesh->GetNormalFaces();
+			auto vtFace = mesh->GetUVFaces();
+			for (int i = 0; i < pFace->size(); i++)//处理每个三角
 			{
-				continue;
-			}
-			
-			//获取三角包围盒
-			auto positionSS = dataTruck->DTpositionSS;
-			auto a = positionSS[0];
-			auto b = positionSS[1];
-			auto c = positionSS[2];
-			int minx = std::max(0, std::min(WIDTH, (int)std::min(a.x(), std::min(b.x(), c.x()))));
-			int miny = std::max(0, std::min(HEIGHT, (int)std::min(a.y(), std::min(b.y(), c.y()))));
-			int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
-			int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
+				dataTruck->Clear();
+				//Eigen::Vector4f a, b, c;
+				Face positionFace = (*pFace)[i];
+				Face normalFace = (*nFace)[i];
+				Face uvFace = (*vtFace)[i];
 
-			Light mainLight = mainScene->GetLight();
-			dataTruck->mainLight = mainLight;
+				//加载顶点position
+				dataTruck->DTpositionOS.push_back((*mesh->GetPositions())[positionFace.A - 1]);
+				dataTruck->DTpositionOS.push_back((*mesh->GetPositions())[positionFace.B - 1]);
+				dataTruck->DTpositionOS.push_back((*mesh->GetPositions())[positionFace.C - 1]);
+				//加载顶点normal
+				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.A - 1]);
+				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.B - 1]);
+				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.C - 1]);
+				//加载顶点uv
+				dataTruck->DTuv0.push_back((*mesh->GetTexcoords())[uvFace.A - 1]);
+				dataTruck->DTuv0.push_back((*mesh->GetTexcoords())[uvFace.B - 1]);
+				dataTruck->DTuv0.push_back((*mesh->GetTexcoords())[uvFace.C - 1]);
 
-			for (int x = minx; x <= maxx; x++)
-			{
-				for (int y = miny; y <= maxy; y++)
+				//运行顶点着色器
+				shader->Vert();
+
+				//背面剔除
+				auto positionWS = dataTruck->DTpositionWS;
+				Eigen::Vector3f worldPos = (positionWS[0].head(3) + positionWS[1].head(3) + positionWS[2].head(3)) / 3;
+				Eigen::Vector3f worldViewDir = camera->GetPosition() - worldPos;
+				worldViewDir.normalize();
+				Eigen::Vector3f v1 = (positionWS[1] - positionWS[0]).head(3);
+				Eigen::Vector3f v2 = (positionWS[2] - positionWS[0]).head(3);
+				Eigen::Vector3f vNormal = v1.cross(v2);
+				vNormal.normalize();
+				if (worldViewDir.dot(vNormal) < 0)
 				{
-					//三角插值
-					Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
-					//像素在三角形内
-					if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
+					continue;
+				}
+
+				//获取三角包围盒
+				auto positionSS = dataTruck->DTpositionSS;
+				auto a = positionSS[0];
+				auto b = positionSS[1];
+				auto c = positionSS[2];
+				int minx = std::max(0, std::min(WIDTH, (int)std::min(a.x(), std::min(b.x(), c.x()))));
+				int miny = std::max(0, std::min(HEIGHT, (int)std::min(a.y(), std::min(b.y(), c.y()))));
+				int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
+				int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
+
+				Light mainLight = mainScene->GetLight();
+				dataTruck->mainLight = mainLight;
+
+				for (int x = minx; x <= maxx; x++)
+				{
+					for (int y = miny; y <= maxy; y++)
 					{
-						//插值出深度
-						float depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
-
-						//深度测试
-						if (depth > frameBuffer->GetZ(x, y))
+						//三角插值
+						Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
+						//像素在三角形内
+						if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
 						{
-							continue;
-						}
+							//插值出深度
+							float depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
 
-						//运行片元着色器
-						auto finalColor = shader->Frag(u.x(), u.y(), u.z());
-						DrawPoint(frameBuffer, x, y, finalColor);
-						frameBuffer->SetZ(x, y, depth);
+							//深度测试
+							if (depth > frameBuffer->GetZ(x, y))
+							{
+								continue;
+							}
+
+							//运行片元着色器
+							auto finalColor = shader->Frag(u.x(), u.y(), u.z());
+							DrawPoint(frameBuffer, x, y, finalColor);
+							frameBuffer->SetZ(x, y, depth);
+						}
 					}
 				}
 			}
@@ -143,7 +147,7 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 	ImTextureID imguiId = (ImTextureID)renderTexture;
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frameBuffer->width(), frameBuffer->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, frameBuffer->GetRawBuffer());
 	drawList->AddImage(imguiId, ImVec2(0, 0), ImVec2(WIDTH, HEIGHT));
-	
+
 	//数据清空
 	frameBuffer->Clear(Vector4fToColor(black));
 }

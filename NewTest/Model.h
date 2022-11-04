@@ -17,6 +17,7 @@ struct Face
 	}
 };
 
+//纹理
 class Texture
 {
 private:
@@ -40,7 +41,8 @@ public:
 	Eigen::Vector2f GetOffset();
 };
 
-class Model
+//网格体
+class Mesh
 {
 private:
 	std::vector<Eigen::Vector4f> positions;
@@ -50,19 +52,10 @@ private:
 	std::vector<Face> m_FacePositions;
 	std::vector<Face> m_FaceUVs;
 	std::vector<Face> m_FaceNormals;
-	std::vector<Texture*> m_Textures;
-
-	Eigen::Vector3f m_Translation;	//平移
-	Eigen::Vector3f m_Rotation;		//旋转
-	Eigen::Vector3f m_Scale;		//缩放
-	Eigen::Matrix4f m_ModelMtx;		//M矩阵
+	
 public:
-	Model(std::string filePath);
-	void SetTranslation(Eigen::Vector3f translaton);
-	void SetRotation(Eigen::Vector3f rotation);
-	void SetScale(Eigen::Vector3f scale);
+	Mesh(std::string filePath);
 
-	Eigen::Matrix4f GetModelMatrix();
 	std::vector<Face>* GetPositionFaces();
 	std::vector<Face>* GetUVFaces();
 	std::vector<Face>* GetNormalFaces();
@@ -71,12 +64,38 @@ public:
 	std::vector<Eigen::Vector2f>* GetTexcoords();
 	std::vector<Eigen::Vector3f>* GetNormals();
 
+};
+
+//模型
+class Model
+{
+private:
+	
+	std::vector<Mesh*> m_Meshes;
+	std::vector<Texture*> m_Textures;
+	
+	Eigen::Vector3f m_Translation;	//平移
+	Eigen::Vector3f m_Rotation;		//旋转
+	Eigen::Vector3f m_Scale;		//缩放
+	Eigen::Matrix4f m_ModelMtx;		//M矩阵
+public:
+	Model();
+	void SetTranslation(Eigen::Vector3f translaton);
+	void SetRotation(Eigen::Vector3f rotation);
+	void SetScale(Eigen::Vector3f scale);
+
+	Eigen::Matrix4f GetModelMatrix();
+	
+
 	Eigen::Vector3f GetTranslation();
 	Eigen::Vector3f GetRotation();
 	Eigen::Vector3f GetScale();
 
 	void AddTexture(Texture* texture);
 	std::vector<Texture*>* GetTextures();
+
+	void AddMesh(Mesh* mesh);
+	std::vector<Mesh*>* GetMeshes();
 
 	void UpdateModelMatrix();//更新M矩阵
 };

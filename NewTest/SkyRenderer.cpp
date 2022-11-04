@@ -73,12 +73,15 @@ int main()
 	mainScene = new Scene();
 	//std::string fileName("OBJs\\african_head.obj");
 	std::string fileName("OBJs\\diablo3_pose.obj");
-	Model african_head(fileName);
+	Mesh ahead(fileName);
+	Model african_head;
+	african_head.AddMesh(&ahead);
 	//fileName = "OBJs\\african_head_diffuse.tga";
 	fileName = "OBJs\\diablo3_pose_diffuse.tga";
 	Texture african_diffuse(fileName);
 	african_head.AddTexture(&african_diffuse);
 	mainScene->AddModel(&african_head);
+
 	Camera mainCamera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 60, 1.f * WIDTH / HEIGHT);
 	mainScene->AddCamera(&mainCamera);
 

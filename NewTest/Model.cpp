@@ -6,7 +6,104 @@
 
 
 //Model
-Model::Model(std::string fileName)
+Model::Model()
+{
+	//将scale、translation、rotation初始化
+	m_Scale << 1, 1, 1;
+	m_Translation << 0, 0, 3;
+	m_Rotation << 0, 180, 0;
+}
+
+void Model::SetTranslation(Eigen::Vector3f translation)
+{
+	m_Translation = translation;
+}
+
+void Model::SetRotation(Eigen::Vector3f rotation)
+{
+	m_Rotation = rotation;
+}
+
+void Model::SetScale(Eigen::Vector3f scale)
+{
+	m_Scale = scale;
+}
+
+Eigen::Matrix4f Model::GetModelMatrix()
+{
+	return m_ModelMtx;
+}
+
+Eigen::Vector3f Model::GetTranslation()
+{
+	return m_Translation;
+}
+Eigen::Vector3f Model::GetRotation()
+{
+	return m_Rotation;
+}
+Eigen::Vector3f Model::GetScale()
+{
+	return m_Scale;
+}
+
+void Model::AddTexture(Texture* texture)
+{
+	m_Textures.push_back(texture);
+}
+
+std::vector<Texture*>* Model::GetTextures()
+{
+	return &m_Textures;
+}
+
+void Model::AddMesh(Mesh* mesh)
+{
+	m_Meshes.push_back(mesh);
+}
+
+std::vector<Mesh*>* Model::GetMeshes()
+{
+	return &m_Meshes;
+}
+
+void Model::UpdateModelMatrix()
+{
+	float pi = acos(-1);
+	float x = m_Rotation.x() * pi / 180.0;
+	float y = m_Rotation.y() * pi / 180.0;
+	float z = m_Rotation.z() * pi / 180.0;
+	Eigen::Matrix4f rotateX;
+	rotateX << 1, 0, 0, 0,
+		0, cos(x), -sin(x), 0,
+		0, sin(x), cos(x), 0,
+		0, 0, 0, 1;
+	Eigen::Matrix4f rotateY;
+	rotateY << cos(y), 0, sin(y), 0,
+		0, 1, 0, 0,
+		-sin(y), 0, cos(y), 0,
+		0, 0, 0, 1;
+	Eigen::Matrix4f rotateZ;
+	rotateZ << cos(z), -sin(z), 0, 0,
+		sin(z), cos(z), 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1;
+	Eigen::Matrix4f translation;
+	translation << 1, 0, 0, m_Translation.x(),
+		0, 1, 0, m_Translation.y(),
+		0, 0, 1, m_Translation.z(),
+		0, 0, 0, 1;
+	Eigen::Matrix4f scale;
+	scale << m_Scale.x(), 0, 0, 0,
+		0, m_Scale.y(), 0, 0,
+		0, 0, m_Scale.z(), 0,
+		0, 0, 0, 1;
+	m_ModelMtx = translation * rotateZ * rotateX * rotateY * scale;
+}
+
+
+//Mesh
+Mesh::Mesh(std::string fileName)
 {
 	std::ifstream in;
 	in.open(fileName.c_str(), std::ifstream::in);
@@ -50,123 +147,40 @@ Model::Model(std::string fileName)
 			m_FaceNormals.push_back(Face(z0, z1, z2));
 		}
 	}
-
-	//将scale、translation、rotation初始化
-	m_Scale << 1, 1, 1;
-	m_Translation << 0, 0, 3;
-	m_Rotation << 0, 180, 0;
 }
 
-
-void Model::SetTranslation(Eigen::Vector3f translation)
-{
-	m_Translation = translation;
-}
-
-void Model::SetRotation(Eigen::Vector3f rotation)
-{
-	m_Rotation = rotation;
-}
-
-void Model::SetScale(Eigen::Vector3f scale)
-{
-	m_Scale = scale;
-}
-
-Eigen::Matrix4f Model::GetModelMatrix()
-{
-	return m_ModelMtx;
-}
-
-std::vector<Eigen::Vector4f>* Model::GetPositions()
-{
-	return &positions;
-}
-
-std::vector<Eigen::Vector2f>* Model::GetTexcoords()
-{
-	return &texcoords;
-}
-std::vector<Eigen::Vector3f>* Model::GetNormals()
-{
-	return &normals;
-}
-
-Eigen::Vector3f Model::GetTranslation()
-{
-	return m_Translation;
-}
-Eigen::Vector3f Model::GetRotation()
-{
-	return m_Rotation;
-}
-Eigen::Vector3f Model::GetScale()
-{
-	return m_Scale;
-}
-
-std::vector<Face>* Model::GetPositionFaces()
+std::vector<Face>* Mesh::GetPositionFaces()
 {
 	return &m_FacePositions;
 }
 
-std::vector<Face>* Model::GetUVFaces()
+std::vector<Face>* Mesh::GetUVFaces()
 {
 	return &m_FaceUVs;
 }
 
-std::vector<Face>* Model::GetNormalFaces()
+std::vector<Face>* Mesh::GetNormalFaces()
 {
 	return &m_FaceNormals;
 }
 
-void Model::AddTexture(Texture* texture)
+std::vector<Eigen::Vector4f>* Mesh::GetPositions()
 {
-	m_Textures.push_back(texture);
+	return &positions;
 }
 
-std::vector<Texture*>* Model::GetTextures()
+std::vector<Eigen::Vector2f>* Mesh::GetTexcoords()
 {
-	return &m_Textures;
+	return &texcoords;
 }
 
-void Model::UpdateModelMatrix()
+std::vector<Eigen::Vector3f>* Mesh::GetNormals()
 {
-	float pi = acos(-1);
-	float x = m_Rotation.x() * pi / 180.0;
-	float y = m_Rotation.y() * pi / 180.0;
-	float z = m_Rotation.z() * pi / 180.0;
-	Eigen::Matrix4f rotateX;
-	rotateX << 1, 0, 0, 0,
-		0, cos(x), -sin(x), 0,
-		0, sin(x), cos(x), 0,
-		0, 0, 0, 1;
-	Eigen::Matrix4f rotateY;
-	rotateY << cos(y), 0, sin(y), 0,
-		0, 1, 0, 0,
-		-sin(y), 0, cos(y), 0,
-		0, 0, 0, 1;
-	Eigen::Matrix4f rotateZ;
-	rotateZ << cos(z), -sin(z), 0, 0,
-		sin(z), cos(z), 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1;
-	Eigen::Matrix4f translation;
-	translation << 1, 0, 0, m_Translation.x(),
-		0, 1, 0, m_Translation.y(),
-		0, 0, 1, m_Translation.z(),
-		0, 0, 0, 1;
-	Eigen::Matrix4f scale;
-	scale << m_Scale.x(), 0, 0, 0,
-		0, m_Scale.y(), 0, 0,
-		0, 0, m_Scale.z(), 0,
-		0, 0, 0, 1;
-	m_ModelMtx = translation * rotateZ * rotateX * rotateY * scale;
+	return &normals;
 }
 
 
-///Texture
-
+//Texture
 Texture::Texture(std::string fileName)
 {
 	m_RawBuffer = (uint32_t*)stbi_load(fileName.c_str(), &m_Width, &m_Height, &m_Channel, 4);//load texture
