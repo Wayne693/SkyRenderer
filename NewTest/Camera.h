@@ -5,8 +5,8 @@ class Camera
 {
 private:
 	Eigen::Vector3f m_Position;			//相机世界坐标
-	Eigen::Vector3f m_LookAt;			//相机前方方向
-	Eigen::Vector3f m_Up;				//相机上方方向
+	Eigen::Vector3f m_LookAt;			//相机前方方向(world space)
+	Eigen::Vector3f m_Up;				//相机上方方向(world space)
 	float m_Near;						//近裁剪平面
 	float m_Far;						//远裁剪平面
 	float m_Fov;						//FOV

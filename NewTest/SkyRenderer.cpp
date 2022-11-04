@@ -5,6 +5,7 @@
 #include "Model.h"
 #include "Camera.h"
 #include "Scene.h"
+#include "Shader.h"
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
@@ -73,14 +74,12 @@ int main()
 	//std::string fileName("OBJs\\african_head.obj");
 	std::string fileName("OBJs\\diablo3_pose.obj");
 	Model african_head(fileName);
-	african_head.SetTranslation(Eigen::Vector3f(0, 0, -3.f));
-	african_head.SetRotation(Eigen::Vector3f(0, 0, 0));
 	//fileName = "OBJs\\african_head_diffuse.tga";
 	fileName = "OBJs\\diablo3_pose_diffuse.tga";
 	Texture african_diffuse(fileName);
 	african_head.AddTexture(&african_diffuse);
 	mainScene->AddModel(&african_head);
-	Camera mainCamera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, -1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 60, 1.f * WIDTH / HEIGHT);
+	Camera mainCamera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 60, 1.f * WIDTH / HEIGHT);
 	mainScene->AddCamera(&mainCamera);
 
 	FrameBuffer* frameBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
@@ -101,8 +100,9 @@ int main()
 			StatusWindowLoop(mainScene);
 		}
 
+		BlinnPhongShader shader;
 		//渲染流程
-		RenderLoop(renderTexture,frameBuffer,mainScene);
+		RenderLoop(renderTexture, frameBuffer, mainScene, &shader);
 
 		// Rendering
 		ImGui::Render();

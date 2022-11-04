@@ -464,6 +464,7 @@
     <ClInclude Include="RenderLoop.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="Stb_image\stb_image.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -476,6 +477,7 @@
     <ClCompile Include="imGui\imgui_tables.cpp" />
     <ClCompile Include="imGui\imgui_widgets.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="BlinnPhongShader.cpp" />
     <ClCompile Include="SkyRenderer.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Scene.cpp" />

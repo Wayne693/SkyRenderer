@@ -1,13 +1,13 @@
 #include "Camera.h"
 
 Camera::Camera(Eigen::Vector3f position, Eigen::Vector3f lookat, Eigen::Vector3f up, float near, float far, float fov, float aspect) :
-	m_Position(position = Eigen::Vector3f(0, 0, 0)),
-	m_LookAt(lookat = Eigen::Vector3f(0, 0, -1)),
-	m_Up(up = Eigen::Vector3f(0,1,0)),
-	m_Near(near = 0.3f),
-	m_Far(far = 1000),
-	m_Fov(fov = 60),
-	m_Aspect(aspect = 1.333f)
+	m_Position(position),
+	m_LookAt(lookat),
+	m_Up(up),
+	m_Near(near),
+	m_Far(far),
+	m_Fov(fov),
+	m_Aspect(aspect)
 {
 
 }

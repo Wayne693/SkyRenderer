@@ -51,9 +51,10 @@ Model::Model(std::string fileName)
 		}
 	}
 
-	//将scale、translation初始化
+	//将scale、translation、rotation初始化
 	m_Scale << 1, 1, 1;
-	m_Translation << 0, 0, -3;
+	m_Translation << 0, 0, 3;
+	m_Rotation << 0, 180, 0;
 }
 
 
