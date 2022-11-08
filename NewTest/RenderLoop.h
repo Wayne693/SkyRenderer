@@ -67,23 +67,43 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 			for (int i = 0; i < pFace->size(); i++)//处理每个三角
 			{
 				dataTruck->Clear();
-				//Eigen::Vector4f a, b, c;
+				
 				Face positionFace = (*pFace)[i];
 				Face normalFace = (*nFace)[i];
 				Face uvFace = (*vtFace)[i];
 
 				//加载顶点position
-				dataTruck->DTpositionOS.push_back((*mesh->GetPositions())[positionFace.A - 1]);
-				dataTruck->DTpositionOS.push_back((*mesh->GetPositions())[positionFace.B - 1]);
-				dataTruck->DTpositionOS.push_back((*mesh->GetPositions())[positionFace.C - 1]);
+				Eigen::Vector4f posA = (*mesh->GetPositions())[positionFace.A - 1];
+				Eigen::Vector4f posB = (*mesh->GetPositions())[positionFace.B - 1];
+				Eigen::Vector4f posC = (*mesh->GetPositions())[positionFace.C - 1];
+				dataTruck->DTpositionOS.push_back(posA);
+				dataTruck->DTpositionOS.push_back(posB);
+				dataTruck->DTpositionOS.push_back(posC);
 				//加载顶点normal
 				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.A - 1]);
 				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.B - 1]);
 				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.C - 1]);
 				//加载顶点uv
-				dataTruck->DTuv0.push_back((*mesh->GetTexcoords())[uvFace.A - 1]);
-				dataTruck->DTuv0.push_back((*mesh->GetTexcoords())[uvFace.B - 1]);
-				dataTruck->DTuv0.push_back((*mesh->GetTexcoords())[uvFace.C - 1]);
+				Eigen::Vector2f uvA = (*mesh->GetTexcoords())[uvFace.A - 1];
+				Eigen::Vector2f uvB = (*mesh->GetTexcoords())[uvFace.B - 1];
+				Eigen::Vector2f uvC = (*mesh->GetTexcoords())[uvFace.C - 1];
+				dataTruck->DTuv0.push_back(uvA);
+				dataTruck->DTuv0.push_back(uvB);
+				dataTruck->DTuv0.push_back(uvC);
+				//计算、加载切线
+			/*	float deltaU1 = uvB.x() - uvA.x();
+				float deltaU2 = uvC.x() - uvA.x();
+				float deltaV1 = uvB.y() - uvA.y();
+				float deltaV2 = uvC.y() - uvA.y();
+				Eigen::Vector3f e1 = posB.head(3) - posA.head(3);
+				Eigen::Vector3f e2 = posC.head(3) - posA.head(3);
+				float ratio = 1 / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
+				Eigen::Vector3f tangent(ratio * (deltaV2 * e1.x() - deltaV1 * e2.x()), ratio * (deltaV2 * e1.y() - deltaV1 * e2.y()), ratio * (deltaV2 * e1.z() - deltaV1 * e2.z()));
+				tangent.normalize();
+				for (int j = 0; j < 3; j++)
+				{
+					dataTruck->DTtangentOS.push_back(tangent);
+				}*/
 
 				//运行顶点着色器
 				shader->Vert();
@@ -135,11 +155,12 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 
 							//运行片元着色器
 							auto finalColor = shader->Frag(u.x(), u.y(), u.z());
+							
 							DrawPoint(frameBuffer, x, y, finalColor);
 							frameBuffer->SetZ(x, y, depth);
 						}
 					}
-				}
+				}//system("Pause");
 			}
 		}
 	}

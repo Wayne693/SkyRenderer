@@ -1,5 +1,4 @@
 #include "Shader.h"
-#include <iostream>
 
 void BlinnPhongShader::Vert()
 {
@@ -35,7 +34,7 @@ Eigen::Vector4f BlinnPhongShader::Frag(float a, float b, float c)
 	normal.normalize();
 	//插值出纹理坐标
 	Eigen::Vector2f uv = a * dataTruck.DTuv0[0] + b * dataTruck.DTuv0[1] + c * dataTruck.DTuv0[2];
-	//目前只有一个texture,todo:处理多个texture
+	//获取diffuse texture
 	Texture* tp = (*dataTruck.model->GetTextures())[0];
 
 	auto mainLight = dataTruck.mainLight;

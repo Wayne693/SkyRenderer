@@ -478,6 +478,7 @@
     <ClCompile Include="imGui\imgui_widgets.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="BlinnPhongShader.cpp" />
+    <ClCompile Include="NormalMapShader.cpp" />
     <ClCompile Include="SkyRenderer.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Scene.cpp" />
