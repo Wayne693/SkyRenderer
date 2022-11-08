@@ -476,6 +476,7 @@
     <ClCompile Include="imGui\imgui_impl_opengl2.cpp" />
     <ClCompile Include="imGui\imgui_tables.cpp" />
     <ClCompile Include="imGui\imgui_widgets.cpp" />
+    <ClCompile Include="LambertShader.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="BlinnPhongShader.cpp" />
     <ClCompile Include="NormalMapShader.cpp" />

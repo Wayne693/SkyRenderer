@@ -55,19 +55,28 @@ public:
 	virtual Eigen::Vector4f Frag(float a,float b,float c) = 0;//参数为三角插值结果1-u-v u v s
 };
 
-class BlinnPhongShader :public Shader
+class LambertShader : public Shader
 {
 public:
 	virtual void Vert();
 	virtual Eigen::Vector4f Frag(float a, float b, float c);
 };
 
-class NormalMapShader :public Shader
+class BlinnPhongShader : public Shader
 {
 public:
 	virtual void Vert();
 	virtual Eigen::Vector4f Frag(float a, float b, float c);
 };
+
+class NormalMapShader : public Shader
+{
+public:
+	virtual void Vert();
+	virtual Eigen::Vector4f Frag(float a, float b, float c);
+};
+
+
 
 
 //颜色相乘

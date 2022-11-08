@@ -1073,6 +1073,9 @@
     <ClCompile Include="NormalMapShader.cpp">
       <Filter>源文件\Shader</Filter>
     </ClCompile>
+    <ClCompile Include="LambertShader.cpp">
+      <Filter>源文件\Shader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NewTest.rc">
