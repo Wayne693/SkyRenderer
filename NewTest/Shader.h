@@ -76,7 +76,12 @@ public:
 	virtual Eigen::Vector4f Frag(float a, float b, float c);
 };
 
-
+class ShadowMapShader : public Shader
+{
+public:
+	virtual void Vert();
+	virtual Eigen::Vector4f Frag(float a, float b, float c);
+};
 
 
 //ÑÕÉ«Ïà³Ë

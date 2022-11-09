@@ -112,8 +112,9 @@ int main()
 
 		BlinnPhongShader bpshader;
 		NormalMapShader nmshader;
+		ShadowMapShader smshader;
 		//渲染流程
-		RenderLoop(renderTexture, frameBuffer, mainScene, &nmshader);
+		RenderLoop(renderTexture, frameBuffer, mainScene, &smshader);
 
 		// Rendering
 		ImGui::Render();

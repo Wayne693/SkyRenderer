@@ -49,7 +49,6 @@ void Camera::SetAspect(float aspect)
 
 void Camera::UpdateViewMatrix()
 {
-	float pi = acos(-1);
 	Eigen::Matrix4f linerTrans;
 	Eigen::Vector3f lookAt = m_LookAt.normalized();
 	Eigen::Vector3f up = m_Up.normalized();
@@ -77,10 +76,26 @@ void Camera::UpdateProjectionMatrix()
 		0, 0, -1, 0;
 }
 
+void Camera::UpdateOrthoMatrix()
+{
+	float pi = acos(-1);
+	float halfFov = m_Fov * pi / 360.0;
+	m_OrthoMtx << 1.f / (m_Aspect * tan(halfFov)), 0, 0, 0,
+		0, 1 / tan(halfFov), 0, 0,
+		0, 0, -2 / (m_Far - m_Near), -(m_Far + m_Near) / (m_Far - m_Near),
+		0, 0, 0, 1;
+}
+
 void Camera::UpdateVPMatrix()
 {
 	Camera::UpdateViewMatrix();
 	Camera::UpdateProjectionMatrix();
+}
+
+void Camera::UpdateOrthoVPMatrix()
+{
+	UpdateViewMatrix();
+	UpdateOrthoMatrix();
 }
 
 Eigen::Matrix4f Camera::GetViewMatrix()
@@ -93,9 +108,19 @@ Eigen::Matrix4f Camera::GetProjectionMatrix()
 	return m_ProjectionMtx;
 }
 
+Eigen::Matrix4f Camera::GetOrthoMatrix()
+{
+	return m_OrthoMtx;
+}
+
 Eigen::Matrix4f Camera::GetVPMatrix()
 {
 	return m_ProjectionMtx * m_ViewMtx;
+}
+
+Eigen::Matrix4f Camera::GetOrthoVPMatrix()
+{
+	return m_OrthoMtx * m_ViewMtx;
 }
 
 Eigen::Vector3f Camera::GetPosition()

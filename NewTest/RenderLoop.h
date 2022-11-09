@@ -90,34 +90,16 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 				dataTruck->DTuv0.push_back(uvA);
 				dataTruck->DTuv0.push_back(uvB);
 				dataTruck->DTuv0.push_back(uvC);
-				//计算、加载切线
-			/*	float deltaU1 = uvB.x() - uvA.x();
-				float deltaU2 = uvC.x() - uvA.x();
-				float deltaV1 = uvB.y() - uvA.y();
-				float deltaV2 = uvC.y() - uvA.y();
-				Eigen::Vector3f e1 = posB.head(3) - posA.head(3);
-				Eigen::Vector3f e2 = posC.head(3) - posA.head(3);
-				float ratio = 1 / (deltaU1 * deltaV2 - deltaU2 * deltaV1);
-				Eigen::Vector3f tangent(ratio * (deltaV2 * e1.x() - deltaV1 * e2.x()), ratio * (deltaV2 * e1.y() - deltaV1 * e2.y()), ratio * (deltaV2 * e1.z() - deltaV1 * e2.z()));
-				tangent.normalize();
-				for (int j = 0; j < 3; j++)
-				{
-					dataTruck->DTtangentOS.push_back(tangent);
-				}*/
 
 				//运行顶点着色器
 				shader->Vert();
 
 				//背面剔除
-				auto positionWS = dataTruck->DTpositionWS;
-				Eigen::Vector3f worldPos = (positionWS[0].head(3) + positionWS[1].head(3) + positionWS[2].head(3)) / 3;
-				Eigen::Vector3f worldViewDir = camera->GetPosition() - worldPos;
-				worldViewDir.normalize();
-				Eigen::Vector3f v1 = (positionWS[1] - positionWS[0]).head(3);
-				Eigen::Vector3f v2 = (positionWS[2] - positionWS[0]).head(3);
+				auto positionCS = dataTruck->DTpositionCS;
+				Eigen::Vector3f v1 = (positionCS[1]/positionCS[1].w() - positionCS[0]/positionCS[0].w()).head(3);
+				Eigen::Vector3f v2 = (positionCS[2]/positionCS[2].w() - positionCS[0]/positionCS[0].w()).head(3);
 				Eigen::Vector3f vNormal = v1.cross(v2);
-				vNormal.normalize();
-				if (worldViewDir.dot(vNormal) < 0)
+				if (vNormal.z() <= 0)
 				{
 					continue;
 				}
@@ -155,7 +137,6 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 
 							//运行片元着色器
 							auto finalColor = shader->Frag(u.x(), u.y(), u.z());
-							
 							DrawPoint(frameBuffer, x, y, finalColor);
 							frameBuffer->SetZ(x, y, depth);
 						}

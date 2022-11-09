@@ -14,6 +14,7 @@ private:
 
 	Eigen::Matrix4f m_ViewMtx;			//Væÿ’Û
 	Eigen::Matrix4f m_ProjectionMtx;	//Pæÿ’Û
+	Eigen::Matrix4f m_OrthoMtx;			//’˝ΩªPæÿ’Û
 
 public:
 	Camera(Eigen::Vector3f position, Eigen::Vector3f lookat, Eigen::Vector3f up, float near, float far, float fov, float aspect);
@@ -26,14 +27,18 @@ public:
 	void SetAspect(float aspect);
 	void UpdateViewMatrix();
 	void UpdateProjectionMatrix();
+	void UpdateOrthoMatrix();
 	void UpdateVPMatrix();
+	void UpdateOrthoVPMatrix();
 
 	Eigen::Vector3f GetPosition();
 	Eigen::Vector3f GetLookAt();
 	Eigen::Vector3f GetUp();
 	Eigen::Matrix4f GetViewMatrix();
 	Eigen::Matrix4f GetProjectionMatrix();
+	Eigen::Matrix4f GetOrthoMatrix();
 	Eigen::Matrix4f GetVPMatrix();
+	Eigen::Matrix4f GetOrthoVPMatrix();
 	float GetNearPlane();
 	float GetFarPlane();
 	float GetFov();

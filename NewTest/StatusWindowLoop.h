@@ -15,7 +15,7 @@ static inline void StatusWindowLoop(Scene* mainScene)
 		Light tmpLight = mainScene->GetLight();
 		//light direction
 		float direction[3] = { tmpLight.direction.x(), tmpLight.direction.y(), tmpLight.direction.z() };
-		ImGui::DragFloat3("direction", direction, 0.1);
+		ImGui::DragFloat3("direction", direction, 0.01);
 		tmpLight.direction = Eigen::Map<Eigen::Vector3f>(direction);
 		//light color
 		float color[4] = { tmpLight.color.x() / 255.0,tmpLight.color.y() / 255.0,tmpLight.color.z() / 255.0, tmpLight.color.w() / 255.0 };
@@ -39,13 +39,13 @@ static inline void StatusWindowLoop(Scene* mainScene)
 				//平移
 				Eigen::Vector3f tmp = model->GetTranslation();
 				float position[3] = { tmp.x(),tmp.y(),tmp.z() };
-				ImGui::DragFloat3("position", position, 0.1);
+				ImGui::DragFloat3("position", position, 0.01);
 				tmp = Eigen::Map<Eigen::Vector3f>(position);
 				model->SetTranslation(tmp);
 				//旋转
 				tmp = model->GetRotation();
 				float rotation[3] = { tmp.x(),tmp.y(),tmp.z() };
-				ImGui::DragFloat3("rotation", rotation, 0.5);
+				ImGui::DragFloat3("rotation", rotation, 0.05);
 				tmp = Eigen::Map<Eigen::Vector3f>(rotation);
 				model->SetRotation(tmp);
 				//缩放
@@ -62,13 +62,13 @@ static inline void StatusWindowLoop(Scene* mainScene)
 					ImGui::Text("texture %d", i + 1);
 					Eigen::Vector2f tmp = currentTex->GetTilling();
 					float tilling[2] = { tmp.x(),tmp.y() };
-					ImGui::DragFloat2("tilling", tilling, 0.1);
+					ImGui::DragFloat2("tilling", tilling, 0.01);
 					tmp = Eigen::Map<Eigen::Vector2f>(tilling);
 					currentTex->SetTilling(tmp);
 
 					tmp = currentTex->GetOffset();
 					float offset[2] = { tmp.x(),tmp.y() };
-					ImGui::DragFloat2("offset", offset, 0.1);
+					ImGui::DragFloat2("offset", offset, 0.01);
 					tmp = Eigen::Map<Eigen::Vector2f>(offset);
 					currentTex->SetOffset(tmp);
 				}
@@ -86,36 +86,36 @@ static inline void StatusWindowLoop(Scene* mainScene)
 
 				Eigen::Vector3f tmp = camera->GetPosition();
 				float position[3] = { tmp.x(),tmp.y(),tmp.z() };
-				ImGui::DragFloat3("position", position, 0.1);
+				ImGui::DragFloat3("position", position, 0.01);
 				tmp = Eigen::Map<Eigen::Vector3f>(position);
 				camera->SetPosition(tmp);
 
 				tmp = camera->GetLookAt();
 				float lookat[3] = { tmp.x(),tmp.y(),tmp.z() };
-				ImGui::DragFloat3("lookat", lookat, 0.1);
+				ImGui::DragFloat3("lookat", lookat, 0.01);
 				tmp = Eigen::Map<Eigen::Vector3f>(lookat);
 				camera->SetLookAt(tmp);
 
 				tmp = camera->GetUp();
 				float up[3] = { tmp.x(),tmp.y(),tmp.z() };
-				ImGui::DragFloat3("up", up, 0.1);
+				ImGui::DragFloat3("up", up, 0.01);
 				tmp = Eigen::Map<Eigen::Vector3f>(up);
 				camera->SetUp(tmp);
 
 				float tmpf = camera->GetNearPlane();
-				ImGui::DragFloat("NearPlane", &tmpf, 0.1);
+				ImGui::DragFloat("NearPlane", &tmpf, 0.01);
 				camera->SetNearPlane(tmpf);
 
 				tmpf = camera->GetFarPlane();
-				ImGui::DragFloat("FarPlane", &tmpf, 0.1);
+				ImGui::DragFloat("FarPlane", &tmpf, 0.01);
 				camera->SetFarPlane(tmpf);
 
 				tmpf = camera->GetFov();
-				ImGui::DragFloat("FOV", &tmpf, 0.5);
+				ImGui::DragFloat("FOV", &tmpf, 0.05);
 				camera->SetFov(tmpf);
 
 				tmpf = camera->GetAspect();
-				ImGui::DragFloat("Aspect", &tmpf, 0.1);
+				ImGui::DragFloat("Aspect", &tmpf, 0.01);
 				camera->SetAspect(tmpf);
 				ImGui::Separator();
 			}
