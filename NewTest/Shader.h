@@ -4,8 +4,11 @@
 #include "vector"
 #include "Scene.h"
 #include "Model.h"
+#include "FrameBuffer.h"
+#include <iostream>
 
-
+extern const int WIDTH;
+extern const int HEIGHT;
 //数据传输结构体
 //用于RenderLoop与Shader之间数据传输
 struct DataTruck
@@ -24,6 +27,7 @@ struct DataTruck
 	Eigen::Matrix4f matrixM;
 	Eigen::Matrix4f matrixVP;
 	Eigen::Vector3f lightDirTS;
+	Eigen::Matrix4f lightMatrixVP;
 
 	int WIDTH;
 	int HEIGHT;
@@ -31,6 +35,7 @@ struct DataTruck
 	Light mainLight;
 	Model* model;
 	Camera* camera;
+	FrameBuffer* shadowMap;
 
 	void Clear()
 	{
@@ -46,6 +51,7 @@ struct DataTruck
 		DTtangentWS.clear();
 	}
 };
+
 
 class Shader
 {
@@ -106,4 +112,9 @@ static inline Eigen::Vector3f UnpackNormal(Texture* normalTexture, Eigen::Vector
 {
 	Eigen::Vector4f data = Tex2D(normalTexture, uv) / 255.f;
 	return 2 * data.head(3) - Eigen::Vector3f(1, 1, 1);
+}
+
+static inline Eigen::Vector4f ComputeScreenSpace(Eigen::Vector4f positionCS)
+{
+	return Eigen::Vector4f(positionCS.x() * WIDTH / (2 * positionCS.w()) + WIDTH / 2, positionCS.y() * HEIGHT / (2 * positionCS.w()) + HEIGHT / 2, positionCS.z() / positionCS.w(), positionCS.w());
 }

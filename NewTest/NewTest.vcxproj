@@ -451,6 +451,8 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="GLFW\include\GLFW\glfw3.h" />
     <ClInclude Include="GLFW\include\GLFW\glfw3native.h" />
+    <ClInclude Include="GlobalSettings.h" />
+    <ClInclude Include="GlobalSettingWindowLoop.h" />
     <ClInclude Include="imGui\imconfig.h" />
     <ClInclude Include="imGui\imgui.h" />
     <ClInclude Include="imGui\imgui_impl_glfw.h" />
@@ -470,6 +472,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="GlobalSettings.cpp" />
     <ClCompile Include="imGui\imgui.cpp" />
     <ClCompile Include="imGui\imgui_draw.cpp" />
     <ClCompile Include="imGui\imgui_impl_glfw.cpp" />

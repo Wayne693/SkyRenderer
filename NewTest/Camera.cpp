@@ -1,4 +1,6 @@
 #include "Camera.h"
+#include <vector>
+#include <iostream>
 
 Camera::Camera(Eigen::Vector3f position, Eigen::Vector3f lookat, Eigen::Vector3f up, float near, float far, float fov, float aspect) :
 	m_Position(position),
@@ -47,6 +49,11 @@ void Camera::SetAspect(float aspect)
 	m_Aspect = aspect;
 }
 
+void Camera::SetSize(float size)
+{
+	m_Size = size;
+}
+
 void Camera::UpdateViewMatrix()
 {
 	Eigen::Matrix4f linerTrans;
@@ -63,7 +70,7 @@ void Camera::UpdateViewMatrix()
 		0, 1, 0, -m_Position.y(),
 		0, 0, 1, -m_Position.z(),
 		0, 0, 0, 1;
-	m_ViewMtx =  linerTrans  * translation;
+	m_ViewMtx =  linerTrans * translation;
 }
 
 void Camera::UpdateProjectionMatrix()
@@ -78,10 +85,8 @@ void Camera::UpdateProjectionMatrix()
 
 void Camera::UpdateOrthoMatrix()
 {
-	float pi = acos(-1);
-	float halfFov = m_Fov * pi / 360.0;
-	m_OrthoMtx << 1.f / (m_Aspect * tan(halfFov)), 0, 0, 0,
-		0, 1 / tan(halfFov), 0, 0,
+	m_OrthoMtx << 1.f / (m_Aspect * m_Size), 0, 0, 0,
+		0, 1 / m_Size, 0, 0,
 		0, 0, -2 / (m_Far - m_Near), -(m_Far + m_Near) / (m_Far - m_Near),
 		0, 0, 0, 1;
 }
@@ -94,8 +99,8 @@ void Camera::UpdateVPMatrix()
 
 void Camera::UpdateOrthoVPMatrix()
 {
-	UpdateViewMatrix();
-	UpdateOrthoMatrix();
+	Camera::UpdateViewMatrix();
+	Camera::UpdateOrthoMatrix();
 }
 
 Eigen::Matrix4f Camera::GetViewMatrix()
@@ -121,6 +126,35 @@ Eigen::Matrix4f Camera::GetVPMatrix()
 Eigen::Matrix4f Camera::GetOrthoVPMatrix()
 {
 	return m_OrthoMtx * m_ViewMtx;
+}
+
+
+std::vector<Eigen::Vector3f>* Camera::GetVisualCone()
+{
+	m_VisualCone.clear();
+	float pi = acos(-1);
+	float halfFov = m_Fov * pi / 360.0;
+
+	Eigen::Vector3f toNear = m_Near * m_LookAt.normalized();
+	Eigen::Vector3f toTop = m_Near * tan(halfFov) * m_Up.normalized();
+	Eigen::Vector3f toRight = m_Aspect * m_Near * tan(halfFov) * m_LookAt.cross(m_Up).normalized();
+	Eigen::Vector3f nearPos = m_Position + toNear;
+
+	m_VisualCone.push_back(nearPos + toTop + toRight);//NearTopRight
+	m_VisualCone.push_back(nearPos + toTop - toRight);//NearTopleft
+	m_VisualCone.push_back(nearPos - toTop + toRight);//NearBottomRight
+	m_VisualCone.push_back(nearPos - toTop - toRight);//NearBottomleft
+
+	Eigen::Vector3f toFar = m_Far * m_LookAt.normalized();
+	toTop = m_Far * tan(halfFov) * m_Up.normalized();
+	toRight = m_Aspect * m_Far * tan(halfFov) * m_LookAt.cross(m_Up).normalized();
+	Eigen::Vector3f farPos = m_Position + toFar;
+
+	m_VisualCone.push_back(farPos + toTop + toRight);//farTopRight
+	m_VisualCone.push_back(farPos + toTop - toRight);//farTopleft
+	m_VisualCone.push_back(farPos - toTop + toRight);//farBottomRight
+	m_VisualCone.push_back(farPos - toTop - toRight);//farBottomleft
+	return &m_VisualCone;
 }
 
 Eigen::Vector3f Camera::GetPosition()
@@ -156,4 +190,9 @@ float Camera::GetFov()
 float Camera::GetAspect()
 {
 	return m_Aspect;
+}
+
+float Camera::GetSize()
+{
+	return m_Size;
 }

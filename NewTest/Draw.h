@@ -11,7 +11,7 @@ const Eigen::Vector4f red = Eigen::Vector4f(255, 0, 0, 255);
 const Eigen::Vector4f green = Eigen::Vector4f(0, 255, 0, 255);
 const Eigen::Vector4f blue = Eigen::Vector4f(0, 0, 255, 255);
 
-unsigned int Vector4fToColor(Eigen::Vector4f color)
+static inline unsigned int Vector4fToColor(Eigen::Vector4f color)
 {
 	unsigned int rtnColor = 0;
 	//小端CPU颜色编码
@@ -22,20 +22,25 @@ unsigned int Vector4fToColor(Eigen::Vector4f color)
 	return rtnColor;
 }
 
-Eigen::Vector4f normalColor(Eigen::Vector4f color)//将颜色分量截断在(0,255)
+static inline Eigen::Vector4f ColorToVector4f(unsigned int color)
+{
+	return Eigen::Vector4f(color & 255, (color >> 8) & 255, (color >> 16) & 255, (color >> 24) & 255);
+}
+
+static inline Eigen::Vector4f normalColor(Eigen::Vector4f color)//将颜色分量截断在(0,255)
 {
 	return Eigen::Vector4f(std::min(255.f, std::max(0.f, color.x())), std::min(255.f, std::max(0.f, color.y())), std::min(255.f, std::max(0.f, color.z())), std::min(255.f, std::max(0.f, color.w())));
 }
 
 
-float normalX(FrameBuffer* frameBuffer, float x)
+static inline float normalX(FrameBuffer* frameBuffer, float x)
 {
 	x = std::max(x, 0.0f);
 	x = std::min(x, (float)frameBuffer->width());
 	return x;
 }
 
-float normalY(FrameBuffer* frameBuffer, float y)
+static inline float normalY(FrameBuffer* frameBuffer, float y)
 {
 	y = std::max(y, 0.0f);
 	y = std::min(y, (float)frameBuffer->height());
@@ -43,14 +48,14 @@ float normalY(FrameBuffer* frameBuffer, float y)
 }
 
 //在FrameBuffer的(x,y)位置画一个颜色为color的点,注意左上角坐标为(0,0)
-void DrawPoint(FrameBuffer* frameBuffer, float x, float y, Eigen::Vector4f color = white)
+static inline void DrawPoint(FrameBuffer* frameBuffer, float x, float y, Eigen::Vector4f color = white)
 {
 	frameBuffer->SetColor(x, y, Vector4fToColor(normalColor(color)));
 }
 
 
 //从FrameBuffer的(x0,y0)到(x1,y1)画一条颜色为color的线,左上角坐标为(0,0)
-void DrawLine(FrameBuffer* frameBuffer, float x0, float y0, float x1, float y1, Eigen::Vector4f color = white)
+static inline void DrawLine(FrameBuffer* frameBuffer, float x0, float y0, float x1, float y1, Eigen::Vector4f color = white)
 {
 	if (x0 < 0 || y0 < 0 || x0 >= frameBuffer->width() || y0 >= frameBuffer->height())
 		return;

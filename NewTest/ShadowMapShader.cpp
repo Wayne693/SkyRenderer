@@ -7,17 +7,65 @@ void ShadowMapShader::Vert()
 	//auto matrixVP = dataTruck.matrixVP;
 	int WIDTH = dataTruck.WIDTH;
 	int HEIGHT = dataTruck.HEIGHT;
-	Eigen::Vector3f sCameraLookat = dataTruck.mainLight.direction;
+	Eigen::Vector3f sCameraLookat = dataTruck.mainLight.direction.normalized();
+
 	Eigen::Vector3f asixY(0, 1, 0);
 	Eigen::Vector3f sCameraAsixX = sCameraLookat.cross(asixY).normalized();
 	Eigen::Vector3f sCameraUp = sCameraAsixX.cross(sCameraLookat).normalized();
-	Camera sCamera = *dataTruck.camera;
+	std::vector<Eigen::Vector3f>* visualCone = dataTruck.camera->GetVisualCone();
+
+	Camera sCamera = *(dataTruck.camera);
 	sCamera.SetLookAt(sCameraLookat);
 	sCamera.SetUp(sCameraUp);
-	sCamera.UpdateOrthoVPMatrix(); 
+	sCamera.UpdateViewMatrix(); 
+
+	Eigen::Matrix4f matrixV = sCamera.GetViewMatrix();
+
+	float minx, maxx, miny, maxy, minz, maxz;
 	//std::cout << sCamera.GetLookAt() << " " << sCamera.GetUp() << std::endl;
-	auto matrixVP = sCamera.GetOrthoVPMatrix();
+	// 
+	//transform visual cone from worldspace to lightspace
+	for (int i = 0; i < visualCone->size(); i++)
+	{
+		(*visualCone)[i] = matrixV.block(0, 0, 3, 3) * (*visualCone)[i];
+		if (i == 0)
+		{
+			minx = (*visualCone)[i].x();
+			maxx = minx;
+			miny = (*visualCone)[i].y();
+			maxy = miny;
+			minz = (*visualCone)[i].z();
+			maxz = minz;
+		}
+		else
+		{
+			minx = std::min(minx, (*visualCone)[i].x());
+			maxx = std::max(maxx, (*visualCone)[i].x());
+			miny = std::min(miny, (*visualCone)[i].y());
+			maxy = std::max(maxy, (*visualCone)[i].y());
+			minz = std::min(minz, (*visualCone)[i].z());
+			maxz = std::max(maxz, (*visualCone)[i].z());
+		}
+	}
+	Eigen::Vector4f center((minx + maxx) / 2, (miny + maxy) / 2, (minz + maxz) / 2, 1);
+	center = matrixV.inverse() * center;
+	center = center / center.w();
+	//printf("%lf %lf %lf %lf\n", minx, maxx, miny, maxy);
+	sCamera.SetSize((maxy - miny) / 2);
+	sCamera.SetAspect((maxx - minx) / (maxy - miny));
+	sCamera.SetPosition(center.head(3));
+	auto cminz = minz;
+	minz = -maxz;
+	maxz = -cminz;
+	sCamera.SetFarPlane(maxz);
+	sCamera.SetNearPlane(minz);
 	
+	sCamera.UpdateOrthoVPMatrix();
+	auto matrixVP = sCamera.GetOrthoVPMatrix();
+	matrixV = sCamera.GetViewMatrix();
+	auto matrixP = sCamera.GetOrthoMatrix();
+	dataTruck.lightMatrixVP = matrixVP;
+	//std::cout << dataTruck.lightMatrixVP.block(0, 0, 3, 3) << std::endl;
 	for (int i = 0; i < 3; i++)
 	{
 		//½«positionOS×ªµ½positionWS
@@ -35,6 +83,7 @@ Eigen::Vector4f ShadowMapShader::Frag(float a, float b, float c)
 {
 	float z = a * dataTruck.DTpositionSS[0].z() + b * dataTruck.DTpositionSS[1].z() + c * dataTruck.DTpositionSS[2].z();
 	z = (z + 1.f) / 2;
+	//std::cout << z << std::endl;
 	Eigen::Vector4f depth(z * 255, z * 255, z * 255, 255);
 	Eigen::Vector4f finalColor = depth;
 	return finalColor;

@@ -11,6 +11,8 @@
 #include <iostream>
 #include "StatusWindowLoop.h"
 #include "RenderLoop.h"
+#include "GlobalSettingWindowLoop.h"
+#include "GlobalSettings.h"
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -55,10 +57,8 @@ int main()
 	ImGui_ImplOpenGL2_Init();
 
 	// 窗口状态
-	bool show_demo_window = true;
-	bool show_another_window = false;
+	bool show_global_window = true;
 	bool show_status_window = true;
-	bool show_Draw_Window = true;
 	//背景颜色
 	ImVec4 clear_color = ImVec4(0, 0, 0, 1.00f);
 
@@ -89,10 +89,25 @@ int main()
 	african_head.AddTexture(&african_normal);
 	mainScene->AddModel(&african_head);
 
-	Camera mainCamera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 60, 1.f * WIDTH / HEIGHT);
+	fileName = "OBJs\\floor.obj";
+	Mesh floorMesh(fileName);
+	Model floor;
+	floor.AddMesh(&floorMesh);
+	fileName = "OBJs\\floor_diffuse.tga";
+	Texture floorDiffuse(fileName);
+	floor.AddTexture(&floorDiffuse);
+	fileName = "OBJs\\floor_nm_tangent.tga";
+	Texture floorNormal(fileName);
+	floor.AddTexture(&floorNormal);
+	mainScene->AddModel(&floor);
+
+	Camera mainCamera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 5, 50, 1.f * WIDTH / HEIGHT);
 	mainScene->AddCamera(&mainCamera);
 
-	FrameBuffer* frameBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
+	//最终渲染到屏幕上的FrameBuffer
+	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
+	//shadowMap
+	FrameBuffer* shadowMap = new FrameBuffer(WIDTH ,HEIGHT , Vector4fToColor(black));
 
 	// Main loop
 	while (!glfwWindowShouldClose(window))
@@ -110,12 +125,49 @@ int main()
 			StatusWindowLoop(mainScene);
 		}
 
+		if (show_global_window)
+		{
+			GlobalSettingWindowLoop();
+		}
+
 		BlinnPhongShader bpshader;
+		LambertShader lshader;
 		NormalMapShader nmshader;
 		ShadowMapShader smshader;
-		//渲染流程
-		RenderLoop(renderTexture, frameBuffer, mainScene, &smshader);
 
+		Eigen::Vector3f lightMatrixVP;
+		//如果要渲染阴影
+		if (GlobalSettings::GetInstance()->settings.drawShadow)
+		{
+			RenderLoop(shadowMap, shadowMap, mainScene, &smshader);
+			nmshader.dataTruck.lightMatrixVP = smshader.dataTruck.lightMatrixVP;
+			lshader.dataTruck.lightMatrixVP = smshader.dataTruck.lightMatrixVP;
+		}
+		
+		//渲染流程
+		if (GlobalSettings::GetInstance()->settings.blinnPhong)
+		{
+			RenderLoop(displayBuffer, shadowMap, mainScene, &nmshader);
+		}
+		else
+		{
+			RenderLoop(displayBuffer, shadowMap, mainScene, &lshader);
+		}
+		
+
+		ImTextureID imguiId = (ImTextureID)renderTexture;
+		if (GlobalSettings::GetInstance()->settings.debug)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, displayBuffer->width(), displayBuffer->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, shadowMap->GetRawBuffer());
+		}
+		else
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, displayBuffer->width(), displayBuffer->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, displayBuffer->GetRawBuffer());
+		}
+		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
+		drawList->AddImage(imguiId, ImVec2(0, 0), ImVec2(WIDTH, HEIGHT));
+
+		
 		// Rendering
 		ImGui::Render();
 		int display_w, display_h;
@@ -129,6 +181,10 @@ int main()
 
 		glfwMakeContextCurrent(window);
 		glfwSwapBuffers(window);
+		
+		//数据清空
+		displayBuffer->Clear(Vector4fToColor(black));
+		shadowMap->Clear(Vector4fToColor(black));
 	}
 
 	// Cleanup

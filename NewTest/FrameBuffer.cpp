@@ -1,6 +1,7 @@
 #include "FrameBuffer.h"
 #include <iostream>
 #include <stdlib.h>
+#include "Draw.h"
 
 const float initDepth = 1;
 
@@ -63,16 +64,27 @@ float* FrameBuffer::GetZbuffer()
 
 float FrameBuffer::GetZ(int x, int y)
 {
-	int pos = (m_Height - y) * m_Width + x;
+	int pos = (m_Height - y - 1) * m_Width + x;
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Height * m_Width)
 	{
 		return m_ZBuffer[pos];
 	}
+	return 1;
+}
+
+Eigen::Vector4f FrameBuffer::GetRaw(int x, int y)
+{
+	int pos = (m_Height - y - 1) * m_Width + x;
+	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Height * m_Width)
+	{
+		return ColorToVector4f(m_RawBuffer[pos]);
+	}
+	return black;
 }
 
 void FrameBuffer::SetColor(int x, int y, unsigned int color)
 {
-	int pos = (m_Height - y) * m_Width + x;
+	int pos = (m_Height - y - 1) * m_Width + x;
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Height * m_Width)
 	{
 		m_RawBuffer[pos] = color;
@@ -81,7 +93,7 @@ void FrameBuffer::SetColor(int x, int y, unsigned int color)
 
 void FrameBuffer::SetZ(int x,int y, float depth)
 {
-	int pos = (m_Height - y) * m_Width + x;
+	int pos = (m_Height - y - 1) * m_Width + x;
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Height * m_Width)
 	{
 		m_ZBuffer[pos] = depth;

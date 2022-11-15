@@ -2,9 +2,8 @@
 #include <fstream>
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-
+//#include "stb_image.h"
+#include"Stb_image/stb_image.h"
 //Model
 Model::Model()
 {
@@ -215,7 +214,7 @@ int Texture::height()
 
 Eigen::Vector4f Texture::GetData(int x, int y)
 {
-	int pos = (m_Height - y) * m_Width + x;
+	int pos = (m_Height - y - 1) * m_Width + x;
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
 	{
 		uint32_t n = m_RawBuffer[pos];

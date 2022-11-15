@@ -25,16 +25,19 @@ extern const int HEIGHT;
 //裁剪空间左手系
 //屏幕空间左手系
 
-Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P)//三角重心插值，返回1-u-v,u,v
+//三角重心插值，返回1-u-v,u,v
+Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P)
 {
 	Eigen::Vector3f u = Eigen::Vector3f(B.x() - A.x(), C.x() - A.x(), A.x() - P.x()).cross(Eigen::Vector3f(B.y() - A.y(), C.y() - A.y(), A.y() - P.y()));// u v 1
 	return Eigen::Vector3f(1.f - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z());
 }
 
-static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Scene* mainScene, Shader* shader)
+/*
+* RenderLoop负责将场景渲染到FrameBuffer上
+* 包含颜色与深度信息
+*/
+static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, Scene* mainScene, Shader* shader)
 {
-	ImDrawList* drawList = ImGui::GetBackgroundDrawList();
-
 	auto models = mainScene->GetModels();
 	auto camera = (*mainScene->GetCameras())[0];//目前只有一个相机
 
@@ -43,6 +46,7 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 	dataTruck->camera = camera;
 	dataTruck->WIDTH = WIDTH;
 	dataTruck->HEIGHT = HEIGHT;
+	dataTruck->shadowMap = shadowMap;
 
 	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)//遍历所有模型
 	{
@@ -55,16 +59,20 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 		dataTruck->matrixM = matrixM;
 		dataTruck->matrixVP = matrixVP;
 		dataTruck->model = model;
-
+		Light mainLight = mainScene->GetLight();
+		dataTruck->mainLight = mainLight;
 		auto meshes = model->GetMeshes();
 
+		//遍历每个模型的所有mesh
 		for (int meshIdx = 0; meshIdx < meshes->size(); meshIdx++)
 		{
 			auto mesh = (*meshes)[meshIdx];
 			auto pFace = mesh->GetPositionFaces();
 			auto nFace = mesh->GetNormalFaces();
 			auto vtFace = mesh->GetUVFaces();
-			for (int i = 0; i < pFace->size(); i++)//处理每个三角
+
+			//处理每个三角
+			for (int i = 0; i < pFace->size(); i++)
 			{
 				dataTruck->Clear();
 				
@@ -114,9 +122,8 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 				int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
 				int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
 
-				Light mainLight = mainScene->GetLight();
-				dataTruck->mainLight = mainLight;
-
+				
+				//遍历包围盒中每个像素
 				for (int x = minx; x <= maxx; x++)
 				{
 					for (int y = miny; y <= maxy; y++)
@@ -128,8 +135,8 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 						{
 							//插值出深度
 							float depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
-
 							//深度测试
+							
 							if (depth > frameBuffer->GetZ(x, y))
 							{
 								continue;
@@ -138,18 +145,12 @@ static inline void RenderLoop(GLuint renderTexture, FrameBuffer* frameBuffer, Sc
 							//运行片元着色器
 							auto finalColor = shader->Frag(u.x(), u.y(), u.z());
 							DrawPoint(frameBuffer, x, y, finalColor);
-							frameBuffer->SetZ(x, y, depth);
+ 							frameBuffer->SetZ(x, y, depth);
+							//std::cout << x << " " << y << " " << depth << std::endl;
 						}
 					}
-				}//system("Pause");
+				}
 			}
 		}
 	}
-
-	ImTextureID imguiId = (ImTextureID)renderTexture;
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, frameBuffer->width(), frameBuffer->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, frameBuffer->GetRawBuffer());
-	drawList->AddImage(imguiId, ImVec2(0, 0), ImVec2(WIDTH, HEIGHT));
-
-	//数据清空
-	frameBuffer->Clear(Vector4fToColor(black));
 }
