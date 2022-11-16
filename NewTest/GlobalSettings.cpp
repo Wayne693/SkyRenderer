@@ -2,7 +2,7 @@
 
 GlobalSettings::GlobalSettings()
 {
-	settings.blinnPhong = true;
+	settings.blinnPhong = false;
 	settings.drawLine = false;
 	settings.lambert = false;
 	settings.drawShadow = true;

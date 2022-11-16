@@ -28,6 +28,51 @@ static void glfw_error_callback(int error, const char* description)
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
+//初始化场景
+void InitScene(Scene* mainScene)
+{
+	//std::string fileName("OBJs\\african_head.obj");
+	//std::string fileName("OBJs\\Test2.obj");
+	std::string fileName("OBJs\\diablo3_pose.obj");
+	Mesh* ahead = new Mesh(fileName);
+	//Mesh test(fileName);
+	Model* african_head = new Model();
+	african_head->SetRotation(Eigen::Vector3f(0, 160, 0));
+	//Model Test;
+	african_head->AddMesh(ahead);
+	//fileName = "OBJs\\african_head_diffuse.tga";
+	fileName = "OBJs\\diablo3_pose_diffuse.tga";
+	Texture* africanDiffuse = new Texture(fileName);
+	//fileName = "OBJs\\african_head_nm_tangent.tga";
+	fileName = "OBJs\\diablo3_pose_nm_tangent.tga";
+	Texture* africanNormal = new Texture(fileName);
+	african_head->AddTexture(africanDiffuse);
+	african_head->AddTexture(africanNormal);
+	mainScene->AddModel(african_head);
+
+	fileName = "OBJs\\floor.obj";
+	Mesh* floorMesh = new Mesh(fileName);
+	Model* floor = new Model();
+	floor->SetTranslation(Eigen::Vector3f(0, 0, 4.360));
+	floor->SetScale(Eigen::Vector3f(1.33f, 1, 1.33f));
+	floor->AddMesh(floorMesh);
+	fileName = "OBJs\\floor_diffuse.tga";
+	Texture* floorDiffuse = new Texture(fileName);
+	floor->AddTexture(floorDiffuse);
+	fileName = "OBJs\\floor_nm_tangent.tga";
+	Texture* floorNormal = new Texture(fileName);
+	floor->AddTexture(floorNormal);
+	mainScene->AddModel(floor);
+
+	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 7.40f, 50, 1.f * WIDTH / HEIGHT);
+	mainScene->AddCamera(mainCamera);
+
+	Light mainLight;
+	mainLight.direction = Eigen::Vector3f(0, -0.930f, 1);
+	mainLight.color = Eigen::Vector4f(255, 255, 255, 255);
+	mainLight.intensity = 1.5f;
+	mainScene->SetLight(mainLight);
+}
 
 int main()
 {
@@ -70,40 +115,9 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	mainScene = new Scene();
-	//std::string fileName("OBJs\\african_head.obj");
-	//std::string fileName("OBJs\\Test2.obj");
-	std::string fileName("OBJs\\diablo3_pose.obj");
-	Mesh ahead(fileName);
-	//Mesh test(fileName);
-	Model african_head;
-	//Model Test;
-	african_head.AddMesh(&ahead);
-	//fileName = "OBJs\\african_head_diffuse.tga";
-	fileName = "OBJs\\diablo3_pose_diffuse.tga";
-	Texture african_diffuse(fileName);
-	//fileName = "OBJs\\african_head_nm_tangent.tga";
-	fileName = "OBJs\\diablo3_pose_nm_tangent.tga";
-	Texture african_normal(fileName);
-	african_head.AddTexture(&african_diffuse);
-	african_head.AddTexture(&african_normal);
-	mainScene->AddModel(&african_head);
-
-	fileName = "OBJs\\floor.obj";
-	Mesh floorMesh(fileName);
-	Model floor;
-	floor.AddMesh(&floorMesh);
-	fileName = "OBJs\\floor_diffuse.tga";
-	Texture floorDiffuse(fileName);
-	floor.AddTexture(&floorDiffuse);
-	fileName = "OBJs\\floor_nm_tangent.tga";
-	Texture floorNormal(fileName);
-	floor.AddTexture(&floorNormal);
-	mainScene->AddModel(&floor);
-
-	Camera mainCamera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 5, 50, 1.f * WIDTH / HEIGHT);
-	mainScene->AddCamera(&mainCamera);
-
+	mainScene = new Scene;
+	InitScene(mainScene);
+	
 	//最终渲染到屏幕上的FrameBuffer
 	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
 	//shadowMap

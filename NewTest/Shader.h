@@ -114,7 +114,7 @@ static inline Eigen::Vector3f UnpackNormal(Texture* normalTexture, Eigen::Vector
 	return 2 * data.head(3) - Eigen::Vector3f(1, 1, 1);
 }
 
-static inline Eigen::Vector4f ComputeScreenSpace(Eigen::Vector4f positionCS)
+static inline Eigen::Vector4f ComputeScreenPos(Eigen::Vector4f positionCS)
 {
 	return Eigen::Vector4f(positionCS.x() * WIDTH / (2 * positionCS.w()) + WIDTH / 2, positionCS.y() * HEIGHT / (2 * positionCS.w()) + HEIGHT / 2, positionCS.z() / positionCS.w(), positionCS.w());
 }

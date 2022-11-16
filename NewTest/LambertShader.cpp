@@ -17,7 +17,7 @@ void LambertShader::Vert()
 		dataTruck.DTpositionCS.push_back(matrixVP * dataTruck.DTpositionWS[i]);
 		//将positionCS转到positionSS
 		auto vertex = dataTruck.DTpositionCS[i];
-		auto tmp = ComputeScreenSpace(vertex);
+		auto tmp = ComputeScreenPos(vertex);
 		dataTruck.DTpositionSS.push_back(tmp);
 
 		//将normalOS转到normalWS
@@ -34,7 +34,7 @@ void LambertShader::Vert()
 Eigen::Vector4f LambertShader::Frag(float a, float b, float c)
 {
 	//插值出纹理坐标(透视矫正插值)
-	Eigen::Vector2f uv;
+	Eigen::Vector2f uv;// = a * dataTruck.DTuv0[0] + b * dataTruck.DTuv0[1] + c * dataTruck.DTuv0[2];
 	float alpha = a / dataTruck.DTpositionWS[0].z();
 	float beta = b / dataTruck.DTpositionWS[1].z();
 	float gamma = c / dataTruck.DTpositionWS[2].z();
@@ -43,19 +43,26 @@ Eigen::Vector4f LambertShader::Frag(float a, float b, float c)
 	//插值出法线
 	Eigen::Vector3f normalWS = a * dataTruck.DTnormalWS[0] + b * dataTruck.DTnormalWS[1] + c * dataTruck.DTnormalWS[2];
 	normalWS.normalize();
-	//插值出世界坐标
-	Eigen::Vector4f positionWS = a * dataTruck.DTpositionWS[0] + b * dataTruck.DTpositionWS[1] + c * dataTruck.DTpositionWS[2];
+	//插值出世界坐标(透视矫正插值)
+	Eigen::Vector4f positionWS = zn * (alpha * dataTruck.DTpositionWS[0] + beta * dataTruck.DTpositionWS[1] + gamma * dataTruck.DTpositionWS[2]);
 
 	//计算TBN
-	float x = normalWS.x();
-	float y = normalWS.y();
-	float z = normalWS.z();
-	Eigen::Vector3f tangentWS = Eigen::Vector3f(x * y / std::sqrt(x * x + z * z), std::sqrt(x * x + z * z), z * y / std::sqrt(x * x + z * z));
-	Eigen::Vector3f binormalWS = normalWS.cross(tangentWS);
+	Eigen::Vector3f v1 = (dataTruck.DTpositionCS[1] / dataTruck.DTpositionCS[1].w() - dataTruck.DTpositionCS[0] / dataTruck.DTpositionCS[0].w()).head(3);
+	Eigen::Vector3f v2 = (dataTruck.DTpositionCS[2] / dataTruck.DTpositionCS[2].w() - dataTruck.DTpositionCS[0] / dataTruck.DTpositionCS[0].w()).head(3);
+	Eigen::Matrix3f A;
+	A << v1.x(), v1.y(), v1.z(),
+		v2.x(), v2.y(), v2.z(),
+		normalWS.x(), normalWS.y(), normalWS.z();
+	Eigen::Matrix3f AI = A.inverse();
+
+	Eigen::Vector3f i = AI * Eigen::Vector3f(dataTruck.DTuv0[1].x() - dataTruck.DTuv0[0].x(), dataTruck.DTuv0[2].x() - dataTruck.DTuv0[0].x(), 0);
+	Eigen::Vector3f j = AI * Eigen::Vector3f(dataTruck.DTuv0[1].y() - dataTruck.DTuv0[0].y(), dataTruck.DTuv0[2].y() - dataTruck.DTuv0[0].y(), 0);
+	i.normalize();
+	j.normalize();
 	Eigen::Matrix3f tbnMatrix;
-	tbnMatrix << tangentWS.x(), binormalWS.x(), normalWS.x(),
-		tangentWS.y(), binormalWS.y(), normalWS.y(),
-		tangentWS.z(), binormalWS.z(), normalWS.z();
+	tbnMatrix << i.x(), j.x(), normalWS.x(),
+		i.y(), j.y(), normalWS.y(),
+		i.z(), j.z(), normalWS.z();
 
 
 	//获取diffuse texture、normal texture
@@ -75,12 +82,13 @@ Eigen::Vector4f LambertShader::Frag(float a, float b, float c)
 	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 	float NdotL = bumpWS.dot(lightDirWS);
 	//diffuse
-	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * mulColor(mainLight.color, Tex2D(diffuseTex, uv));
+	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * mulColor(mainLight.color, Tex2D(diffuseTex, Eigen::Vector2f(uv)));
 
 	float shadow = 0.f;
 	if (GlobalSettings::GetInstance()->settings.drawShadow)
 	{
-		Eigen::Vector4f positionLSS = ComputeScreenSpace(dataTruck.lightMatrixVP * positionWS);
+		Eigen::Vector4f positionLSS = ComputeScreenPos(dataTruck.lightMatrixVP * positionWS);
+		//return Eigen::Vector4f(positionLSS.z() * 255, 0, 0, 255);
 		float bias = std::max(0.05 * (1 - bumpWS.dot(lightDirWS)), 0.01);
 		//PCF
 		for (int i = -1; i <= 1; i++)
