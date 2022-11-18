@@ -31,24 +31,18 @@ static void glfw_error_callback(int error, const char* description)
 //初始化场景
 void InitScene(Scene* mainScene)
 {
-	//std::string fileName("OBJs\\african_head.obj");
-	//std::string fileName("OBJs\\Test2.obj");
 	std::string fileName("OBJs\\diablo3_pose.obj");
-	Mesh* ahead = new Mesh(fileName);
-	//Mesh test(fileName);
-	Model* african_head = new Model();
-	african_head->SetRotation(Eigen::Vector3f(0, 160, 0));
-	//Model Test;
-	african_head->AddMesh(ahead);
-	//fileName = "OBJs\\african_head_diffuse.tga";
+	Mesh* diabloMesh = new Mesh(fileName);
+	Model* diabloModel = new Model();
+	diabloModel->SetRotation(Eigen::Vector3f(0, 160, 1));
+	diabloModel->AddMesh(diabloMesh);
 	fileName = "OBJs\\diablo3_pose_diffuse.tga";
-	Texture* africanDiffuse = new Texture(fileName);
-	//fileName = "OBJs\\african_head_nm_tangent.tga";
+	Texture* diabloDiffuse = new Texture(fileName);
 	fileName = "OBJs\\diablo3_pose_nm_tangent.tga";
-	Texture* africanNormal = new Texture(fileName);
-	african_head->AddTexture(africanDiffuse);
-	african_head->AddTexture(africanNormal);
-	mainScene->AddModel(african_head);
+	Texture* diabloNormal = new Texture(fileName);
+	diabloModel->AddTexture(diabloDiffuse);
+	diabloModel->AddTexture(diabloNormal);
+	mainScene->AddModel(diabloModel);
 
 	fileName = "OBJs\\floor.obj";
 	Mesh* floorMesh = new Mesh(fileName);
@@ -64,7 +58,7 @@ void InitScene(Scene* mainScene)
 	floor->AddTexture(floorNormal);
 	mainScene->AddModel(floor);
 
-	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 7.40f, 50, 1.f * WIDTH / HEIGHT);
+	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
 	mainScene->AddCamera(mainCamera);
 
 	Light mainLight;

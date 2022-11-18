@@ -34,7 +34,7 @@ void LambertShader::Vert()
 Eigen::Vector4f LambertShader::Frag(float a, float b, float c)
 {
 	//插值出纹理坐标(透视矫正插值)
-	Eigen::Vector2f uv;// = a * dataTruck.DTuv0[0] + b * dataTruck.DTuv0[1] + c * dataTruck.DTuv0[2];
+	Eigen::Vector2f uv;
 	float alpha = a / dataTruck.DTpositionWS[0].z();
 	float beta = b / dataTruck.DTpositionWS[1].z();
 	float gamma = c / dataTruck.DTpositionWS[2].z();
@@ -75,10 +75,6 @@ Eigen::Vector4f LambertShader::Frag(float a, float b, float c)
 
 	//获得法线纹理中法线数据
 	Eigen::Vector3f bumpTS = UnpackNormal(normalTex, uv);
-	bumpTS.head(2) *= 0.8f;
-	bumpTS.z() = sqrt(1.f - std::max(0.f, std::min(1.f, bumpTS.head(2).dot(bumpTS.head(2)))));
-	bumpTS.normalize();
-
 	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 	float NdotL = bumpWS.dot(lightDirWS);
 	//diffuse

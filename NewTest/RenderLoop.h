@@ -146,7 +146,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 							auto finalColor = shader->Frag(u.x(), u.y(), u.z());
 							DrawPoint(frameBuffer, x, y, finalColor);
  							frameBuffer->SetZ(x, y, depth);
-							//std::cout << x << " " << y << " " << depth << std::endl;
 						}
 					}
 				}

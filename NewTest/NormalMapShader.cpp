@@ -43,7 +43,7 @@ Eigen::Vector4f NormalMapShader::Frag(float a, float b, float c)
 	//插值出法线
 	Eigen::Vector3f normalWS = a * dataTruck.DTnormalWS[0] + b * dataTruck.DTnormalWS[1] + c * dataTruck.DTnormalWS[2];
 	normalWS.normalize();
-	//插值出世界坐标(透视矫正插值)
+	//插值出世界坐标(透视矫正插值)todo: understand
 	Eigen::Vector4f positionWS = zn * (alpha * dataTruck.DTpositionWS[0] + beta * dataTruck.DTpositionWS[1] + gamma * dataTruck.DTpositionWS[2]);
 
 	//计算TBN
@@ -76,10 +76,7 @@ Eigen::Vector4f NormalMapShader::Frag(float a, float b, float c)
 
 	//获得法线纹理中法线数据
 	Eigen::Vector3f bumpTS = UnpackNormal(normalTex, uv);
-	//std::cout << bumpTS << std::endl;
-	bumpTS.head(2) *= 0.8f;
-	bumpTS.z() = sqrt(1.f - std::max(0.f, std::min(1.f, bumpTS.head(2).dot(bumpTS.head(2)))));
-	bumpTS.normalize();
+
 
 	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 	float NdotL = bumpWS.dot(lightDirWS);
