@@ -33,36 +33,55 @@ Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2
 }
 
 /*
+* 渲染状态
+* 表明一次渲染的目的
+*/
+enum RenderConfig
+{
+	RENDER_SHADOW,
+	RENDER_BY_PASS
+};
+
+/*
+* 全局LightMatrixVP
+* 须在ShadowMapShader中向dataTruck赋值
+*/
+Eigen::Vector4f lightMatrixVP;
+
+DataTruck dataTruck;
+/*
 * RenderLoop负责将场景渲染到FrameBuffer上
 * 包含颜色与深度信息
 */
-static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, Scene* mainScene, Shader* shader)
+static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, Scene* mainScene, RenderConfig renderConfig)
 {
 	auto models = mainScene->GetModels();
 	auto camera = (*mainScene->GetCameras())[0];//目前只有一个相机
 
 	//获取当前shader的dataTruck
-	DataTruck* dataTruck = &shader->dataTruck;
+	/*DataTruck* dataTruck = &shader->dataTruck;
 	dataTruck->camera = camera;
 	dataTruck->WIDTH = WIDTH;
 	dataTruck->HEIGHT = HEIGHT;
-	dataTruck->shadowMap = shadowMap;
-
+	dataTruck->shadowMap = shadowMap;*/
+	dataTruck.camera = camera;
+	dataTruck.WIDTH = WIDTH;
+	dataTruck.HEIGHT = HEIGHT;
+	dataTruck.shadowMap = shadowMap;
 	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)//遍历所有模型
 	{
+		//获取当前模型
 		auto model = (*models)[modelIdx];
+		//更新MVP矩阵
 		model->UpdateModelMatrix();
 		camera->UpdateVPMatrix();
-		Eigen::Matrix4f matrixM = model->GetModelMatrix();
-		Eigen::Matrix4f matrixVP = camera->GetVPMatrix();
-		//向shader传递MVP矩阵,当前model
-		dataTruck->matrixM = matrixM;
-		dataTruck->matrixVP = matrixVP;
-		dataTruck->model = model;
+		dataTruck.matrixM = model->GetModelMatrix();
+		dataTruck.matrixVP = camera->GetVPMatrix();
+		dataTruck.model = model;
 		Light mainLight = mainScene->GetLight();
-		dataTruck->mainLight = mainLight;
+		dataTruck.mainLight = mainLight;
+		
 		auto meshes = model->GetMeshes();
-
 		//遍历每个模型的所有mesh
 		for (int meshIdx = 0; meshIdx < meshes->size(); meshIdx++)
 		{
@@ -70,50 +89,78 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			auto pFace = mesh->GetPositionFaces();
 			auto nFace = mesh->GetNormalFaces();
 			auto vtFace = mesh->GetUVFaces();
-
+			dataTruck.mesh = mesh;
+			//根据config选取shader
+			Shader* shader = nullptr;
+			if (renderConfig == RENDER_SHADOW)
+			{
+				shader = mesh->GetShadowShader();
+			}
+			else if(renderConfig == RENDER_BY_PASS)
+			{
+				shader = mesh->GetCommonShader();
+			}
+			//将所选shader的dataTruck指向为renderLoop的dataTruck
+			if (!shader)
+			{
+				continue;
+			}
+			shader->dataTruck = &dataTruck;
 			//处理每个三角
 			for (int i = 0; i < pFace->size(); i++)
 			{
-				dataTruck->Clear();
-				
+				dataTruck.Clear();
+
 				Face positionFace = (*pFace)[i];
 				Face normalFace = (*nFace)[i];
 				Face uvFace = (*vtFace)[i];
 
 				//加载顶点position
-				Eigen::Vector4f posA = (*mesh->GetPositions())[positionFace.A - 1];
-				Eigen::Vector4f posB = (*mesh->GetPositions())[positionFace.B - 1];
-				Eigen::Vector4f posC = (*mesh->GetPositions())[positionFace.C - 1];
-				dataTruck->DTpositionOS.push_back(posA);
-				dataTruck->DTpositionOS.push_back(posB);
-				dataTruck->DTpositionOS.push_back(posC);
+				if ((*mesh->GetPositions()).size() >= 3)
+				{
+					Eigen::Vector4f posA = (*mesh->GetPositions())[positionFace.A - 1];
+					Eigen::Vector4f posB = (*mesh->GetPositions())[positionFace.B - 1];
+					Eigen::Vector4f posC = (*mesh->GetPositions())[positionFace.C - 1];
+					dataTruck.DTpositionOS.push_back(posA);
+					dataTruck.DTpositionOS.push_back(posB);
+					dataTruck.DTpositionOS.push_back(posC);
+				}
 				//加载顶点normal
-				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.A - 1]);
-				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.B - 1]);
-				dataTruck->DTnormalOS.push_back((*mesh->GetNormals())[normalFace.C - 1]);
+				if ((*mesh->GetNormals()).size() >= 3)
+				{
+					dataTruck.DTnormalOS.push_back((*mesh->GetNormals())[normalFace.A - 1]);
+					dataTruck.DTnormalOS.push_back((*mesh->GetNormals())[normalFace.B - 1]);
+					dataTruck.DTnormalOS.push_back((*mesh->GetNormals())[normalFace.C - 1]);
+				}
 				//加载顶点uv
-				Eigen::Vector2f uvA = (*mesh->GetTexcoords())[uvFace.A - 1];
-				Eigen::Vector2f uvB = (*mesh->GetTexcoords())[uvFace.B - 1];
-				Eigen::Vector2f uvC = (*mesh->GetTexcoords())[uvFace.C - 1];
-				dataTruck->DTuv0.push_back(uvA);
-				dataTruck->DTuv0.push_back(uvB);
-				dataTruck->DTuv0.push_back(uvC);
+				if ((*mesh->GetTexcoords()).size() >= 3)
+				{
+					Eigen::Vector2f uvA = (*mesh->GetTexcoords())[uvFace.A - 1];
+					Eigen::Vector2f uvB = (*mesh->GetTexcoords())[uvFace.B - 1];
+					Eigen::Vector2f uvC = (*mesh->GetTexcoords())[uvFace.C - 1];
+					dataTruck.DTuv0.push_back(uvA);
+					dataTruck.DTuv0.push_back(uvB);
+					dataTruck.DTuv0.push_back(uvC);
+				}
 
 				//运行顶点着色器
 				shader->Vert();
 
 				//背面剔除
-				auto positionCS = dataTruck->DTpositionCS;
-				Eigen::Vector3f v1 = (positionCS[1]/positionCS[1].w() - positionCS[0]/positionCS[0].w()).head(3);
-				Eigen::Vector3f v2 = (positionCS[2]/positionCS[2].w() - positionCS[0]/positionCS[0].w()).head(3);
-				Eigen::Vector3f vNormal = v1.cross(v2);
-				if (vNormal.z() <= 0)
+			/*	if (!model->IsSkyBox())
 				{
-					continue;
-				}
+					auto positionCS = dataTruck.DTpositionCS;
+					Eigen::Vector3f v1 = (positionCS[1] / positionCS[1].w() - positionCS[0] / positionCS[0].w()).head(3);
+					Eigen::Vector3f v2 = (positionCS[2] / positionCS[2].w() - positionCS[0] / positionCS[0].w()).head(3);
+					Eigen::Vector3f vNormal = v1.cross(v2);
+					if (vNormal.z() <= 0)
+					{
+						continue;
+					}
+				}*/
 
 				//获取三角包围盒
-				auto positionSS = dataTruck->DTpositionSS;
+				auto positionSS = dataTruck.DTpositionSS;
 				auto a = positionSS[0];
 				auto b = positionSS[1];
 				auto c = positionSS[2];
@@ -122,7 +169,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 				int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
 				int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
 
-				
+
 				//遍历包围盒中每个像素
 				for (int x = minx; x <= maxx; x++)
 				{
@@ -136,7 +183,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 							//插值出深度
 							float depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
 							//深度测试
-							
 							if (depth > frameBuffer->GetZ(x, y))
 							{
 								continue;
@@ -145,7 +191,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 							//运行片元着色器
 							auto finalColor = shader->Frag(u.x(), u.y(), u.z());
 							DrawPoint(frameBuffer, x, y, finalColor);
- 							frameBuffer->SetZ(x, y, depth);
+							frameBuffer->SetZ(x, y, depth);
 						}
 					}
 				}

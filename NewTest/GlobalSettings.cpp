@@ -7,6 +7,7 @@ GlobalSettings::GlobalSettings()
 	settings.lambert = false;
 	settings.drawShadow = true;
 	settings.debug = false;
+	settings.skyBox = true;
 }
 
 GlobalSettings::~GlobalSettings()

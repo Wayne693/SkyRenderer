@@ -471,6 +471,7 @@
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Stb_image\stb_image.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Pretreatment.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FrameBuffer.cpp" />
@@ -485,7 +486,9 @@
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="BlinnPhongShader.cpp" />
     <ClCompile Include="NormalMapShader.cpp" />
+    <ClCompile Include="PBRShader.cpp" />
     <ClCompile Include="ShadowMapShader.cpp" />
+    <ClCompile Include="SkyBoxShader.cpp" />
     <ClCompile Include="SkyRenderer.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Scene.cpp" />

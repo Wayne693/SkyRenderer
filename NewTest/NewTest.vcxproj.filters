@@ -43,6 +43,9 @@
     <Filter Include="源文件\WindowsLoop">
       <UniqueIdentifier>{9755dcae-e772-48a1-8728-9adaaeca8958}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\Pretreatment">
+      <UniqueIdentifier>{0ed3549c-f357-4115-9e2e-f2cdada57c6a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -1038,6 +1041,9 @@
     <ClInclude Include="GlobalSettingWindowLoop.h">
       <Filter>源文件\WindowsLoop</Filter>
     </ClInclude>
+    <ClInclude Include="Pretreatment.h">
+      <Filter>源文件\Pretreatment</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SkyRenderer.cpp">
@@ -1090,6 +1096,12 @@
     </ClCompile>
     <ClCompile Include="GlobalSettings.cpp">
       <Filter>源文件\GlobalSettings</Filter>
+    </ClCompile>
+    <ClCompile Include="PBRShader.cpp">
+      <Filter>源文件\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyBoxShader.cpp">
+      <Filter>源文件\Shader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

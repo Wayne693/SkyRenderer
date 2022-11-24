@@ -8,6 +8,7 @@ struct Settings
 	bool lambert;
 	bool drawLine;
 	bool debug;
+	bool skyBox;
 };
 
 class GlobalSettings

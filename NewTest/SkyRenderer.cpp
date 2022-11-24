@@ -13,6 +13,7 @@
 #include "RenderLoop.h"
 #include "GlobalSettingWindowLoop.h"
 #include "GlobalSettings.h"
+#include "Pretreatment.h"
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -29,7 +30,7 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 //初始化场景
-void InitScene(Scene* mainScene)
+void InitSceneDiablo(Scene* mainScene)
 {
 	std::string fileName("OBJs\\diablo3_pose.obj");
 	Mesh* diabloMesh = new Mesh(fileName);
@@ -40,8 +41,8 @@ void InitScene(Scene* mainScene)
 	Texture* diabloDiffuse = new Texture(fileName);
 	fileName = "OBJs\\diablo3_pose_nm_tangent.tga";
 	Texture* diabloNormal = new Texture(fileName);
-	diabloModel->AddTexture(diabloDiffuse);
-	diabloModel->AddTexture(diabloNormal);
+	diabloMesh->AddTexture(diabloDiffuse);
+	diabloMesh->AddTexture(diabloNormal);
 	mainScene->AddModel(diabloModel);
 
 	fileName = "OBJs\\floor.obj";
@@ -52,10 +53,10 @@ void InitScene(Scene* mainScene)
 	floor->AddMesh(floorMesh);
 	fileName = "OBJs\\floor_diffuse.tga";
 	Texture* floorDiffuse = new Texture(fileName);
-	floor->AddTexture(floorDiffuse);
+	floorMesh->AddTexture(floorDiffuse);
 	fileName = "OBJs\\floor_nm_tangent.tga";
 	Texture* floorNormal = new Texture(fileName);
-	floor->AddTexture(floorNormal);
+	floorMesh->AddTexture(floorNormal);
 	mainScene->AddModel(floor);
 
 	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
@@ -66,6 +67,63 @@ void InitScene(Scene* mainScene)
 	mainLight.color = Eigen::Vector4f(255, 255, 255, 255);
 	mainLight.intensity = 1.5f;
 	mainScene->SetLight(mainLight);
+}
+
+void InitSceneHelmet(Scene* mainScene)
+{
+	//helmet
+	std::string fileName("OBJs\\helmet.obj");
+	Mesh* helmetMesh = new Mesh(fileName);
+	Model* helmet = new Model();
+	helmet->AddMesh(helmetMesh);
+	fileName = "OBJs\\helmet_albedo.tga";
+	Texture* helmetAlbedo = new Texture(fileName);
+	helmetMesh->AddTexture(helmetAlbedo);
+	fileName = "OBJs\\helmet_normal.tga";
+	Texture* gunNormal = new Texture(fileName);
+	helmetMesh->AddTexture(gunNormal);
+	fileName = "OBJs\\helmet_roughness.tga";
+	Texture* gunRoughness = new Texture(fileName);
+	helmetMesh->AddTexture(gunRoughness);
+	fileName = "OBJs\\helmet_metallic.tga";
+	Texture* gunMetallic = new Texture(fileName);
+	helmetMesh->AddTexture(gunMetallic);
+
+	LambertShader* lambertShader = new LambertShader;
+	helmetMesh->SetCommonShader(lambertShader);
+	ShadowMapShader* shadowMapShader = new ShadowMapShader;
+	helmetMesh->SetShadowShader(shadowMapShader);
+	helmet->SetTranslation(Eigen::Vector3f(0, 0, 5.5));
+	helmet->SetRotation(Eigen::Vector3f(220, 97.5, -87.5));
+	//mainScene->AddModel(helmet);
+
+	//skyBox
+	fileName = "OBJs\\SkyBox.obj";
+	Mesh* skyBoxMesh = new Mesh(fileName);
+	Model* skyBox = new Model;
+	skyBox->SetIsSkyBox(true);
+	skyBox->AddMesh(skyBoxMesh);
+	SkyBoxShader* skyBoxShader = new SkyBoxShader;
+	skyBoxMesh->SetCommonShader(skyBoxShader);
+	std::vector<std::string> cubemapFiles
+	{
+		"OBJs\\right.jpg",
+		"OBJs\\left.jpg",
+		"OBJs\\top.jpg",
+		"OBJs\\bottom.jpg",
+		"OBJs\\front.jpg",
+		"OBJs\\back.jpg"
+	};
+	CubeMap* cubeMap = new CubeMap(cubemapFiles);
+	CubeMap* irrdance = GenerateIrradianceMap(cubeMap);
+
+	skyBoxMesh->SetCubeMap(irrdance);
+	//skyBoxMesh->SetCubeMap(cubeMap);
+	mainScene->AddModel(skyBox);
+
+	//Camera
+	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
+	mainScene->AddCamera(mainCamera);
 }
 
 int main()
@@ -110,8 +168,10 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	mainScene = new Scene;
-	InitScene(mainScene);
-	
+	//InitSceneDiablo(mainScene);
+	InitSceneHelmet(mainScene);
+
+
 	//最终渲染到屏幕上的FrameBuffer
 	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
 	//shadowMap
@@ -144,24 +204,14 @@ int main()
 		ShadowMapShader smshader;
 
 		Eigen::Vector3f lightMatrixVP;
-		//如果要渲染阴影
+		//渲染阴影
 		if (GlobalSettings::GetInstance()->settings.drawShadow)
 		{
-			RenderLoop(shadowMap, shadowMap, mainScene, &smshader);
-			nmshader.dataTruck.lightMatrixVP = smshader.dataTruck.lightMatrixVP;
-			lshader.dataTruck.lightMatrixVP = smshader.dataTruck.lightMatrixVP;
+			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
 		}
 		
 		//渲染流程
-		if (GlobalSettings::GetInstance()->settings.blinnPhong)
-		{
-			RenderLoop(displayBuffer, shadowMap, mainScene, &nmshader);
-		}
-		else
-		{
-			RenderLoop(displayBuffer, shadowMap, mainScene, &lshader);
-		}
-		
+		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
 
 		ImTextureID imguiId = (ImTextureID)renderTexture;
 		if (GlobalSettings::GetInstance()->settings.debug)

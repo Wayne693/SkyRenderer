@@ -40,7 +40,7 @@ static inline void StatusWindowLoop(Scene* mainScene)
 				//平移
 				Eigen::Vector3f tmp = model->GetTranslation();
 				float position[3] = { tmp.x(),tmp.y(),tmp.z() };
-				
+
 				ImGui::DragFloat3("position", position, 0.01);
 				tmp = Eigen::Map<Eigen::Vector3f>(position);
 				model->SetTranslation(tmp);
@@ -54,32 +54,38 @@ static inline void StatusWindowLoop(Scene* mainScene)
 				tmp = model->GetScale();
 				float scale[3] = { tmp.x(),tmp.y(),tmp.z() };
 				ImGui::DragFloat3("scale", scale, 0.01);
-				
+
 				tmp = Eigen::Map<Eigen::Vector3f>(scale);
 				model->SetScale(tmp);
-				//纹理
-				auto textures = model->GetTextures();
-				for (int idxt = 0; idxt < textures->size(); idxt++)
+
+				auto meshP = model->GetMeshes();
+				for (int idxm = 0; idxm < meshP->size(); idxm++)
 				{
-					Texture* currentTex = (*textures)[idxt];
-					ImGui::PushID(currentTex);
-					ImGui::Text("texture %d", idxt + 1);
-					Eigen::Vector2f tmp = currentTex->GetTilling();
-					float tilling[2] = { tmp.x(),tmp.y() };
-					ImGui::DragFloat2("tilling", tilling, 0.01);
-					//ImGui::PopID();
-					tmp = Eigen::Map<Eigen::Vector2f>(tilling);
-					currentTex->SetTilling(tmp);
+					//纹理
+					auto textures = (*meshP)[idxm]->GetTextures();
+					for (int idxt = 0; idxt < textures->size(); idxt++)
+					{
+						Texture* currentTex = (*textures)[idxt];
+						ImGui::PushID(currentTex);
+						ImGui::Text("texture %d", idxt + 1);
+						Eigen::Vector2f tmp = currentTex->GetTilling();
+						float tilling[2] = { tmp.x(),tmp.y() };
+						ImGui::DragFloat2("tilling", tilling, 0.01);
+						//ImGui::PopID();
+						tmp = Eigen::Map<Eigen::Vector2f>(tilling);
+						currentTex->SetTilling(tmp);
 
-					tmp = currentTex->GetOffset();
-					float offset[2] = { tmp.x(),tmp.y() };
-					//ImGui::PushID(idxt);
-					ImGui::DragFloat2("offset", offset, 0.01);
-					tmp = Eigen::Map<Eigen::Vector2f>(offset);
-					currentTex->SetOffset(tmp);
+						tmp = currentTex->GetOffset();
+						float offset[2] = { tmp.x(),tmp.y() };
+						//ImGui::PushID(idxt);
+						ImGui::DragFloat2("offset", offset, 0.01);
+						tmp = Eigen::Map<Eigen::Vector2f>(offset);
+						currentTex->SetOffset(tmp);
 
-					ImGui::PopID();
+						ImGui::PopID();
+					}
 				}
+
 				ImGui::PopID();
 				ImGui::Separator();
 			}

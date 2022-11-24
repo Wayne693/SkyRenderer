@@ -3,7 +3,8 @@
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 //#include "stb_image.h"
-#include"Stb_image/stb_image.h"
+#include "Stb_image/stb_image.h"
+
 //Model
 Model::Model()
 {
@@ -11,6 +12,7 @@ Model::Model()
 	m_Scale << 1, 1, 1;
 	m_Translation << 0, 0, 3;
 	m_Rotation << 0, 180, 0;
+	m_IsskyBox = false;
 }
 
 void Model::SetTranslation(Eigen::Vector3f translation)
@@ -26,6 +28,13 @@ void Model::SetRotation(Eigen::Vector3f rotation)
 void Model::SetScale(Eigen::Vector3f scale)
 {
 	m_Scale = scale;
+}
+
+
+
+void Model::SetIsSkyBox(bool flag)
+{
+	m_IsskyBox = flag;
 }
 
 Eigen::Matrix4f Model::GetModelMatrix()
@@ -46,15 +55,12 @@ Eigen::Vector3f Model::GetScale()
 	return m_Scale;
 }
 
-void Model::AddTexture(Texture* texture)
+bool Model::IsSkyBox()
 {
-	m_Textures.push_back(texture);
+	return m_IsskyBox;
 }
 
-std::vector<Texture*>* Model::GetTextures()
-{
-	return &m_Textures;
-}
+
 
 void Model::AddMesh(Mesh* mesh)
 {
@@ -148,6 +154,16 @@ Mesh::Mesh(std::string fileName)
 	}
 }
 
+void Mesh::SetShadowShader(Shader* shader)
+{
+	m_ShadowShader = shader;
+}
+
+void Mesh::SetCommonShader(Shader* shader)
+{
+	m_CommonShader = shader;
+}
+
 std::vector<Face>* Mesh::GetPositionFaces()
 {
 	return &m_FacePositions;
@@ -178,6 +194,35 @@ std::vector<Eigen::Vector3f>* Mesh::GetNormals()
 	return &normals;
 }
 
+void Mesh::SetCubeMap(CubeMap* cubeMap)
+{
+	m_CubeMap = cubeMap;
+}
+
+void Mesh::AddTexture(Texture* texture)
+{
+	m_Textures.push_back(texture);
+}
+
+std::vector<Texture*>* Mesh::GetTextures()
+{
+	return &m_Textures;
+}
+
+Shader* Mesh::GetShadowShader()
+{
+	return m_ShadowShader;
+}
+
+Shader* Mesh::GetCommonShader()
+{
+	return m_CommonShader;
+}
+
+CubeMap* Mesh::GetCubeMap()
+{
+	return m_CubeMap;
+}
 
 //Texture
 Texture::Texture(std::string fileName)
@@ -185,6 +230,16 @@ Texture::Texture(std::string fileName)
 	m_RawBuffer = (uint32_t*)stbi_load(fileName.c_str(), &m_Width, &m_Height, &m_Channel, 4);//load texture
 	m_Tilling = Eigen::Vector2f(1, 1);
 	m_Offset = Eigen::Vector2f(0, 0);
+}
+
+Texture::Texture(int width, int height)
+{
+	m_RawBuffer = (uint32_t*)malloc(sizeof(uint32_t) * width * height);
+	m_Tilling = Eigen::Vector2f(1, 1);
+	m_Offset = Eigen::Vector2f(0, 0);
+	m_Width = width;
+	m_Height = height;
+	//assert(!m_RawBuffer);
 }
 
 Texture::~Texture()
@@ -200,6 +255,18 @@ void Texture::SetTilling(Eigen::Vector2f tilling)
 void Texture::SetOffset(Eigen::Vector2f offset)
 {
 	m_Offset = offset;
+}
+
+void Texture::SetData(Eigen::Vector2f uv, Eigen::Vector4f color)
+{
+	int x = (int)(uv.x() * m_Width);
+	int y = (int)(uv.y() * m_Height);
+	//std::cout << "x = " << x << " y = " << y << std::endl;
+	int pos = (m_Height - y - 1) * m_Width + x;
+	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
+	{
+		m_RawBuffer[pos] = Vector4fToColor(color);
+	}
 }
 
 int Texture::width()
@@ -225,15 +292,16 @@ Eigen::Vector4f Texture::GetData(int x, int y)
 	return Eigen::Vector4f(0, 0, 0, 0);
 }
 
+//repeat
 Eigen::Vector4f Texture::GetData(Eigen::Vector2f uv)
 {
-	int x = (int)uv.x();
-	int y = (int)uv.y();
+	int x = (int)(uv.x() * m_Width);
+	int y = (int)(uv.y() * m_Height);
 	if (x > 0)
 	{
 		x = x % m_Width;
 	}
-	else
+	else if(x < 0)
 	{
 		x = m_Width + x % m_Width;
 	}
@@ -242,13 +310,12 @@ Eigen::Vector4f Texture::GetData(Eigen::Vector2f uv)
 	{
 		y = y % m_Height;
 	}
-	else
+	else if (y < 0)
 	{
 		y = m_Height + y % m_Height;
 	}
 
 	return GetData(x, y);
-	
 }
 
 Eigen::Vector2f Texture::GetTilling()
@@ -259,4 +326,155 @@ Eigen::Vector2f Texture::GetTilling()
 Eigen::Vector2f Texture::GetOffset()
 {
 	return m_Offset;
+}
+
+//Cube Map
+CubeMap::CubeMap(std::vector<std::string> fileNames)
+{
+	for (int i = 0; i < fileNames.size(); i++)
+	{
+		Texture* tmpTex = new Texture(fileNames[i]);
+		m_Textures.push_back(tmpTex);
+	}
+}
+
+CubeMap::CubeMap(int width,int height)
+{
+	for (int i = 0; i < 6; i++)
+	{
+		Texture* tmpTex = new Texture(width, height);
+		m_Textures.push_back(tmpTex);
+	}
+}
+
+CubeMap::~CubeMap()
+{
+	for (int i = 0; i < m_Textures.size(); i++)
+	{
+		if (m_Textures[i])
+		{
+			delete m_Textures[i];
+		}
+	}
+}
+
+//todo understand
+int selectCubeMapFace(Eigen::Vector3f direction, Eigen::Vector2f* texcoord) {
+	float abs_x = (float)fabs(direction.x());
+	float abs_y = (float)fabs(direction.y());
+	float abs_z = (float)fabs(direction.z());
+	float ma, sc, tc;
+	int face_index;
+
+	if (abs_x > abs_y && abs_x > abs_z) {   /* major axis -> x */
+		ma = abs_x;
+		if (direction.x() > 0) {                  /* positive x */
+			face_index = 0;
+			sc = -direction.z();
+			tc = -direction.y();
+		}
+		else {                                /* negative x */
+			face_index = 1;
+			sc = +direction.z();
+			tc = -direction.y();
+		}
+	}
+	else if (abs_y > abs_z) {             /* major axis -> y */
+		ma = abs_y;
+		if (direction.y() > 0) {                  /* positive y */
+			face_index = 2;
+			sc = +direction.x();
+			tc = +direction.z();
+		}
+		else {                                /* negative y */
+			face_index = 3;
+			sc = +direction.x();
+			tc = -direction.z();
+		}
+	}
+	else {                                /* major axis -> z */
+		ma = abs_z;
+		if (direction.z() > 0) {                  /* positive z */
+			face_index = 4;
+			sc = +direction.x();
+			tc = -direction.y();
+		}
+		else {                                /* negative z */
+			face_index = 5;
+			sc = -direction.x();
+			tc = -direction.y();
+		}
+	}
+
+	texcoord->x() = (sc / ma + 1) / 2;
+	texcoord->y() =1 - (tc / ma + 1) / 2;
+	return face_index;
+}
+
+//int selectCubeMapFace(Eigen::Vector3f direction, Eigen::Vector2f* texcoord) {
+//	float abs_x = (float)fabs(direction.x());
+//	float abs_y = (float)fabs(direction.y());
+//	float abs_z = (float)fabs(direction.z());
+//	float ma, sc, tc;
+//	int face_index;
+//
+//	if (abs_x > abs_y && abs_x > abs_z) {   /* major axis -> x */
+//		ma = abs_x;
+//		if (direction.x() > 0) {                  /* positive x */
+//			face_index = 0;
+//			sc = direction.z();
+//			tc = direction.y();
+//		}
+//		else {                                /* negative x */
+//			face_index = 1;
+//			sc = -direction.z();
+//			tc = direction.y();
+//		}
+//	}
+//	else if (abs_y > abs_z) {             /* major axis -> y */
+//		ma = abs_y;
+//		if (direction.y() > 0) {                  /* positive y */
+//			face_index = 2;
+//			sc = +direction.x();
+//			tc = +direction.z();
+//		}
+//		else {                                /* negative y */
+//			face_index = 3;
+//			sc = +direction.x();
+//			tc = -direction.z();
+//		}
+//	}
+//	else {                                /* major axis -> z */
+//		ma = abs_z;
+//		if (direction.z() > 0) {                  /* positive z */
+//			face_index = 4;
+//			sc = -direction.x();
+//			tc = direction.y();
+//		}
+//		else {                                /* negative z */
+//			face_index = 5;
+//			sc = direction.x();
+//			tc = direction.y();
+//		}
+//	}
+//
+//	texcoord->x() = (sc / ma + 1) / 2;
+//	texcoord->y() = (tc / ma + 1) / 2;
+//	return face_index;
+//}
+
+void CubeMap::SetData(Eigen::Vector3f direction, Eigen::Vector4f col)
+{
+	Eigen::Vector2f uv;
+
+	int idx = selectCubeMapFace(direction, &uv);
+	//std::cout << "idx = " << idx << " uv = " << uv << std::endl;
+	m_Textures[idx]->SetData(uv, col);
+}
+
+Eigen::Vector4f CubeMap::GetData(Eigen::Vector3f direction)
+{
+	Eigen::Vector2f uv;
+	int idx = selectCubeMapFace(direction, &uv);
+	return m_Textures[idx]->GetData(uv);
 }

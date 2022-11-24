@@ -3,7 +3,6 @@
 #include "Dense"
 #include "vector"
 #include "Scene.h"
-#include "Model.h"
 #include "FrameBuffer.h"
 #include <iostream>
 
@@ -34,6 +33,7 @@ struct DataTruck
 
 	Light mainLight;
 	Model* model;
+	Mesh* mesh;
 	Camera* camera;
 	FrameBuffer* shadowMap;
 
@@ -56,7 +56,7 @@ struct DataTruck
 class Shader
 {
 public:
-	DataTruck dataTruck;
+	DataTruck* dataTruck;
 	virtual void Vert() = 0;
 	virtual Eigen::Vector4f Frag(float a,float b,float c) = 0;//参数为三角插值结果1-u-v u v s
 };
@@ -89,6 +89,19 @@ public:
 	virtual Eigen::Vector4f Frag(float a, float b, float c);
 };
 
+class PBRShader : public Shader
+{
+public:
+	virtual void Vert();
+	virtual Eigen::Vector4f Frag(float a, float b, float c);
+};
+
+class SkyBoxShader : public Shader
+{
+public:
+	virtual void Vert();
+	virtual Eigen::Vector4f Frag(float a, float b, float c);
+};
 
 //颜色相乘
 static inline Eigen::Vector4f mulColor(Eigen::Vector4f a, Eigen::Vector4f b)
@@ -101,6 +114,14 @@ static inline void TransformTex(std::vector<Eigen::Vector2f>* uv, Texture* textu
 	float x = (*uv)[idx].x() * texture->GetTilling().x() * texture->width() + texture->GetOffset().x();
 	float y = (*uv)[idx].y() * texture->GetTilling().y() * texture->height() + texture->GetOffset().y();
 	(*uv)[idx] = Eigen::Vector2f(x, y);
+}
+
+static inline void TransformTex(Eigen::Vector2f* uv, Texture* texture)
+{
+	//std::cout << texture->width() << " " << texture->height() << std::endl;
+	float x = uv->x() * texture->GetTilling().x() + texture->GetOffset().x();
+	float y = uv->y() * texture->GetTilling().y() + texture->GetOffset().y();
+	(*uv) = Eigen::Vector2f(x, y);
 }
 //根据uv坐标采样纹理
 static inline Eigen::Vector4f Tex2D(Texture* texture, Eigen::Vector2f uv)
