@@ -78,7 +78,7 @@ Eigen::Vector4f LambertShader::Frag(float a, float b, float c)
 	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 	float NdotL = bumpWS.dot(lightDirWS);
 	//diffuse
-	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * mulColor(mainLight.color, Tex2D(diffuseTex, Eigen::Vector2f(uv)));
+	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D(diffuseTex, Eigen::Vector2f(uv)));
 
 	float shadow = 0.f;
 	if (GlobalSettings::GetInstance()->settings.drawShadow)

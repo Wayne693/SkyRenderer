@@ -10,6 +10,18 @@ extern const int WIDTH;
 extern const int HEIGHT;
 //数据传输结构体
 //用于RenderLoop与Shader之间数据传输
+
+struct iblMap
+{
+	//漫反射辐照度贴图，由GenerateIrradianceMap预处理获得
+	CubeMap* irradianceMap;
+	//预滤波环境贴图
+	int level;
+	std::vector<CubeMap*>* PrefilterMaps;
+	//LUT
+	Texture* LUT;
+};
+
 struct DataTruck
 {
 	std::vector<Eigen::Vector4f> DTpositionOS;
@@ -36,6 +48,7 @@ struct DataTruck
 	Mesh* mesh;
 	Camera* camera;
 	FrameBuffer* shadowMap;
+	iblMap iblMap;
 
 	void Clear()
 	{
@@ -104,25 +117,24 @@ public:
 };
 
 //颜色相乘
-static inline Eigen::Vector4f mulColor(Eigen::Vector4f a, Eigen::Vector4f b)
+static inline Eigen::Vector4f Vec4Mul(Eigen::Vector4f a, Eigen::Vector4f b)
 {
-	return Eigen::Vector4f(a.x() * b.x() / 255.0, a.y() * b.y() / 255.0, a.z() * b.z() / 255.0, a.w() * b.w() / 255.0);
+	return Eigen::Vector4f(a.x() * b.x(), a.y() * b.y(), a.z() * b.z(), a.w() * b.w());
 }
+
+static inline Eigen::Vector3f Vec3Mul(Eigen::Vector3f a, Eigen::Vector3f b)
+{
+	return Eigen::Vector3f(a.x() * b.x(), a.y() * b.y(), a.z() * b.z());
+}
+
 //将uv坐标平移缩放
 static inline void TransformTex(std::vector<Eigen::Vector2f>* uv, Texture* texture, int idx) 
 {
-	float x = (*uv)[idx].x() * texture->GetTilling().x() * texture->width() + texture->GetOffset().x();
-	float y = (*uv)[idx].y() * texture->GetTilling().y() * texture->height() + texture->GetOffset().y();
+	float x = (*uv)[idx].x() * texture->GetTilling().x() + texture->GetOffset().x();
+	float y = (*uv)[idx].y() * texture->GetTilling().y() + texture->GetOffset().y();
 	(*uv)[idx] = Eigen::Vector2f(x, y);
 }
-
-static inline void TransformTex(Eigen::Vector2f* uv, Texture* texture)
-{
-	//std::cout << texture->width() << " " << texture->height() << std::endl;
-	float x = uv->x() * texture->GetTilling().x() + texture->GetOffset().x();
-	float y = uv->y() * texture->GetTilling().y() + texture->GetOffset().y();
-	(*uv) = Eigen::Vector2f(x, y);
-}
+ 
 //根据uv坐标采样纹理
 static inline Eigen::Vector4f Tex2D(Texture* texture, Eigen::Vector2f uv)
 {
@@ -131,7 +143,7 @@ static inline Eigen::Vector4f Tex2D(Texture* texture, Eigen::Vector2f uv)
 
 static inline Eigen::Vector3f UnpackNormal(Texture* normalTexture, Eigen::Vector2f uv)
 {
-	Eigen::Vector4f data = Tex2D(normalTexture, uv) / 255.f;
+	Eigen::Vector4f data = Tex2D(normalTexture, uv);
 	return 2 * data.head(3) - Eigen::Vector3f(1, 1, 1);
 }
 

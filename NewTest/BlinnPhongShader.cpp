@@ -41,7 +41,7 @@ Eigen::Vector4f BlinnPhongShader::Frag(float a, float b, float c)
 	auto lightDir = -1 * mainLight.direction.normalized();
 	float NdotL = normal.dot(lightDir);
 
-	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * mulColor(mainLight.color, Tex2D(tp, uv));
+	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D(tp, uv));
 	
 	Eigen::Vector3f worldPos = (a * dataTruck->DTpositionWS[0] + b * dataTruck->DTpositionWS[1] + c * dataTruck->DTpositionWS[2]).head(3);
 	Eigen::Vector3f viewDir = (dataTruck->camera->GetPosition() - worldPos).normalized();

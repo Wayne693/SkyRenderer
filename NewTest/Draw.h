@@ -5,11 +5,11 @@
 #include <iostream>
 
 //常用颜色
-const Eigen::Vector4f white = Eigen::Vector4f(255, 255, 255, 255);
-const Eigen::Vector4f black = Eigen::Vector4f(0, 0, 0, 255);
-const Eigen::Vector4f red = Eigen::Vector4f(255, 0, 0, 255);
-const Eigen::Vector4f green = Eigen::Vector4f(0, 255, 0, 255);
-const Eigen::Vector4f blue = Eigen::Vector4f(0, 0, 255, 255);
+const Eigen::Vector4f white = Eigen::Vector4f(1, 1, 1, 1);
+const Eigen::Vector4f black = Eigen::Vector4f(0, 0, 0, 1);
+const Eigen::Vector4f red = Eigen::Vector4f(1, 0, 0, 1);
+const Eigen::Vector4f green = Eigen::Vector4f(0, 1, 0, 1);
+const Eigen::Vector4f blue = Eigen::Vector4f(0, 0, 1, 1);
 
 static inline unsigned int Vector4fToColor(Eigen::Vector4f color)
 {
@@ -50,6 +50,7 @@ static inline float normalY(FrameBuffer* frameBuffer, float y)
 //在FrameBuffer的(x,y)位置画一个颜色为color的点,注意左上角坐标为(0,0)
 static inline void DrawPoint(FrameBuffer* frameBuffer, float x, float y, Eigen::Vector4f color = white)
 {
+	color *= 255;
 	frameBuffer->SetColor(x, y, Vector4fToColor(normalColor(color)));
 }
 

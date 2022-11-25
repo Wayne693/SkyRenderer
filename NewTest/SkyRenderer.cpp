@@ -80,31 +80,39 @@ void InitSceneHelmet(Scene* mainScene)
 	Texture* helmetAlbedo = new Texture(fileName);
 	helmetMesh->AddTexture(helmetAlbedo);
 	fileName = "OBJs\\helmet_normal.tga";
-	Texture* gunNormal = new Texture(fileName);
-	helmetMesh->AddTexture(gunNormal);
+	Texture* helmetNormal = new Texture(fileName);
+	helmetMesh->AddTexture(helmetNormal);
 	fileName = "OBJs\\helmet_roughness.tga";
-	Texture* gunRoughness = new Texture(fileName);
-	helmetMesh->AddTexture(gunRoughness);
+	Texture* helmetRoughness = new Texture(fileName);
+	helmetMesh->AddTexture(helmetRoughness);
 	fileName = "OBJs\\helmet_metallic.tga";
-	Texture* gunMetallic = new Texture(fileName);
-	helmetMesh->AddTexture(gunMetallic);
+	Texture* helmetMetallic = new Texture(fileName);
+	helmetMesh->AddTexture(helmetMetallic);
+	fileName = "OBJs\\helmet_occlusion.tga";
+	Texture* helmetOcclusion = new Texture(fileName);
+	helmetMesh->AddTexture(helmetOcclusion);
+	fileName = "OBJs\\helmet_emission.tga";
+	Texture* helmetEmission = new Texture(fileName);
+	helmetMesh->AddTexture(helmetEmission);
+	
 
-	LambertShader* lambertShader = new LambertShader;
-	helmetMesh->SetCommonShader(lambertShader);
+	PBRShader* pbrShader = new PBRShader;
+	//LambertShader* lambertShader = new LambertShader;
+	helmetMesh->SetCommonShader(pbrShader);
 	ShadowMapShader* shadowMapShader = new ShadowMapShader;
 	helmetMesh->SetShadowShader(shadowMapShader);
 	helmet->SetTranslation(Eigen::Vector3f(0, 0, 5.5));
 	helmet->SetRotation(Eigen::Vector3f(220, 97.5, -87.5));
-	//mainScene->AddModel(helmet);
+	mainScene->AddModel(helmet);
 
 	//skyBox
-	fileName = "OBJs\\SkyBox.obj";
+	/*fileName = "OBJs\\SkyBox.obj";
 	Mesh* skyBoxMesh = new Mesh(fileName);
 	Model* skyBox = new Model;
 	skyBox->SetIsSkyBox(true);
 	skyBox->AddMesh(skyBoxMesh);
 	SkyBoxShader* skyBoxShader = new SkyBoxShader;
-	skyBoxMesh->SetCommonShader(skyBoxShader);
+	skyBoxMesh->SetCommonShader(skyBoxShader);*/
 	std::vector<std::string> cubemapFiles
 	{
 		"OBJs\\right.jpg",
@@ -115,11 +123,15 @@ void InitSceneHelmet(Scene* mainScene)
 		"OBJs\\back.jpg"
 	};
 	CubeMap* cubeMap = new CubeMap(cubemapFiles);
-	CubeMap* irrdance = GenerateIrradianceMap(cubeMap);
-
-	skyBoxMesh->SetCubeMap(irrdance);
-	//skyBoxMesh->SetCubeMap(cubeMap);
-	mainScene->AddModel(skyBox);
+	//将预处理好的irradianceMap设置给dataTruck
+	dataTruck.iblMap.irradianceMap = GenerateIrradianceMap(cubeMap);
+	dataTruck.iblMap.PrefilterMaps = GeneratePrefilterMap(cubeMap, 2);
+	dataTruck.iblMap.level = 2;
+	fileName = "OBJs\\LUT.png";
+	dataTruck.iblMap.LUT = new Texture(fileName);
+	//skyBoxMesh->SetCubeMap(irrdance);
+	////skyBoxMesh->SetCubeMap(cubeMap);
+	//mainScene->AddModel(skyBox);
 
 	//Camera
 	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);

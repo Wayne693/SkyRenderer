@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
@@ -59,6 +60,11 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 	auto camera = (*mainScene->GetCameras())[0];//目前只有一个相机
 
 	//获取当前shader的dataTruck
+	/*DataTruck* dataTruck = &shader->dataTruck;
+	dataTruck->camera = camera;
+	dataTruck->WIDTH = WIDTH;
+	dataTruck->HEIGHT = HEIGHT;
+	dataTruck->shadowMap = shadowMap;*/
 	dataTruck.camera = camera;
 	dataTruck.WIDTH = WIDTH;
 	dataTruck.HEIGHT = HEIGHT;
@@ -142,16 +148,17 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 				shader->Vert();
 
 				//背面剔除
-
-				auto positionCS = dataTruck.DTpositionCS;
-				Eigen::Vector3f v1 = (positionCS[1] / positionCS[1].w() - positionCS[0] / positionCS[0].w()).head(3);
-				Eigen::Vector3f v2 = (positionCS[2] / positionCS[2].w() - positionCS[0] / positionCS[0].w()).head(3);
-				Eigen::Vector3f vNormal = v1.cross(v2);
-				if (vNormal.z() <= 0)
+			/*	if (!model->IsSkyBox())
 				{
-					continue;
-				}
-
+					auto positionCS = dataTruck.DTpositionCS;
+					Eigen::Vector3f v1 = (positionCS[1] / positionCS[1].w() - positionCS[0] / positionCS[0].w()).head(3);
+					Eigen::Vector3f v2 = (positionCS[2] / positionCS[2].w() - positionCS[0] / positionCS[0].w()).head(3);
+					Eigen::Vector3f vNormal = v1.cross(v2);
+					if (vNormal.z() <= 0)
+					{
+						continue;
+					}
+				}*/
 
 				//获取三角包围盒
 				auto positionSS = dataTruck.DTpositionSS;

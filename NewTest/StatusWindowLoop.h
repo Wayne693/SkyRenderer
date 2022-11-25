@@ -18,9 +18,9 @@ static inline void StatusWindowLoop(Scene* mainScene)
 		ImGui::DragFloat3("direction", direction, 0.01);
 		tmpLight.direction = Eigen::Map<Eigen::Vector3f>(direction);
 		//light color
-		float color[4] = { tmpLight.color.x() / 255.0,tmpLight.color.y() / 255.0,tmpLight.color.z() / 255.0, tmpLight.color.w() / 255.0 };
-		ImGui::ColorEdit3("color", color, ImGuiColorEditFlags_DisplayRGB);
-		tmpLight.color = 255.0 * Eigen::Map<Eigen::Vector4f>(color);
+		float color[4] = { tmpLight.color.x() ,tmpLight.color.y() ,tmpLight.color.z() , tmpLight.color.w() };
+		ImGui::ColorEdit3("color", color);
+		tmpLight.color = Eigen::Map<Eigen::Vector4f>(color);
 		//light intensity
 		float intensity = tmpLight.intensity;
 		ImGui::DragFloat("intensity", &intensity, 0.01);

@@ -81,7 +81,7 @@ Eigen::Vector4f NormalMapShader::Frag(float a, float b, float c)
 	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 	float NdotL = bumpWS.dot(lightDirWS);
 	//diffuse
-	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * mulColor(mainLight.color, Tex2D(diffuseTex, uv));
+	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D(diffuseTex, uv));
 	//specular
 	Eigen::Vector3f worldPos = (a * dataTruck->DTpositionWS[0] + b * dataTruck->DTpositionWS[1] + c * dataTruck->DTpositionWS[2]).head(3);
 	Eigen::Vector3f viewDir = (dataTruck->camera->GetPosition() - worldPos).normalized();

@@ -3,7 +3,7 @@
 Scene::Scene()
 {
 	m_MainLight.direction = Eigen::Vector3f(0, 0, 1);
-	m_MainLight.color = Eigen::Vector4f(255, 255, 255, 255);
+	m_MainLight.color = Eigen::Vector4f(1, 1, 1, 1);
 	m_MainLight.intensity = 1.f;
 }
 
