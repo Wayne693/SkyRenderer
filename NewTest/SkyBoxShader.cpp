@@ -24,28 +24,23 @@ void SkyBoxShader::Vert()
 		dataTruck->DTpositionWS.push_back(matrixM * dataTruck->DTpositionOS[i]);
 		//将positionWS转到positionCS
 		dataTruck->DTpositionCS.push_back(matrixVP * dataTruck->DTpositionWS[i]);
-		//将positionCS转到positionSS
-		auto vertex = dataTruck->DTpositionCS[i];
-		auto tmp = ComputeScreenPos(vertex);
-		dataTruck->DTpositionSS.push_back(tmp);
 		//dataTruck->DTpositionSS[i].z() = 1.f;
 	}
 }
 
-Eigen::Vector4f SkyBoxShader::Frag(float a, float b, float c)
+Eigen::Vector4f SkyBoxShader::Frag(Face face, float a, float b, float c)
 {
 	//插值出纹理坐标(透视矫正插值)
-	float alpha = a / dataTruck->DTpositionWS[0].z();
-	float beta = b / dataTruck->DTpositionWS[1].z();
-	float gamma = c / dataTruck->DTpositionWS[2].z();
+	float alpha = a / dataTruck->DTpositionCS[face.A].w();
+	float beta = b / dataTruck->DTpositionCS[face.B].w();
+	float gamma = c / dataTruck->DTpositionCS[face.C].w();
 	float zn = 1 / (alpha + beta + gamma);
 	//插值出世界坐标(透视矫正插值)
-	Eigen::Vector3f positionOS = zn * (alpha * dataTruck->DTpositionOS[0] + beta * dataTruck->DTpositionOS[1] + gamma * dataTruck->DTpositionOS[2]).head(3);
-	Eigen::Vector3f normalOS = a * dataTruck->DTnormalOS[0] + b * dataTruck->DTnormalOS[1] + c * dataTruck->DTnormalOS[2];
-	//normalOS.normalize();
+	Eigen::Vector3f positionWS = zn * (alpha * dataTruck->DTpositionWS[face.A] + beta * dataTruck->DTpositionWS[face.B] + gamma * dataTruck->DTpositionWS[face.C]).head(3);
+
 	CubeMap* cubeMap = dataTruck->mesh->GetCubeMap();
 	//采样CubeMap
-	Eigen::Vector4f finalColor = cubeMap->GetData(positionOS.normalized());
+	Eigen::Vector4f finalColor = cubeMap->GetData(positionWS.normalized());
 	//std::cout << finalColor << std::endl;
 	return finalColor;
 }

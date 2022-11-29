@@ -13,23 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="源文件\imGui">
-      <UniqueIdentifier>{e2279312-4e33-4b63-965f-a87e536daddd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Camera">
-      <UniqueIdentifier>{b6441adb-34e2-49da-9bce-d8c2e9ed1667}</UniqueIdentifier>
-    </Filter>
     <Filter Include="源文件\Draw">
       <UniqueIdentifier>{b391f8fa-6d17-44e2-8253-2a4ca40c24f4}</UniqueIdentifier>
     </Filter>
     <Filter Include="源文件\FrameBuffer">
       <UniqueIdentifier>{853d83af-b6fa-4cb7-a152-b1901ded1a0e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Model">
-      <UniqueIdentifier>{a312ac24-6994-48fd-9874-1ff1f6868b96}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Scene">
-      <UniqueIdentifier>{6d774205-ca0d-424c-b484-b05f9f87110a}</UniqueIdentifier>
     </Filter>
     <Filter Include="源文件\RenderLoop">
       <UniqueIdentifier>{966b8346-f8c5-44dc-b648-966125d9e486}</UniqueIdentifier>
@@ -40,11 +28,29 @@
     <Filter Include="源文件\GlobalSettings">
       <UniqueIdentifier>{b80aee5e-ad83-41bc-8b4d-182ab2fba36b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\WindowsLoop">
-      <UniqueIdentifier>{9755dcae-e772-48a1-8728-9adaaeca8958}</UniqueIdentifier>
-    </Filter>
     <Filter Include="源文件\Pretreatment">
       <UniqueIdentifier>{0ed3549c-f357-4115-9e2e-f2cdada57c6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Object">
+      <UniqueIdentifier>{00a206c8-ce85-43cf-b07b-fd47da9f862b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Object\Camera">
+      <UniqueIdentifier>{b6441adb-34e2-49da-9bce-d8c2e9ed1667}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Object\Model">
+      <UniqueIdentifier>{a312ac24-6994-48fd-9874-1ff1f6868b96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Object\Scene">
+      <UniqueIdentifier>{6d774205-ca0d-424c-b484-b05f9f87110a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\UI">
+      <UniqueIdentifier>{13614ffa-878e-454a-b912-64bca28c150b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\UI\imGui">
+      <UniqueIdentifier>{e2279312-4e33-4b63-965f-a87e536daddd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\UI\WindowsLoop">
+      <UniqueIdentifier>{9755dcae-e772-48a1-8728-9adaaeca8958}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1012,7 +1018,7 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
-      <Filter>源文件\Camera</Filter>
+      <Filter>源文件\Object\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Draw.h">
       <Filter>源文件\Draw</Filter>
@@ -1021,10 +1027,10 @@
       <Filter>源文件\FrameBuffer</Filter>
     </ClInclude>
     <ClInclude Include="Model.h">
-      <Filter>源文件\Model</Filter>
+      <Filter>源文件\Object\Model</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
-      <Filter>源文件\Scene</Filter>
+      <Filter>源文件\Object\Scene</Filter>
     </ClInclude>
     <ClInclude Include="RenderLoop.h">
       <Filter>源文件\RenderLoop</Filter>
@@ -1039,7 +1045,7 @@
       <Filter>源文件\GlobalSettings</Filter>
     </ClInclude>
     <ClInclude Include="GlobalSettingWindowLoop.h">
-      <Filter>源文件\WindowsLoop</Filter>
+      <Filter>源文件\UI\WindowsLoop</Filter>
     </ClInclude>
     <ClInclude Include="Pretreatment.h">
       <Filter>源文件\Pretreatment</Filter>
@@ -1050,40 +1056,37 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui.cpp">
-      <Filter>源文件\imGui</Filter>
+      <Filter>源文件\UI\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_draw.cpp">
-      <Filter>源文件\imGui</Filter>
+      <Filter>源文件\UI\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_impl_glfw.cpp">
-      <Filter>源文件\imGui</Filter>
+      <Filter>源文件\UI\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_impl_opengl2.cpp">
-      <Filter>源文件\imGui</Filter>
+      <Filter>源文件\UI\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_tables.cpp">
-      <Filter>源文件\imGui</Filter>
+      <Filter>源文件\UI\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_widgets.cpp">
-      <Filter>源文件\imGui</Filter>
+      <Filter>源文件\UI\imGui</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
-      <Filter>源文件\Camera</Filter>
+      <Filter>源文件\Object\Camera</Filter>
     </ClCompile>
     <ClCompile Include="FrameBuffer.cpp">
       <Filter>源文件\FrameBuffer</Filter>
     </ClCompile>
     <ClCompile Include="Model.cpp">
-      <Filter>源文件\Model</Filter>
+      <Filter>源文件\Object\Model</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
-      <Filter>源文件\Scene</Filter>
+      <Filter>源文件\Object\Scene</Filter>
     </ClCompile>
     <ClCompile Include="StatusWindowLoop.h">
-      <Filter>源文件\WindowsLoop</Filter>
-    </ClCompile>
-    <ClCompile Include="BlinnPhongShader.cpp">
-      <Filter>源文件\Shader</Filter>
+      <Filter>源文件\UI\WindowsLoop</Filter>
     </ClCompile>
     <ClCompile Include="NormalMapShader.cpp">
       <Filter>源文件\Shader</Filter>

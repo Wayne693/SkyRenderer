@@ -26,11 +26,8 @@ struct DataTruck
 {
 	std::vector<Eigen::Vector4f> DTpositionOS;
 	std::vector<Eigen::Vector3f> DTnormalOS;
-	std::vector<Eigen::Vector3f> DTtangentOS;
 	std::vector<Eigen::Vector2f> DTuv0;
-	std::vector<Eigen::Vector2f> DTuv1;
 	std::vector<Eigen::Vector4f> DTpositionWS;
-	std::vector<Eigen::Vector3f> DTtangentWS;
 	std::vector<Eigen::Vector4f> DTpositionCS;
 	std::vector<Eigen::Vector4f> DTpositionSS;
 	std::vector<Eigen::Vector3f> DTnormalWS;
@@ -57,11 +54,8 @@ struct DataTruck
 		DTpositionCS.clear();
 		DTpositionSS.clear();
 		DTuv0.clear();
-		DTuv1.clear();
 		DTnormalOS.clear();
 		DTnormalWS.clear();
-		DTtangentOS.clear();
-		DTtangentWS.clear();
 	}
 };
 
@@ -71,49 +65,42 @@ class Shader
 public:
 	DataTruck* dataTruck;
 	virtual void Vert() = 0;
-	virtual Eigen::Vector4f Frag(float a,float b,float c) = 0;//参数为三角插值结果1-u-v u v s
+	virtual Eigen::Vector4f Frag(Face face, float a,float b,float c) = 0;//参数为三角插值结果1-u-v u v s
 };
 
 class LambertShader : public Shader
 {
 public:
 	virtual void Vert();
-	virtual Eigen::Vector4f Frag(float a, float b, float c);
-};
-
-class BlinnPhongShader : public Shader
-{
-public:
-	virtual void Vert();
-	virtual Eigen::Vector4f Frag(float a, float b, float c);
+	virtual Eigen::Vector4f Frag(Face face, float a, float b, float c);
 };
 
 class NormalMapShader : public Shader
 {
 public:
 	virtual void Vert();
-	virtual Eigen::Vector4f Frag(float a, float b, float c);
+	virtual Eigen::Vector4f Frag(Face face, float a, float b, float c);
 };
 
 class ShadowMapShader : public Shader
 {
 public:
 	virtual void Vert();
-	virtual Eigen::Vector4f Frag(float a, float b, float c);
+	virtual Eigen::Vector4f Frag(Face face, float a, float b, float c);
 };
 
 class PBRShader : public Shader
 {
 public:
 	virtual void Vert();
-	virtual Eigen::Vector4f Frag(float a, float b, float c);
+	virtual Eigen::Vector4f Frag(Face face,float a, float b, float c);
 };
 
 class SkyBoxShader : public Shader
 {
 public:
 	virtual void Vert();
-	virtual Eigen::Vector4f Frag(float a, float b, float c);
+	virtual Eigen::Vector4f Frag(Face face, float a, float b, float c);
 };
 
 //颜色相乘

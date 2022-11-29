@@ -67,16 +67,12 @@ void ShadowMapShader::Vert()
 		dataTruck->DTpositionWS.push_back(matrixM * dataTruck->DTpositionOS[i]);
 		//将positionWS转到positionCS
 		dataTruck->DTpositionCS.push_back(matrixVP * dataTruck->DTpositionWS[i]);
-		//将positionCS转到positionSS
-		auto vertex = dataTruck->DTpositionCS[i];
-		auto tmp = Eigen::Vector4f(vertex.x() * WIDTH / (2 * vertex.w()) + WIDTH / 2, vertex.y() * HEIGHT / (2 * vertex.w()) + HEIGHT / 2, vertex.z() / vertex.w(), vertex.w());
-		dataTruck->DTpositionSS.push_back(tmp);
 	}
 }
 
-Eigen::Vector4f ShadowMapShader::Frag(float a, float b, float c)
+Eigen::Vector4f ShadowMapShader::Frag(Face face, float a, float b, float c)
 {
-	float z = a * dataTruck->DTpositionSS[0].z() + b * dataTruck->DTpositionSS[1].z() + c * dataTruck->DTpositionSS[2].z();
+	float z = 0;// a* dataTruck->DTpositionSS[face.A].z() + b * dataTruck->DTpositionSS[face.B].z() + c * dataTruck->DTpositionSS[face.C].z();
 	z = (z + 1.f) / 2;
 	Eigen::Vector4f depth(z, z, z, 1);
 	Eigen::Vector4f finalColor = depth;

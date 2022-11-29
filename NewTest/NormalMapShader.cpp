@@ -31,32 +31,32 @@ void NormalMapShader::Vert()
 	}
 }
 
-Eigen::Vector4f NormalMapShader::Frag(float a, float b, float c)
+Eigen::Vector4f NormalMapShader::Frag(Face face, float a, float b, float c)
 {
 	//插值出纹理坐标(透视矫正插值)
 	Eigen::Vector2f uv;
-	float alpha = a / dataTruck->DTpositionWS[0].z();
-	float beta = b / dataTruck->DTpositionWS[1].z();
-	float gamma = c / dataTruck->DTpositionWS[2].z();
+	float alpha = a / dataTruck->DTpositionWS[face.A].z();
+	float beta = b / dataTruck->DTpositionWS[face.B].z();
+	float gamma = c / dataTruck->DTpositionWS[face.C].z();
 	float zn = 1 / (alpha + beta + gamma);
-	uv = zn * (alpha * dataTruck->DTuv0[0] + beta * dataTruck->DTuv0[1] + gamma * dataTruck->DTuv0[2]);
+	uv = zn * (alpha * dataTruck->DTuv0[face.A] + beta * dataTruck->DTuv0[face.B] + gamma * dataTruck->DTuv0[face.C]);
 	//插值出法线
-	Eigen::Vector3f normalWS = a * dataTruck->DTnormalWS[0] + b * dataTruck->DTnormalWS[1] + c * dataTruck->DTnormalWS[2];
+	Eigen::Vector3f normalWS = a * dataTruck->DTnormalWS[face.A] + b * dataTruck->DTnormalWS[face.B] + c * dataTruck->DTnormalWS[face.C];
 	normalWS.normalize();
 	//插值出世界坐标(透视矫正插值)todo: understand
-	Eigen::Vector4f positionWS = zn * (alpha * dataTruck->DTpositionWS[0] + beta * dataTruck->DTpositionWS[1] + gamma * dataTruck->DTpositionWS[2]);
+	Eigen::Vector4f positionWS = zn * (alpha * dataTruck->DTpositionWS[face.A] + beta * dataTruck->DTpositionWS[face.B] + gamma * dataTruck->DTpositionWS[face.C]);
 
 	//计算TBN
-	Eigen::Vector3f v1 = (dataTruck->DTpositionCS[1] / dataTruck->DTpositionCS[1].w() - dataTruck->DTpositionCS[0] / dataTruck->DTpositionCS[0].w()).head(3);
-	Eigen::Vector3f v2 = (dataTruck->DTpositionCS[2] / dataTruck->DTpositionCS[2].w() - dataTruck->DTpositionCS[0] / dataTruck->DTpositionCS[0].w()).head(3);
+	Eigen::Vector3f v1 = (dataTruck->DTpositionCS[face.B] / dataTruck->DTpositionCS[face.B].w() - dataTruck->DTpositionCS[face.A] / dataTruck->DTpositionCS[face.A].w()).head(3);
+	Eigen::Vector3f v2 = (dataTruck->DTpositionCS[face.C] / dataTruck->DTpositionCS[face.C].w() - dataTruck->DTpositionCS[face.A] / dataTruck->DTpositionCS[face.A].w()).head(3);
 	Eigen::Matrix3f A;
 	A << v1.x(), v1.y(), v1.z(),
 		v2.x(), v2.y(), v2.z(),
 		normalWS.x(), normalWS.y(), normalWS.z();
 	Eigen::Matrix3f AI = A.inverse();
 
-	Eigen::Vector3f i = AI * Eigen::Vector3f(dataTruck->DTuv0[1].x() - dataTruck->DTuv0[0].x(), dataTruck->DTuv0[2].x() - dataTruck->DTuv0[0].x(), 0);
-	Eigen::Vector3f j = AI * Eigen::Vector3f(dataTruck->DTuv0[1].y() - dataTruck->DTuv0[0].y(), dataTruck->DTuv0[2].y() - dataTruck->DTuv0[0].y(), 0);
+	Eigen::Vector3f i = AI * Eigen::Vector3f(dataTruck->DTuv0[face.B].x() - dataTruck->DTuv0[face.A].x(), dataTruck->DTuv0[face.C].x() - dataTruck->DTuv0[face.A].x(), 0);
+	Eigen::Vector3f j = AI * Eigen::Vector3f(dataTruck->DTuv0[face.B].y() - dataTruck->DTuv0[face.A].y(), dataTruck->DTuv0[face.C].y() - dataTruck->DTuv0[face.A].y(), 0);
 	i.normalize();
 	j.normalize();
 	Eigen::Matrix3f tbnMatrix;
@@ -83,7 +83,7 @@ Eigen::Vector4f NormalMapShader::Frag(float a, float b, float c)
 	//diffuse
 	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D(diffuseTex, uv));
 	//specular
-	Eigen::Vector3f worldPos = (a * dataTruck->DTpositionWS[0] + b * dataTruck->DTpositionWS[1] + c * dataTruck->DTpositionWS[2]).head(3);
+	Eigen::Vector3f worldPos = (a * dataTruck->DTpositionWS[face.A] + b * dataTruck->DTpositionWS[face.B] + c * dataTruck->DTpositionWS[face.C]).head(3);
 	Eigen::Vector3f viewDir = (dataTruck->camera->GetPosition() - worldPos).normalized();
 	Eigen::Vector3f halfDir = (viewDir + lightDirWS).normalized();
 	Eigen::Vector4f specular = mainLight.intensity * mainLight.color * pow(std::max(0.f, bumpWS.dot(halfDir)), 25);
