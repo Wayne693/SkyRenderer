@@ -14,7 +14,10 @@ Eigen::Vector2f SampleSphericalMap(Eigen::Vector3f pos)
 void SkyBoxShader::Vert()
 {
 	auto matrixM = dataTruck->matrixM;
-	auto matrixVP = dataTruck->matrixVP;
+	auto matrixP = dataTruck->camera->GetProjectionMatrix();
+	Eigen::Matrix4f matrixV = Eigen::Matrix4f::Zero();
+	matrixV << dataTruck->camera->GetViewMatrix().block(0, 0, 3, 3);
+	matrixV(3, 3) = 1;
 	int WIDTH = dataTruck->WIDTH;
 	int HEIGHT = dataTruck->HEIGHT;
 
@@ -23,8 +26,7 @@ void SkyBoxShader::Vert()
 		//将positionOS转到positionWS
 		dataTruck->DTpositionWS.push_back(matrixM * dataTruck->DTpositionOS[i]);
 		//将positionWS转到positionCS
-		dataTruck->DTpositionCS.push_back(matrixVP * dataTruck->DTpositionWS[i]);
-		//dataTruck->DTpositionSS[i].z() = 1.f;
+		dataTruck->DTpositionCS.push_back(matrixP * matrixV * dataTruck->DTpositionWS[i]);
 	}
 }
 

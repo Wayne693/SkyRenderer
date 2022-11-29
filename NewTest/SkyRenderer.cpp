@@ -30,6 +30,7 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 //初始化场景
+//经验光照模型
 void InitSceneDiablo(Scene* mainScene)
 {
 	std::string fileName("OBJs\\diablo3_pose.obj");
@@ -47,13 +48,13 @@ void InitSceneDiablo(Scene* mainScene)
 	ShadowMapShader* shadowShader = new ShadowMapShader;
 	diabloMesh->SetCommonShader(lambertShader);
 	diabloMesh->SetShadowShader(shadowShader);
-	//mainScene->AddModel(diabloModel);
+	mainScene->AddModel(diabloModel);
 
 	fileName = "OBJs\\floor.obj";
 	Mesh* floorMesh = new Mesh(fileName);
 	Model* floor = new Model();
 	floor->SetTranslation(Eigen::Vector3f(0, -0.12, 2));
-	//floor->SetTranslation(Eigen::Vector3f(0, 0, 4.360));
+	floor->SetTranslation(Eigen::Vector3f(0, 0, 4.360));
 	floor->SetScale(Eigen::Vector3f(1.33f, 1, 1.33f));
 	floor->AddMesh(floorMesh);
 	fileName = "OBJs\\floor_diffuse.tga";
@@ -75,7 +76,7 @@ void InitSceneDiablo(Scene* mainScene)
 	mainLight.intensity = 1.5f;
 	mainScene->SetLight(mainLight);
 }
-
+//PBR/IBL/SkyBox
 void InitSceneHelmet(Scene* mainScene)
 {
 	//helmet
@@ -142,36 +143,10 @@ void InitSceneHelmet(Scene* mainScene)
 	mainScene->AddModel(skyBox);
 
 	//Camera
-	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
+	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 50, 1.f * WIDTH / HEIGHT);
 	mainScene->AddCamera(mainCamera);
 }
 
-void InitSceneSkyBox(Scene* mainScene)
-{
-	std::string fileName = "OBJs\\SkyBox.obj";
-	Mesh* skyBoxMesh = new Mesh(fileName);
-	Model* skyBox = new Model;
-	skyBox->SetTranslation(Eigen::Vector3f(0, 0, 0));
-	skyBox->SetIsSkyBox(true);
-	skyBox->AddMesh(skyBoxMesh);
-	SkyBoxShader* skyBoxShader = new SkyBoxShader;
-	skyBoxMesh->SetCommonShader(skyBoxShader);
-	std::vector<std::string> cubemapFiles
-	{
-		"OBJs\\right.jpg",
-		"OBJs\\left.jpg",
-		"OBJs\\top.jpg",
-		"OBJs\\bottom.jpg",
-		"OBJs\\front.jpg",
-		"OBJs\\back.jpg"
-	};
-	CubeMap* cubeMap = new CubeMap(cubemapFiles);
-	skyBoxMesh->SetCubeMap(cubeMap);
-	mainScene->AddModel(skyBox);
-
-	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
-	mainScene->AddCamera(mainCamera);
-}
 
 int main()
 {
@@ -217,7 +192,6 @@ int main()
 	mainScene = new Scene;
 	//InitSceneDiablo(mainScene);
 	InitSceneHelmet(mainScene);
-	//InitSceneSkyBox(mainScene);
 
 	//最终渲染到屏幕上的FrameBuffer
 	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
