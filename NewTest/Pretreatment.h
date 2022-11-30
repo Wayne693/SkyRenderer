@@ -6,6 +6,7 @@ const float PI = acos(-1);
 static inline void ComputeNormal(int face_id, int x, int y, float& x_coord, float& y_coord, float& z_coord, float length)
 {
 	length--;
+	x = length - x;
 	switch (face_id)
 	{
 	case 0:   //positive x (right face)
@@ -21,12 +22,12 @@ static inline void ComputeNormal(int face_id, int x, int y, float& x_coord, floa
 	case 2:   //positive y (top face)
 		x_coord = -0.5f + x / length;
 		y_coord = 0.5f;
-		z_coord = -0.5f + y / length;
+		z_coord = 0.5f - y / length;
 		break;
 	case 3:   //negative y (bottom face)
 		x_coord = -0.5f + x / length;
 		y_coord = -0.5f;
-		z_coord = 0.5f - y / length;
+		z_coord = -0.5f + y / length;
 		break;
 	case 4:   //positive z (back face)
 		x_coord = 0.5f - x / length;
@@ -134,7 +135,7 @@ static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int 
 {
 	const int maxLevels = 4;
 	std::vector<CubeMap*>* prefilterMaps = new std::vector<CubeMap*>();
-	int maxSize = 32;
+	int maxSize = 64;
 	levels = std::max(maxLevels, levels);
 
 	//遍历mip-map的每个level

@@ -122,7 +122,7 @@ void InitSceneHelmet(Scene* mainScene)
 	skyBox->AddMesh(skyBoxMesh);
 	SkyBoxShader* skyBoxShader = new SkyBoxShader;
 	skyBoxMesh->SetCommonShader(skyBoxShader);
-	std::vector<std::string> cubemapFiles
+	/*std::vector<std::string> cubemapFiles
 	{
 		"OBJs\\right.jpg",
 		"OBJs\\left.jpg",
@@ -130,6 +130,15 @@ void InitSceneHelmet(Scene* mainScene)
 		"OBJs\\bottom.jpg",
 		"OBJs\\front.jpg",
 		"OBJs\\back.jpg"
+	};*/
+	std::vector<std::string> cubemapFiles
+	{
+		"OBJs\\DOOMright.png",
+		"OBJs\\DOOMleft.png",
+		"OBJs\\DOOMtop.png",
+		"OBJs\\DOOMbottom.png",
+		"OBJs\\DOOMfront.png",
+		"OBJs\\DOOMback.png"
 	};
 	CubeMap* cubeMap = new CubeMap(cubemapFiles);
 	//将预处理好的irradianceMap设置给dataTruck
