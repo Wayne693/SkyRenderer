@@ -72,7 +72,7 @@ void ShadowMapShader::Vert()
 
 Eigen::Vector4f ShadowMapShader::Frag(Face face, float a, float b, float c)
 {
-	float z = 0;// a* dataTruck->DTpositionSS[face.A].z() + b * dataTruck->DTpositionSS[face.B].z() + c * dataTruck->DTpositionSS[face.C].z();
+	float z = a* dataTruck->DTpositionSS[face.A].z() + b * dataTruck->DTpositionSS[face.B].z() + c * dataTruck->DTpositionSS[face.C].z();
 	z = (z + 1.f) / 2;
 	Eigen::Vector4f depth(z, z, z, 1);
 	Eigen::Vector4f finalColor = depth;

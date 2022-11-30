@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include <thread>
 #include "StatusWindowLoop.h"
 #include "RenderLoop.h"
 #include "GlobalSettingWindowLoop.h"
@@ -144,7 +145,7 @@ void InitSceneHelmet(Scene* mainScene)
 	//将预处理好的irradianceMap设置给dataTruck
 	dataTruck.iblMap.irradianceMap = GenerateIrradianceMap(cubeMap);
 	dataTruck.iblMap.PrefilterMaps = GeneratePrefilterMap(cubeMap, 2);
-	dataTruck.iblMap.level = 2;
+	dataTruck.iblMap.level = 3;
 	fileName = "OBJs\\LUT.png";
 	dataTruck.iblMap.LUT = new Texture(fileName);
 	//skyBoxMesh->SetCubeMap(irrdance);

@@ -279,7 +279,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 					}
 				}
 
-
 				//Æë´Î×ø±ê²Ã¼ô
 				HomoClip(&dataTruck);
 				int vertNum = dataTruck.DTpositionCS.size();

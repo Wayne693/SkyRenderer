@@ -1,5 +1,6 @@
 #pragma once
 #include "model.h"
+#include <thread>
 
 const float PI = acos(-1);
 
@@ -135,7 +136,8 @@ static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int 
 {
 	const int maxLevels = 4;
 	std::vector<CubeMap*>* prefilterMaps = new std::vector<CubeMap*>();
-	int maxSize = 64;
+	std::thread th[6];
+	int maxSize = 128;
 	levels = std::max(maxLevels, levels);
 
 	//遍历mip-map的每个level
@@ -144,48 +146,57 @@ static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int 
 		int factor = 1 << levelidx;
 		int size = maxSize / factor;
 		CubeMap* preMap = new CubeMap(size, size);
+
 		//遍历每个面
 		for (int facei = 0; facei < 6; facei++)
 		{
-			//遍历每个像素
-			for (int x = 0; x < size; x++)
-			{
-				for (int y = 0; y < size; y++)
+			//lambda for multithread
+			th[facei] = std::thread([=] {
+				//遍历每个像素
+				for (int x = 0; x < size; x++)
 				{
-					Eigen::Vector3f normal;
-					ComputeNormal(facei, x, y, normal.x(), normal.y(), normal.z(), size);
-					normal.normalize();
-					Eigen::Vector3f up = abs(normal.y()) < 0.999f ? Eigen::Vector3f(0, 1, 0) : Eigen::Vector3f(0, 0, 1);
-					Eigen::Vector3f right = up.cross(normal).normalized();
-					up = normal.cross(right);
-
-					Eigen::Vector3f r = normal;
-					Eigen::Vector3f v = normal;
-
-					Eigen::Vector3f prefilterColor(0, 0, 0);
-					float totalWeight = 0;
-					int numSamples = 1024;
-					for (int i = 0; i < numSamples; i++)
+					for (int y = 0; y < size; y++)
 					{
-						Eigen::Vector2f Xi = Hammersley(i, numSamples);
-						Eigen::Vector3f h = ImportanceSampleGGX(Xi, normal, levelidx / maxLevels);
-						Eigen::Vector3f l = (2 * v.dot(h) * h - v).normalized();
+						Eigen::Vector3f normal;
+						ComputeNormal(facei, x, y, normal.x(), normal.y(), normal.z(), size);
+						normal.normalize();
+						Eigen::Vector3f up = abs(normal.y()) < 0.999f ? Eigen::Vector3f(0, 1, 0) : Eigen::Vector3f(0, 0, 1);
+						Eigen::Vector3f right = up.cross(normal).normalized();
+						up = normal.cross(right);
 
-						Eigen::Vector3f col = cubeMap->GetData(l).head(3);
-						float nDotl = std::max(normal.dot(l), 0.f);
+						Eigen::Vector3f r = normal;
+						Eigen::Vector3f v = normal;
 
-						if (nDotl > 0)
+						Eigen::Vector3f prefilterColor(0, 0, 0);
+						float totalWeight = 0;
+						int numSamples = 1024;
+						for (int i = 0; i < numSamples; i++)
 						{
-							prefilterColor += col * nDotl;
-							totalWeight += nDotl;
+							Eigen::Vector2f Xi = Hammersley(i, numSamples);
+							Eigen::Vector3f h = ImportanceSampleGGX(Xi, normal, levelidx / maxLevels);
+							Eigen::Vector3f l = (2 * v.dot(h) * h - v).normalized();
+
+							Eigen::Vector3f col = cubeMap->GetData(l).head(3);
+							float nDotl = std::max(normal.dot(l), 0.f);
+
+							if (nDotl > 0)
+							{
+								prefilterColor += col * nDotl;
+								totalWeight += nDotl;
+							}
 						}
+						prefilterColor /= totalWeight;
+						Eigen::Vector4f pcolor(prefilterColor.x(), prefilterColor.y(), prefilterColor.z(), 1);
+						preMap->m_Textures[facei]->SetData(Eigen::Vector2f(1.f * x / size, 1.f * y / size), pcolor);
 					}
-					prefilterColor /= totalWeight;
-					Eigen::Vector4f pcolor(prefilterColor.x(), prefilterColor.y(), prefilterColor.z(), 1);
-					preMap->m_Textures[facei]->SetData(Eigen::Vector2f(1.f * x / size, 1.f * y / size), pcolor);
 				}
-			}
+				});
 		}
+		for (int facei = 0; facei < 6; facei++)
+		{
+			th[facei].join();
+		}
+
 		prefilterMaps->push_back(preMap);
 	}
 	return prefilterMaps;
