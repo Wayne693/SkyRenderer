@@ -16,7 +16,7 @@ GlobalSettings::~GlobalSettings()
 
 GlobalSettings* GlobalSettings::GetInstance()
 {
-	if (instance == nullptr)
+	if (!instance)
 	{
 		instance = new GlobalSettings();
 	}

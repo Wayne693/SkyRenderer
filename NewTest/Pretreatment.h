@@ -1,6 +1,6 @@
 #pragma once
 #include "model.h"
-#include <thread>
+#include "ThreadPool.h"
 
 const float PI = acos(-1);
 
@@ -136,8 +136,8 @@ static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int 
 {
 	const int maxLevels = 4;
 	std::vector<CubeMap*>* prefilterMaps = new std::vector<CubeMap*>();
-	std::thread th[6];
 	int maxSize = 128;
+	ThreadPool threadPool(4);
 	levels = std::max(maxLevels, levels);
 
 	//遍历mip-map的每个level
@@ -151,7 +151,7 @@ static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int 
 		for (int facei = 0; facei < 6; facei++)
 		{
 			//lambda for multithread
-			th[facei] = std::thread([=] {
+			threadPool.Enqueue([=] {
 				//遍历每个像素
 				for (int x = 0; x < size; x++)
 				{
@@ -192,11 +192,6 @@ static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int 
 				}
 				});
 		}
-		for (int facei = 0; facei < 6; facei++)
-		{
-			th[facei].join();
-		}
-
 		prefilterMaps->push_back(preMap);
 	}
 	return prefilterMaps;

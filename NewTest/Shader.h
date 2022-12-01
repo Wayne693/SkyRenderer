@@ -41,7 +41,6 @@ struct DataTruck
 	int HEIGHT;
 
 	Light mainLight;
-	Model* model;
 	Mesh* mesh;
 	Camera* camera;
 	FrameBuffer* shadowMap;
@@ -65,7 +64,7 @@ class Shader
 public:
 	DataTruck* dataTruck;
 	virtual void Vert() = 0;
-	virtual Eigen::Vector4f Frag(Face face, float a,float b,float c) = 0;//参数为三角插值结果1-u-v u v s
+	virtual Eigen::Vector4f Frag(Face face, float a,float b,float c) = 0;//参数为三角插值结果1-u-v u v 
 };
 
 class LambertShader : public Shader

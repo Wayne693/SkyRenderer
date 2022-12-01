@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "Scene.h"
 #include "Shader.h"
+#include "ThreadPool.h"
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
@@ -174,12 +175,15 @@ static void HomoClip(DataTruck* dataTruck)
 
 //RenderLoop拥有的dataTruck对象
 DataTruck dataTruck;
+
 /*
 * RenderLoop负责将场景渲染到FrameBuffer上
 * 包含颜色与深度信息
 */
 static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, Scene* mainScene, RenderConfig renderConfig)
 {
+	//ThreadPool threadPool(4);
+
 	auto models = mainScene->GetModels();
 	auto camera = (*mainScene->GetCameras())[0];//目前只有一个相机
 
@@ -197,7 +201,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 		camera->UpdateVPMatrix();
 		dataTruck.matrixM = model->GetModelMatrix();
 		dataTruck.matrixVP = camera->GetVPMatrix();
-		dataTruck.model = model;
 		Light mainLight = mainScene->GetLight();
 		dataTruck.mainLight = mainLight;
 
@@ -285,6 +288,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 				dataTruck.DTpositionSS.resize(vertNum);
 				for (int ti = 0; ti < vertNum - 2; ti++)
 				{
+
 					//获取三角包围盒
 					auto positionCS = dataTruck.DTpositionCS;
 					auto a = ComputeScreenPos(positionCS[0]);
@@ -309,7 +313,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 							if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
 							{
 								//插值出深度
-								float depth; 
+								float depth;
 								if (model->IsSkyBox())
 								{
 									depth = 1.f;
@@ -324,15 +328,15 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 									continue;
 								}
 
-								//运行片元着色器
+								//运行片元着色器 
 								auto finalColor = shader->Frag(Face(0, ti + 1, ti + 2), u.x(), u.y(), u.z());
+
 								DrawPoint(frameBuffer, x, y, finalColor);
 								frameBuffer->SetZ(x, y, depth);
 							}
 						}
 					}
 				}
-
 			}
 		}
 	}

@@ -472,6 +472,7 @@
     <ClInclude Include="Stb_image\stb_image.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Pretreatment.h" />
+    <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FrameBuffer.cpp" />
