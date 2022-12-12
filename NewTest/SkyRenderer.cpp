@@ -225,10 +225,10 @@ int main()
 
 		Eigen::Vector3f lightMatrixVP;
 		//渲染阴影
-		/*if (GlobalSettings::GetInstance()->settings.drawShadow)
+		if (GlobalSettings::GetInstance()->settings.drawShadow)
 		{
 			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
-		}*/
+		}
 		
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
