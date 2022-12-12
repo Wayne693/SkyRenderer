@@ -75,114 +75,96 @@ Eigen::Vector3f FresnelSchlickRoughness(Eigen::Vector3f n, Eigen::Vector3f v, Ei
 	return F0 + (Eigen::Vector3f(r1, r2, r3) - F0) * pow(1 - nDotv, 5.f);
 }
 
-void PBRShader::Vert()
+Varyings PBRShader::Vert(Attributes vertex)
 {
-	auto matrixM = dataTruck->matrixM;
+	auto matrixM = vertex.matrixM;
 	auto matrixVP = dataTruck->matrixVP;
 	int WIDTH = dataTruck->WIDTH;
 	int HEIGHT = dataTruck->HEIGHT;
 
-	for (int i = 0; i < 3; i++)
-	{
-		//将positionOS转到positionWS
-		dataTruck->DTpositionWS.push_back(matrixM * dataTruck->DTpositionOS[i]);
-		//将positionWS转到positionCS
-		dataTruck->DTpositionCS.push_back(matrixVP * dataTruck->DTpositionWS[i]);
-		//将positionCS转到positionSS
-		auto vertex = dataTruck->DTpositionCS[i];
-		auto tmp = ComputeScreenPos(vertex);
-		dataTruck->DTpositionSS.push_back(tmp);
+	Varyings o;
 
-		//将normalOS转到normalWS
-		auto normalos = dataTruck->DTnormalOS[i];
-		Eigen::Matrix3f normalMatrix = matrixM.block(0, 0, 3, 3).inverse().transpose();
-		Eigen::Vector3f normalWS = normalMatrix * normalos;
-		dataTruck->DTnormalWS.push_back(normalWS);
+	//将positionOS转到positionWS
+	o.positionWS = matrixM * vertex.positionOS;
+	//将positionWS转到positionCS
+	o.positionCS = matrixVP * o.positionWS;
 
-		//将顶点uv坐标处理好
-		TransformTex(&dataTruck->DTuv0, (*dataTruck->mesh->GetTextures())[0], i);
-	}
+	//将normalOS转到normalWS
+	Eigen::Matrix3f normalMatrix = matrixM.block(0, 0, 3, 3).inverse().transpose();
+	o.normalWS = normalMatrix * vertex.normalOS;
+
+	//将顶点uv坐标处理好
+	//o.uv = TransformTex(vertex.uv, diabloDiffuse);
+	return o;
 }
 
-Eigen::Vector4f PBRShader::Frag(Face face, float a, float b, float c)
+Eigen::Vector4f PBRShader::Frag(Varyings i)
 {
-	//插值出纹理坐标(透视矫正插值)
-	Eigen::Vector2f uv;
-	float alpha = a / dataTruck->DTpositionCS[face.A].w();
-	float beta = b / dataTruck->DTpositionCS[face.B].w();
-	float gamma = c / dataTruck->DTpositionCS[face.C].w();
-	float zn = 1 / (alpha + beta + gamma);
-	uv = zn * (alpha * dataTruck->DTuv0[face.A] + beta * dataTruck->DTuv0[face.B] + gamma * dataTruck->DTuv0[face.C]);
-	//插值出法线
-	Eigen::Vector3f normalWS = zn * (alpha * dataTruck->DTnormalWS[face.A] + beta * dataTruck->DTnormalWS[face.B] + gamma * dataTruck->DTnormalWS[face.C]);
-	normalWS.normalize();
-	//插值出世界坐标(透视矫正插值)todo: understand
-	Eigen::Vector4f positionWS = zn * (alpha * dataTruck->DTpositionWS[face.A] + beta * dataTruck->DTpositionWS[face.B] + gamma * dataTruck->DTpositionWS[face.C]);
+	////计算TBN
+	//Eigen::Vector3f v1 = (dataTruck->DTpositionCS[face.B] / dataTruck->DTpositionCS[face.B].w() - dataTruck->DTpositionCS[face.A] / dataTruck->DTpositionCS[face.A].w()).head(3);
+	//Eigen::Vector3f v2 = (dataTruck->DTpositionCS[face.C] / dataTruck->DTpositionCS[face.C].w() - dataTruck->DTpositionCS[face.A] / dataTruck->DTpositionCS[face.A].w()).head(3);
+	//Eigen::Matrix3f A;
+	//A << v1.x(), v1.y(), v1.z(),
+	//	v2.x(), v2.y(), v2.z(),
+	//	normalWS.x(), normalWS.y(), normalWS.z();
+	//Eigen::Matrix3f AI = A.inverse();
 
-	//计算TBN
-	Eigen::Vector3f v1 = (dataTruck->DTpositionCS[face.B] / dataTruck->DTpositionCS[face.B].w() - dataTruck->DTpositionCS[face.A] / dataTruck->DTpositionCS[face.A].w()).head(3);
-	Eigen::Vector3f v2 = (dataTruck->DTpositionCS[face.C] / dataTruck->DTpositionCS[face.C].w() - dataTruck->DTpositionCS[face.A] / dataTruck->DTpositionCS[face.A].w()).head(3);
-	Eigen::Matrix3f A;
-	A << v1.x(), v1.y(), v1.z(),
-		v2.x(), v2.y(), v2.z(),
-		normalWS.x(), normalWS.y(), normalWS.z();
-	Eigen::Matrix3f AI = A.inverse();
+	//Eigen::Vector3f i = AI * Eigen::Vector3f(dataTruck->DTuv0[face.B].x() - dataTruck->DTuv0[face.A].x(), dataTruck->DTuv0[face.C].x() - dataTruck->DTuv0[face.A].x(), 0);
+	//Eigen::Vector3f j = AI * Eigen::Vector3f(dataTruck->DTuv0[face.B].y() - dataTruck->DTuv0[face.A].y(), dataTruck->DTuv0[face.C].y() - dataTruck->DTuv0[face.A].y(), 0);
+	//i.normalize();
+	//j.normalize();
+	//Eigen::Matrix3f tbnMatrix;
+	//tbnMatrix << i.x(), j.x(), normalWS.x(),
+	//	i.y(), j.y(), normalWS.y(),
+	//	i.z(), j.z(), normalWS.z();
 
-	Eigen::Vector3f i = AI * Eigen::Vector3f(dataTruck->DTuv0[face.B].x() - dataTruck->DTuv0[face.A].x(), dataTruck->DTuv0[face.C].x() - dataTruck->DTuv0[face.A].x(), 0);
-	Eigen::Vector3f j = AI * Eigen::Vector3f(dataTruck->DTuv0[face.B].y() - dataTruck->DTuv0[face.A].y(), dataTruck->DTuv0[face.C].y() - dataTruck->DTuv0[face.A].y(), 0);
-	i.normalize();
-	j.normalize();
-	Eigen::Matrix3f tbnMatrix;
-	tbnMatrix << i.x(), j.x(), normalWS.x(),
-		i.y(), j.y(), normalWS.y(),
-		i.z(), j.z(), normalWS.z();
+	////std::cout << tbnMatrix << std::endl;
 
-	//std::cout << tbnMatrix << std::endl;
+	////获取 texture
+	//Texture* albedoTex = (*dataTruck->mesh->GetTextures())[0];
+	//Texture* normalTex = (*dataTruck->mesh->GetTextures())[1];
+	//Texture* roughnessTex = (*dataTruck->mesh->GetTextures())[2];
+	//Texture* metallicTex = (*dataTruck->mesh->GetTextures())[3];
+	//Texture* occlusionTex = (*dataTruck->mesh->GetTextures())[4];
+	//Texture* emissionTex = (*dataTruck->mesh->GetTextures())[5];
+	////采样
+	////std::cout << uv << std::endl;
+	//Eigen::Vector3f albedo = Tex2D(albedoTex, uv).head(3);
+	//float roughness = Tex2D(roughnessTex, uv).x();
+	//float metallic = Tex2D(metallicTex, uv).x();
+	//float ao = Tex2D(occlusionTex, uv).x();
+	//Eigen::Vector3f emission = Tex2D(emissionTex, uv).head(3);
 
-	//获取 texture
-	Texture* albedoTex = (*dataTruck->mesh->GetTextures())[0];
-	Texture* normalTex = (*dataTruck->mesh->GetTextures())[1];
-	Texture* roughnessTex = (*dataTruck->mesh->GetTextures())[2];
-	Texture* metallicTex = (*dataTruck->mesh->GetTextures())[3];
-	Texture* occlusionTex = (*dataTruck->mesh->GetTextures())[4];
-	Texture* emissionTex = (*dataTruck->mesh->GetTextures())[5];
-	//采样
-	//std::cout << uv << std::endl;
-	Eigen::Vector3f albedo = Tex2D(albedoTex, uv).head(3);
-	float roughness = Tex2D(roughnessTex, uv).x();
-	float metallic = Tex2D(metallicTex, uv).x();
-	float ao = Tex2D(occlusionTex, uv).x();
-	Eigen::Vector3f emission = Tex2D(emissionTex, uv).head(3);
+	////获得法线纹理中法线数据
+	//Eigen::Vector3f bumpTS = UnpackNormal(normalTex, uv);
+	//Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 
-	//获得法线纹理中法线数据
-	Eigen::Vector3f bumpTS = UnpackNormal(normalTex, uv);
-	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
+	//Eigen::Vector3f worldPos = (a * dataTruck->DTpositionWS[face.A] + b * dataTruck->DTpositionWS[face.B] + c * dataTruck->DTpositionWS[face.C]).head(3);
+	//Eigen::Vector3f viewDir = (dataTruck->camera->GetPosition() - worldPos).normalized();
+	//
+	////计算Fresnel项
+	//Eigen::Vector3f F0(0.04f, 0.04f, 0.04f);
+	//F0 = F0 + (albedo - F0) * metallic;
+	//Eigen::Vector3f F = FresnelSchlickRoughness(normalWS, viewDir, F0, roughness);
+	//Eigen::Vector3f Kd = Eigen::Vector3f(1.f, 1.f, 1.f) - F;
 
-	Eigen::Vector3f worldPos = (a * dataTruck->DTpositionWS[face.A] + b * dataTruck->DTpositionWS[face.B] + c * dataTruck->DTpositionWS[face.C]).head(3);
-	Eigen::Vector3f viewDir = (dataTruck->camera->GetPosition() - worldPos).normalized();
-	
-	//计算Fresnel项
-	Eigen::Vector3f F0(0.04f, 0.04f, 0.04f);
-	F0 = F0 + (albedo - F0) * metallic;
-	Eigen::Vector3f F = FresnelSchlickRoughness(normalWS, viewDir, F0, roughness);
-	Eigen::Vector3f Kd = Eigen::Vector3f(1.f, 1.f, 1.f) - F;
+	//Eigen::Vector3f irradiance = dataTruck->iblMap.irradianceMap->GetData(normalWS).head(3);
+	////diffuse
+	//Eigen::Vector3f diffuse = Vec3Mul(Vec3Mul(Kd, irradiance), albedo);
 
-	Eigen::Vector3f irradiance = dataTruck->iblMap.irradianceMap->GetData(normalWS).head(3);
-	//diffuse
-	Eigen::Vector3f diffuse = Vec3Mul(Vec3Mul(Kd, irradiance), albedo);
+	////specular
+	//Eigen::Vector3f r = (2.f * viewDir.dot(normalWS) * normalWS - viewDir).normalized();
+	//float nDotv = normalWS.dot(viewDir);
+	//Eigen::Vector2f lutuv(nDotv, roughness);
+	//Eigen::Vector3f lut = Tex2D(dataTruck->iblMap.LUT, lutuv).head(3);
+	//Eigen::Vector3f specular = F0 * lut.x() + Eigen::Vector3f(lut.y(),lut.y(),lut.y());
+	//int level = roughness * dataTruck->iblMap.level;
+	//Eigen::Vector3f prefilter = (*(dataTruck->iblMap.PrefilterMaps))[level]->GetData(r).head(3);
+	//specular = Vec3Mul(specular, prefilter);
 
-	//specular
-	Eigen::Vector3f r = (2.f * viewDir.dot(normalWS) * normalWS - viewDir).normalized();
-	float nDotv = normalWS.dot(viewDir);
-	Eigen::Vector2f lutuv(nDotv, roughness);
-	Eigen::Vector3f lut = Tex2D(dataTruck->iblMap.LUT, lutuv).head(3);
-	Eigen::Vector3f specular = F0 * lut.x() + Eigen::Vector3f(lut.y(),lut.y(),lut.y());
-	int level = roughness * dataTruck->iblMap.level;
-	Eigen::Vector3f prefilter = (*(dataTruck->iblMap.PrefilterMaps))[level]->GetData(r).head(3);
-	specular = Vec3Mul(specular, prefilter);
+	//Eigen::Vector3f fincol = (diffuse + specular) * ao + emission;
 
-	Eigen::Vector3f fincol = (diffuse + specular) * ao + emission;
-
-	Eigen::Vector4f finalColor(fincol.x(), fincol.y(), fincol.z(), 1);
-	return finalColor;
+	//Eigen::Vector4f finalColor(fincol.x(), fincol.y(), fincol.z(), 1);
+	//return finalColor;
+	return Eigen::Vector4f(0, 0, 0, 0);
 }

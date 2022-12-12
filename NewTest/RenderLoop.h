@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include <time.h>
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -26,21 +27,7 @@ const int ERRORNUM = 1e-5;
 //裁剪空间左手系
 //屏幕空间左手系
 
-//三角重心插值，返回1-u-v,u,v
-Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P)
-{
-	Eigen::Vector3f u = Eigen::Vector3f(B.x() - A.x(), C.x() - A.x(), A.x() - P.x()).cross(Eigen::Vector3f(B.y() - A.y(), C.y() - A.y(), A.y() - P.y()));// u v 1
-	return Eigen::Vector3f(1.f - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z());
-}
 
-bool CheckClip(Eigen::Vector4f pos)
-{
-	if (pos.x() >= -pos.w() && pos.x() <= pos.w() && pos.y() >= -pos.w() && pos.y() <= pos.w() && pos.z() >= -pos.w() && pos.z() <= pos.w())
-	{
-		return true;
-	}
-	return false;
-}
 
 enum ClipPlane
 {
@@ -62,6 +49,33 @@ enum RenderConfig
 	RENDER_SHADOW,
 	RENDER_BY_PASS
 };
+
+//RenderLoop拥有的dataTruck对象
+DataTruck dataTruck;
+
+struct VertData
+{
+	Attributes rawData;
+	Shader* shader;
+};
+
+struct FragData
+{
+	Varyings rawData;
+	Shader* shader;
+};
+
+std::vector<FragData> FragDatas;	//经顶点着色后的顶点数据
+std::queue<FragData> ClipQueue;		//裁剪后的顶点数据
+//std::vector<FragData> PixelDatas;
+//std::mutex cqmutex;
+
+//三角重心插值，返回1-u-v,u,v
+Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P)
+{
+	Eigen::Vector3f u = Eigen::Vector3f(B.x() - A.x(), C.x() - A.x(), A.x() - P.x()).cross(Eigen::Vector3f(B.y() - A.y(), C.y() - A.y(), A.y() - P.y()));// u v 1
+	return Eigen::Vector3f(1.f - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z());
+}
 
 static int IsInsidePlane(ClipPlane plane, Eigen::Vector4f vertex)
 {
@@ -116,19 +130,16 @@ T Lerp(T x, T y, float ratio)
 	return x + ratio * (y - x);
 }
 //与一个面裁剪
-static void ClipWithPlane(ClipPlane plane, DataTruck* dataTruck)
+static void ClipWithPlane(ClipPlane plane, std::vector<FragData>& inVec, std::vector<FragData>& outVec)
 {
-	std::vector<Eigen::Vector4f> tmpPositionCS;
-	std::vector<Eigen::Vector4f> tmpPositionWS;
-	std::vector<Eigen::Vector3f> tmpNormalWS;
-	std::vector<Eigen::Vector2f> tmpUV;
-	int size = dataTruck->DTpositionCS.size();
+	outVec.clear();
+	int size = inVec.size();
 	for (int i = 0; i < size; i++)
 	{
 		int curi = i;
 		int prei = (i - 1 + size) % size;
-		Eigen::Vector4f curVet = dataTruck->DTpositionCS[curi];
-		Eigen::Vector4f preVet = dataTruck->DTpositionCS[prei];
+		Eigen::Vector4f curVet = inVec[curi].rawData.positionCS;
+		Eigen::Vector4f preVet = inVec[prei].rawData.positionCS;
 
 		int curin = IsInsidePlane(plane, curVet);
 		int prein = IsInsidePlane(plane, preVet);
@@ -136,204 +147,319 @@ static void ClipWithPlane(ClipPlane plane, DataTruck* dataTruck)
 		if (curin != prein)
 		{
 			float ratio = GetIntersectRatio(preVet, curVet, plane);
-
-			tmpPositionCS.push_back(Lerp(preVet, curVet, ratio));
-			tmpPositionWS.push_back(Lerp(dataTruck->DTpositionWS[prei], dataTruck->DTpositionWS[curi], ratio));
-			if (!dataTruck->DTnormalWS.empty())
-				tmpNormalWS.push_back(Lerp(dataTruck->DTnormalWS[prei], dataTruck->DTnormalWS[curi], ratio));
-			if (!dataTruck->DTuv0.empty())
-				tmpUV.push_back(Lerp(dataTruck->DTuv0[prei], dataTruck->DTuv0[curi], ratio));
+			FragData tmpdata;
+			tmpdata.shader = inVec[curi].shader;
+			tmpdata.rawData.positionCS = Lerp(preVet, curVet, ratio);
+			tmpdata.rawData.positionWS = Lerp(inVec[prei].rawData.positionWS, inVec[curi].rawData.positionWS, ratio);
+			tmpdata.rawData.normalWS = Lerp(inVec[prei].rawData.normalWS, inVec[curi].rawData.normalWS, ratio);
+			tmpdata.rawData.uv = Lerp(inVec[prei].rawData.uv, inVec[curi].rawData.uv, ratio);
+			outVec.push_back(tmpdata);
 		}
 
 		if (curin)
 		{
-			tmpPositionCS.push_back(curVet);
-			tmpPositionWS.push_back(dataTruck->DTpositionWS[curi]);
-			if (!dataTruck->DTnormalWS.empty())
-				tmpNormalWS.push_back(dataTruck->DTnormalWS[curi]);
-			if (!dataTruck->DTuv0.empty())
-				tmpUV.push_back(dataTruck->DTuv0[curi]);
+			FragData tmpdata;
+			tmpdata.shader = inVec[curi].shader;
+			tmpdata.rawData.positionCS = curVet;
+			tmpdata.rawData.positionWS = inVec[curi].rawData.positionWS;
+			tmpdata.rawData.normalWS = inVec[curi].rawData.normalWS;
+			tmpdata.rawData.uv = inVec[curi].rawData.uv;
+			outVec.push_back(tmpdata);
 		}
 	}
-	dataTruck->DTpositionCS = tmpPositionCS;
-	dataTruck->DTpositionWS = tmpPositionWS;
-	dataTruck->DTnormalWS = tmpNormalWS;
-	dataTruck->DTuv0 = tmpUV;
 }
 
 //齐次坐标裁剪
-static void HomoClip(DataTruck* dataTruck)
+static void HomoClipPreTrangle()
 {
-	ClipWithPlane(ERROR, dataTruck);
-	ClipWithPlane(RIGHT, dataTruck);
-	ClipWithPlane(LEFT, dataTruck);
-	ClipWithPlane(TOP, dataTruck);
-	ClipWithPlane(BOTTOM, dataTruck);
-	ClipWithPlane(NEAR, dataTruck);
-	ClipWithPlane(FAR, dataTruck);
+	std::vector<FragData> clipVec1, clipVec2;
+	for (int i = 0; i < 3; i++)
+	{
+		//cqmutex.lock();
+		clipVec1.push_back(ClipQueue.front());
+		ClipQueue.pop();
+		//cqmutex.unlock();
+	}
+	ClipWithPlane(ERROR, clipVec1, clipVec2);
+	ClipWithPlane(RIGHT, clipVec2, clipVec1);
+	ClipWithPlane(LEFT, clipVec1, clipVec2);
+	ClipWithPlane(TOP, clipVec2, clipVec1);
+	ClipWithPlane(BOTTOM, clipVec1, clipVec2);
+	ClipWithPlane(NEAR, clipVec2, clipVec1);
+	ClipWithPlane(FAR, clipVec1, clipVec2);
+
+	//cqmutex.lock();
+	int size = clipVec2.size() - 2;
+	for (int i = 0; i < size; i++)
+	{
+		ClipQueue.push(clipVec2[0]);
+		ClipQueue.push(clipVec2[i + 1]);
+		ClipQueue.push(clipVec2[i + 2]);
+	}
+	//cqmutex.unlock();
+}
+void HomoClip()
+{
+	//ThreadPool threadpool(4);
+	int size = ClipQueue.size();
+	for (int i = 0; i < size - 2; i += 3)
+	{
+		//threadpool.Enqueue(HomoClipPreTrangle, i);
+		HomoClipPreTrangle();
+	}
 }
 
-//RenderLoop拥有的dataTruck对象
-DataTruck dataTruck;
+//顶点着色MultiThread
+void VertCal(Mesh* mesh, Eigen::Matrix4f matrixM, RenderConfig renderConfig)
+{
+	//ThreadPool threadpool(4);
 
+	Shader* shader = nullptr;
+	if (renderConfig == RENDER_SHADOW)
+	{
+		shader = mesh->GetShadowShader();
+	}
+	else if (renderConfig == RENDER_BY_PASS)
+	{
+		shader = mesh->GetCommonShader();
+	}
+	//将所选shader的dataTruck指向为renderLoop的dataTruck
+	if (!shader)
+	{
+		return;
+	}
+	shader->dataTruck = &dataTruck;
+	auto vertDatas = mesh->GetVertDatas();
+	int size = vertDatas->size();
+	FragDatas.resize(size);
+	for (int vertIdx = 0; vertIdx < size; vertIdx++)
+	{
+		VertData tmpdata = { {(*vertDatas)[vertIdx].positionOS,(*vertDatas)[vertIdx].normalOS,(*vertDatas)[vertIdx].uv,matrixM},shader };
+		//threadpool.Enqueue(CalPreVert, vertIdx, tmpdata);
+		/*threadpool.Enqueue([=] {*/
+			//std::cout << vertIdx << std::endl;
+		//std::cout << shader->dataTruck->matrixVP << std::endl;
+		FragDatas[vertIdx] = { tmpdata.shader->Vert(tmpdata.rawData),shader };
+		/*});*/
+	}
+}
+
+
+
+//背面剔除
+bool ISBack(Eigen::Vector4f& posCSA, Eigen::Vector4f& posCSB, Eigen::Vector4f& posCSC)
+{
+	Eigen::Vector3f v1 = (posCSB / posCSB.w() - posCSA / posCSA.w()).head(3);
+	Eigen::Vector3f v2 = (posCSC / posCSC.w() - posCSA / posCSA.w()).head(3);
+	Eigen::Vector3f vNormal = v1.cross(v2);
+	return vNormal.z() <= 0;
+}
+void CullFace(Face face)
+{
+	if (ISBack(FragDatas[face.A].rawData.positionCS, FragDatas[face.B].rawData.positionCS, FragDatas[face.C].rawData.positionCS))
+	{
+		return;
+	}
+	//cqmutex.lock();
+	ClipQueue.push(FragDatas[face.A]);
+	ClipQueue.push(FragDatas[face.B]);
+	ClipQueue.push(FragDatas[face.C]);
+	//cqmutex.unlock();
+}
+void CullBack(Mesh* mesh)
+{
+	//ThreadPool threadpool(4);
+	auto indexDatas = mesh->GetIndexDatas();
+	for (int i = 0; i < indexDatas->size(); i++)
+	{
+		Face currentFace = (*indexDatas)[i];
+		//threadpool.Enqueue(CullFace, currentFace);
+		CullFace(currentFace);
+	}
+}
+
+//void ShadePrePixel(int i)
+//{
+//
+//}
+//
+////像素着色
+//void PixelShading()
+//{
+//	ThreadPool threadpool(4);
+//	for (int i = 0; i < PixelDatas.size(); i++)
+//	{
+//
+//	}
+//}
 /*
 * RenderLoop负责将场景渲染到FrameBuffer上
 * 包含颜色与深度信息
 */
+
+
 static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, Scene* mainScene, RenderConfig renderConfig)
 {
-	//ThreadPool threadPool(4);
-
-	auto models = mainScene->GetModels();
 	auto camera = (*mainScene->GetCameras())[0];//目前只有一个相机
+	//PixelDatas.clear();
 
-	//获取当前shader的dataTruck
+	//将Global Data载入dataTruck
 	dataTruck.camera = camera;
+	camera->UpdateVPMatrix();
+	camera->CalculateVisualCone();
+	dataTruck.matrixVP = camera->GetVPMatrix();
+	Light mainLight = mainScene->GetLight();
+	dataTruck.mainLight = mainLight;
 	dataTruck.WIDTH = WIDTH;
 	dataTruck.HEIGHT = HEIGHT;
 	dataTruck.shadowMap = shadowMap;
-	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)//遍历所有模型
-	{
-		//获取当前模型
-		auto model = (*models)[modelIdx];
-		//更新MVP矩阵
-		model->UpdateModelMatrix();
-		camera->UpdateVPMatrix();
-		dataTruck.matrixM = model->GetModelMatrix();
-		dataTruck.matrixVP = camera->GetVPMatrix();
-		Light mainLight = mainScene->GetLight();
-		dataTruck.mainLight = mainLight;
 
+
+	auto models = mainScene->GetModels();
+	////////////////////////////////////////////////////////////////////////////////////
+	if (renderConfig == RENDER_SHADOW)
+	{
+	Eigen::Vector3f sCameraLookat = mainLight.direction.normalized();
+
+	Eigen::Vector3f asixY(0, 1, 0);
+	Eigen::Vector3f sCameraAsixX = sCameraLookat.cross(asixY).normalized();
+	Eigen::Vector3f sCameraUp = sCameraAsixX.cross(sCameraLookat).normalized();
+	std::vector<Eigen::Vector3f> visualCone = *camera->GetVisualCone();
+
+	Camera sCamera = *(dataTruck.camera);
+	sCamera.SetLookAt(sCameraLookat);
+	sCamera.SetUp(sCameraUp);
+	sCamera.UpdateViewMatrix();
+
+	Eigen::Matrix4f matrixV = sCamera.GetViewMatrix();
+	float minx, maxx, miny, maxy, minz, maxz;
+	//transform visual cone from worldspace to lightspace
+	for (int i = 0; i < visualCone.size(); i++)
+	{
+		visualCone[i] = matrixV.block(0, 0, 3, 3) * visualCone[i];
+		if (i == 0)
+		{
+			minx = visualCone[i].x();
+			maxx = minx;
+			miny = visualCone[i].y();
+			maxy = miny;
+			minz = visualCone[i].z();
+			maxz = minz;
+		}
+		else
+		{
+			minx = std::min(minx, visualCone[i].x());
+			maxx = std::max(maxx, visualCone[i].x());
+			miny = std::min(miny, visualCone[i].y());
+			maxy = std::max(maxy, visualCone[i].y());
+			minz = std::min(minz, visualCone[i].z());
+			maxz = std::max(maxz, visualCone[i].z());
+		}
+	}
+		Eigen::Vector4f center((minx + maxx) / 2, (miny + maxy) / 2, (minz + maxz) / 2, 1);
+		center = matrixV.inverse() * center;
+		center = center / center.w();
+		sCamera.SetSize((maxy - miny) / 2);
+		sCamera.SetAspect((maxx - minx) / (maxy - miny));
+		auto cminz = minz;
+		minz = -maxz;
+		maxz = -cminz;
+		sCamera.SetFarPlane(maxz);
+		sCamera.SetNearPlane(minz);
+		sCamera.SetPosition(center.head(3) - sCameraLookat * ((maxz - minz) / 2 + minz));
+		sCamera.UpdateOrthoVPMatrix();
+		auto matrixVP = sCamera.GetOrthoVPMatrix();
+		//将lightMatrixVP赋值给dataTruck，供后面的渲染使用
+		dataTruck.lightMatrixVP = matrixVP;
+	}
+
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)
+	{
+		auto model = (*models)[modelIdx];
+		model->UpdateModelMatrix();
 		auto meshes = model->GetMeshes();
+
 		//遍历每个模型的所有mesh
 		for (int meshIdx = 0; meshIdx < meshes->size(); meshIdx++)
 		{
+			FragDatas.clear();
 			auto mesh = (*meshes)[meshIdx];
-			auto pFace = mesh->GetPositionFaces();
-			auto nFace = mesh->GetNormalFaces();
-			auto vtFace = mesh->GetUVFaces();
-			dataTruck.mesh = mesh;
-			//根据config选取shader
-			Shader* shader = nullptr;
-			if (renderConfig == RENDER_SHADOW)
-			{
-				shader = mesh->GetShadowShader();
-			}
-			else if (renderConfig == RENDER_BY_PASS)
-			{
-				shader = mesh->GetCommonShader();
-			}
-			//将所选shader的dataTruck指向为renderLoop的dataTruck
-			if (!shader)
-			{
-				continue;
-			}
-			shader->dataTruck = &dataTruck;
-			//处理每个三角
-			for (int i = 0; i < pFace->size(); i++)
-			{
-				dataTruck.Clear();
+			//顶点着色
+			VertCal(mesh, model->GetModelMatrix(), renderConfig);
+			//背面剔除
+			CullBack(mesh);
 
-				Face positionFace = (*pFace)[i];
-				Face normalFace = (*nFace)[i];
-				Face uvFace = (*vtFace)[i];
+			//std::cout <<" after cull back "<< ClipQueue.size() << std::endl;
+			//齐次坐标裁剪
+			HomoClip();
+			//std::cout <<" after homo clip "<<ClipQueue.size() << std::endl;
+			//ThreadPool threadpool(4);
 
-				//加载顶点position
-				if ((*mesh->GetPositions()).size() >= 3)
-				{
-					Eigen::Vector4f posA = (*mesh->GetPositions())[positionFace.A - 1];
-					Eigen::Vector4f posB = (*mesh->GetPositions())[positionFace.B - 1];
-					Eigen::Vector4f posC = (*mesh->GetPositions())[positionFace.C - 1];
-					dataTruck.DTpositionOS.push_back(posA);
-					dataTruck.DTpositionOS.push_back(posB);
-					dataTruck.DTpositionOS.push_back(posC);
-				}
-				//加载顶点normal
-				if ((*mesh->GetNormals()).size() >= 3)
-				{
-					dataTruck.DTnormalOS.push_back((*mesh->GetNormals())[normalFace.A - 1]);
-					dataTruck.DTnormalOS.push_back((*mesh->GetNormals())[normalFace.B - 1]);
-					dataTruck.DTnormalOS.push_back((*mesh->GetNormals())[normalFace.C - 1]);
-				}
-				//加载顶点uv
-				if ((*mesh->GetTexcoords()).size() >= 3)
-				{
-					Eigen::Vector2f uvA = (*mesh->GetTexcoords())[uvFace.A - 1];
-					Eigen::Vector2f uvB = (*mesh->GetTexcoords())[uvFace.B - 1];
-					Eigen::Vector2f uvC = (*mesh->GetTexcoords())[uvFace.C - 1];
-					dataTruck.DTuv0.push_back(uvA);
-					dataTruck.DTuv0.push_back(uvB);
-					dataTruck.DTuv0.push_back(uvC);
-				}
+			int cnt = 0;
+			//clock_t c1 = clock();
+			//int ss = ClipQueue.size();
+			while (ClipQueue.size() >= 3)
+			{
+				FragData A, B, C;
 
-				//运行顶点着色器
-				shader->Vert();
+				A = ClipQueue.front();
+				ClipQueue.pop();
+				B = ClipQueue.front();
+				ClipQueue.pop();
+				C = ClipQueue.front();
+				ClipQueue.pop();
 
-				//背面剔除(Skybox不做)
-				if (!model->IsSkyBox())
+
+				auto a = ComputeScreenPos(A.rawData.positionCS);
+				auto b = ComputeScreenPos(B.rawData.positionCS);
+				auto c = ComputeScreenPos(C.rawData.positionCS);
+				int minx = std::max(0, std::min(WIDTH, (int)std::min(a.x(), std::min(b.x(), c.x()))));
+				int miny = std::max(0, std::min(HEIGHT, (int)std::min(a.y(), std::min(b.y(), c.y()))));
+				int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
+				int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
+
+				for (int x = minx; x <= maxx; x++)
 				{
-					auto positionCS = dataTruck.DTpositionCS;
-					Eigen::Vector3f v1 = (positionCS[1] / positionCS[1].w() - positionCS[0] / positionCS[0].w()).head(3);
-					Eigen::Vector3f v2 = (positionCS[2] / positionCS[2].w() - positionCS[0] / positionCS[0].w()).head(3);
-					Eigen::Vector3f vNormal = v1.cross(v2);
-					if (vNormal.z() <= 0)
+					for (int y = miny; y <= maxy; y++)
 					{
-						continue;
-					}
-				}
-
-				//齐次坐标裁剪
-				HomoClip(&dataTruck);
-				int vertNum = dataTruck.DTpositionCS.size();
-				dataTruck.DTpositionSS.resize(vertNum);
-				for (int ti = 0; ti < vertNum - 2; ti++)
-				{
-
-					//获取三角包围盒
-					auto positionCS = dataTruck.DTpositionCS;
-					auto a = ComputeScreenPos(positionCS[0]);
-					auto b = ComputeScreenPos(positionCS[ti + 1]);
-					auto c = ComputeScreenPos(positionCS[ti + 2]);
-					dataTruck.DTpositionSS[0] = a;
-					dataTruck.DTpositionSS[ti + 1] = b;
-					dataTruck.DTpositionSS[ti + 2] = c;
-					int minx = std::max(0, std::min(WIDTH, (int)std::min(a.x(), std::min(b.x(), c.x()))));
-					int miny = std::max(0, std::min(HEIGHT, (int)std::min(a.y(), std::min(b.y(), c.y()))));
-					int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
-					int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
-
-					//遍历包围盒中每个像素
-					for (int x = minx; x <= maxx; x++)
-					{
-						for (int y = miny; y <= maxy; y++)
+						//三角插值
+						Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
+						//像素在三角形内
+						if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
 						{
-							//三角插值
-							Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
-							//像素在三角形内
-							if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
+							//插值出深度
+							float depth;
+							depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
+
+							//深度测试
+							if (depth > frameBuffer->GetZ(x, y))
 							{
-								//插值出深度
-								float depth;
-								if (model->IsSkyBox())
-								{
-									depth = 1.f;
-								}
-								else
-								{
-									depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
-								}
-								//深度测试
-								if (depth > frameBuffer->GetZ(x, y))
-								{
-									continue;
-								}
-
-								//运行片元着色器 
-								auto finalColor = shader->Frag(Face(0, ti + 1, ti + 2), u.x(), u.y(), u.z());
-
-								DrawPoint(frameBuffer, x, y, finalColor);
-								frameBuffer->SetZ(x, y, depth);
+								continue;
 							}
+
+							float alpha = u.x() / A.rawData.positionCS.w();
+							float beta = u.y() / B.rawData.positionCS.w();
+							float gamma = u.z() / C.rawData.positionCS.w();
+							float zn = 1 / (alpha + beta + gamma);
+
+							FragData tmpdata;
+							tmpdata.shader = A.shader;
+							tmpdata.rawData.positionWS = zn * (alpha * A.rawData.positionWS + beta * B.rawData.positionWS + gamma * C.rawData.positionWS);
+							tmpdata.rawData.positionCS = zn * (alpha * A.rawData.positionCS + beta * B.rawData.positionCS + gamma * C.rawData.positionCS);
+							tmpdata.rawData.normalWS = zn * (alpha * A.rawData.normalWS + beta * B.rawData.normalWS + gamma * C.rawData.normalWS);
+							tmpdata.rawData.uv = zn * (alpha * A.rawData.uv + beta * B.rawData.uv + gamma * C.rawData.uv);
+							//PixelDatas.push_back(tmpdata);
+							//运行片元着色器 
+							/*threadpool.Enqueue([=] {*/
+							auto finalColor = tmpdata.shader->Frag(tmpdata.rawData);
+							DrawPoint(frameBuffer, x, y, finalColor);
+							frameBuffer->SetZ(x, y, depth);
+
+							//});
+
 						}
 					}
 				}

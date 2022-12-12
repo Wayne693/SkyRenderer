@@ -128,8 +128,8 @@ Eigen::Matrix4f Camera::GetOrthoVPMatrix()
 	return m_OrthoMtx * m_ViewMtx;
 }
 
-
-std::vector<Eigen::Vector3f>* Camera::GetVisualCone()
+//Ã¿Ö¡¸üÐÂ
+void Camera::CalculateVisualCone()
 {
 	m_VisualCone.clear();
 	float pi = acos(-1);
@@ -154,6 +154,11 @@ std::vector<Eigen::Vector3f>* Camera::GetVisualCone()
 	m_VisualCone.push_back(farPos + toTop - toRight);//farTopleft
 	m_VisualCone.push_back(farPos - toTop + toRight);//farBottomRight
 	m_VisualCone.push_back(farPos - toTop - toRight);//farBottomleft
+}
+
+
+std::vector<Eigen::Vector3f>* Camera::GetVisualCone()
+{
 	return &m_VisualCone;
 }
 

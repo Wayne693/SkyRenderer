@@ -13,7 +13,7 @@
 
 class ThreadPool {
 public:
-    template<class F, class... Args> 
+    template<class F, class... Args>
     auto Enqueue(F&& f, Args&&... args)
         ->std::future<typename std::result_of<F(Args...)>::type>;
     int GetWorkersNum()

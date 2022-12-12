@@ -43,6 +43,7 @@ public:
 	Eigen::Matrix4f GetOrthoMatrix();
 	Eigen::Matrix4f GetVPMatrix();
 	Eigen::Matrix4f GetOrthoVPMatrix();
+	void CalculateVisualCone();
 	std::vector<Eigen::Vector3f>* GetVisualCone();
 
 	float GetNearPlane();

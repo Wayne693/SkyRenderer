@@ -6,6 +6,13 @@
 
 class Shader;
 
+struct VertRawData
+{
+	Eigen::Vector4f positionOS;
+	Eigen::Vector3f normalOS;
+	Eigen::Vector2f uv;
+};
+
 //一个三角三个顶点的索引
 struct Face
 {
@@ -18,13 +25,20 @@ struct Face
 		B = b;
 		C = c;
 	}
+	bool friend operator < (Face const& a ,Face const& b)
+	{
+		if (a.A == b.A)
+		{
+			if (a.B == b.B)
+			{
+				return a.C < b.C;
+			}
+			return a.B < b.B;
+		}
+		return a.A < b.A;
+	}
 };
 
-//enum TextureFormat
-//{
-//	FHDR,
-//	FLDR
-//};
 
 //纹理
 class Texture
@@ -70,13 +84,8 @@ public:
 class Mesh
 {
 private:
-	std::vector<Eigen::Vector4f> positions;
-	std::vector<Eigen::Vector2f> texcoords;
-	std::vector<Eigen::Vector3f> normals;
-	std::vector<Eigen::Vector3f> tangents;
-	std::vector<Face> m_FacePositions;
-	std::vector<Face> m_FaceUVs;
-	std::vector<Face> m_FaceNormals;
+	std::vector<VertRawData> m_VertexData;
+	std::vector<Face> m_IndexData;
 
 	std::vector<Texture*> m_Textures;
 	CubeMap* m_CubeMap;
@@ -88,15 +97,10 @@ public:
 	void SetCommonShader(Shader* shader);
 	void SetCubeMap(CubeMap* cubeMap);
 
-	void AddTexture(Texture* texture);
+	std::vector<VertRawData>* GetVertDatas();
+	std::vector<Face>* GetIndexDatas();
 
-	std::vector<Face>* GetPositionFaces();
-	std::vector<Face>* GetUVFaces();
-	std::vector<Face>* GetNormalFaces();
-	
-	std::vector<Eigen::Vector4f>* GetPositions();
-	std::vector<Eigen::Vector2f>* GetTexcoords();
-	std::vector<Eigen::Vector3f>* GetNormals();
+	void AddTexture(Texture* texture);
 	std::vector<Texture*>* GetTextures();
 	Shader*  GetShadowShader();
 	Shader*  GetCommonShader();

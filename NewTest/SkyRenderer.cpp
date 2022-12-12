@@ -7,6 +7,8 @@
 #include "Scene.h"
 #include "Shader.h"
 #include <stdio.h>
+#include <unordered_map>
+#include <map>
 #include <math.h>
 #include <iostream>
 #include <thread>
@@ -39,12 +41,6 @@ void InitSceneDiablo(Scene* mainScene)
 	Model* diabloModel = new Model();
 	diabloModel->SetRotation(Eigen::Vector3f(0, 160, 1));
 	diabloModel->AddMesh(diabloMesh);
-	fileName = "OBJs\\diablo3_pose_diffuse.tga";
-	Texture* diabloDiffuse = new Texture(fileName);
-	fileName = "OBJs\\diablo3_pose_nm_tangent.tga";
-	Texture* diabloNormal = new Texture(fileName);
-	diabloMesh->AddTexture(diabloDiffuse);
-	diabloMesh->AddTexture(diabloNormal);
 	LambertShader* lambertShader = new LambertShader;
 	ShadowMapShader* shadowShader = new ShadowMapShader;
 	diabloMesh->SetCommonShader(lambertShader);
@@ -58,12 +54,6 @@ void InitSceneDiablo(Scene* mainScene)
 	floor->SetTranslation(Eigen::Vector3f(0, 0, 4.360));
 	floor->SetScale(Eigen::Vector3f(1.33f, 1, 1.33f));
 	floor->AddMesh(floorMesh);
-	fileName = "OBJs\\floor_diffuse.tga";
-	Texture* floorDiffuse = new Texture(fileName);
-	floorMesh->AddTexture(floorDiffuse);
-	fileName = "OBJs\\floor_nm_tangent.tga";
-	Texture* floorNormal = new Texture(fileName);
-	floorMesh->AddTexture(floorNormal);
 	floorMesh->SetCommonShader(lambertShader);
 	floorMesh->SetShadowShader(shadowShader);
 	mainScene->AddModel(floor);
@@ -157,7 +147,6 @@ void InitSceneHelmet(Scene* mainScene)
 	mainScene->AddCamera(mainCamera);
 }
 
-
 int main()
 {
 	// Setup window
@@ -200,9 +189,10 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	mainScene = new Scene;
-	//InitSceneDiablo(mainScene);
-	InitSceneHelmet(mainScene);
-
+	InitSceneDiablo(mainScene);
+	//InitSceneHelmet(mainScene);
+	
+	
 	//最终渲染到屏幕上的FrameBuffer
 	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
 	//shadowMap
@@ -235,13 +225,14 @@ int main()
 
 		Eigen::Vector3f lightMatrixVP;
 		//渲染阴影
-		if (GlobalSettings::GetInstance()->settings.drawShadow)
+		/*if (GlobalSettings::GetInstance()->settings.drawShadow)
 		{
 			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
-		}
+		}*/
 		
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
+		
 
 		ImTextureID imguiId = (ImTextureID)renderTexture;
 		if (GlobalSettings::GetInstance()->settings.debug)

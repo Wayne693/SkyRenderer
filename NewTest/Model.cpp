@@ -1,5 +1,6 @@
 #include "Model.h"
 #include <fstream>
+#include <map>
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
 //#include "stb_image.h"
@@ -106,8 +107,14 @@ void Model::UpdateModelMatrix()
 	m_ModelMtx = translation * rotateZ * rotateX * rotateY * scale;
 }
 
-
-//Mesh
+std::vector<Eigen::Vector4f> positions;
+std::vector<Eigen::Vector2f> texcoords;
+std::vector<Eigen::Vector3f> normals;
+std::map<Face, int> mp;
+/*
+* Mesh
+* 加载时将数据处理为VertData和IndexData
+*/
 Mesh::Mesh(std::string fileName)
 {
 	std::ifstream in;
@@ -116,8 +123,13 @@ Mesh::Mesh(std::string fileName)
 	{
 		std::cout << "Load Model Fail!" << std::endl;
 	}
+	positions.clear();
+	texcoords.clear();
+	normals.clear();
+	mp.clear();
 	std::string line;
 	int num;
+	int cnt = 0;
 	while (!in.eof())
 	{
 		std::getline(in, line);
@@ -147,9 +159,47 @@ Mesh::Mesh(std::string fileName)
 			int x0, y0, z0, x1, y1, z1, x2, y2, z2;
 			num = sscanf_s(line.c_str(), "f %d/%d/%d %d/%d/%d %d/%d/%d", &x0, &y0, &z0, &x1, &y1, &z1, &x2, &y2, &z2);
 			assert(num == 9);
-			m_FacePositions.push_back(Face(x0, x1, x2));
-			m_FaceUVs.push_back(Face(y0, y1, y2));
-			m_FaceNormals.push_back(Face(z0, z1, z2));
+			VertRawData vertA, vertB, vertC;
+
+			vertA.positionOS = positions[x0 - 1];
+			vertA.uv = texcoords[y0 - 1];
+			vertA.normalOS = normals[z0 - 1];
+
+			vertB.positionOS = positions[x1 - 1];
+			vertB.uv = texcoords[y1 - 1];
+			vertB.normalOS = normals[z1 - 1];
+
+			vertC.positionOS = positions[x2 - 1];
+			vertC.uv = texcoords[y2 - 1];
+			vertC.normalOS = normals[z2 - 1];
+
+			Face tmpA(x0 - 1, y0 - 1, z0 - 1);
+			Face trangle(0, 0, 0);
+
+			if (mp.find(tmpA) == mp.end())
+			{
+				mp[tmpA] = cnt++;
+				m_VertexData.push_back(vertA);
+			}
+			trangle.A = mp[tmpA]; 
+
+			Face tmpB(x1 - 1, y1 - 1, z1 - 1);
+			if (mp.find(tmpB) == mp.end())
+			{
+				mp[tmpB] = cnt++;
+				m_VertexData.push_back(vertB);
+			}
+			trangle.B = mp[tmpB];
+
+			Face tmpC(x2 - 1, y2 - 1, z2 - 1);
+			if (mp.find(tmpC) == mp.end())
+			{
+				mp[tmpC] = cnt++;
+				m_VertexData.push_back(vertC);
+			}
+			trangle.C = mp[tmpC];
+
+			m_IndexData.push_back(trangle);
 		}
 	}
 }
@@ -164,39 +214,50 @@ void Mesh::SetCommonShader(Shader* shader)
 	m_CommonShader = shader;
 }
 
-std::vector<Face>* Mesh::GetPositionFaces()
-{
-	return &m_FacePositions;
-}
-
-std::vector<Face>* Mesh::GetUVFaces()
-{
-	return &m_FaceUVs;
-}
-
-std::vector<Face>* Mesh::GetNormalFaces()
-{
-	return &m_FaceNormals;
-}
-
-std::vector<Eigen::Vector4f>* Mesh::GetPositions()
-{
-	return &positions;
-}
-
-std::vector<Eigen::Vector2f>* Mesh::GetTexcoords()
-{
-	return &texcoords;
-}
-
-std::vector<Eigen::Vector3f>* Mesh::GetNormals()
-{
-	return &normals;
-}
+//std::vector<Face>* Mesh::GetPositionFaces()
+//{
+//	return &m_FacePositions;
+//}
+//
+//std::vector<Face>* Mesh::GetUVFaces()
+//{
+//	return &m_FaceUVs;
+//}
+//
+//std::vector<Face>* Mesh::GetNormalFaces()
+//{
+//	return &m_FaceNormals;
+//}
+//
+//std::vector<Eigen::Vector4f>* Mesh::GetPositions()
+//{
+//	return &positions;
+//}
+//
+//std::vector<Eigen::Vector2f>* Mesh::GetTexcoords()
+//{
+//	return &texcoords;
+//}
+//
+//std::vector<Eigen::Vector3f>* Mesh::GetNormals()
+//{
+//	return &normals;
+//}
 
 void Mesh::SetCubeMap(CubeMap* cubeMap)
 {
 	m_CubeMap = cubeMap;
+}
+
+
+std::vector<VertRawData>* Mesh::GetVertDatas()
+{
+	return &m_VertexData;
+}
+
+std::vector<Face>* Mesh::GetIndexDatas()
+{
+	return &m_IndexData;
 }
 
 void Mesh::AddTexture(Texture* texture)
@@ -304,7 +365,7 @@ Eigen::Vector4f Texture::GetData(Eigen::Vector2f uv)
 	{
 		x = x % m_Width;
 	}
-	else if(x < 0)
+	else if (x < 0)
 	{
 		x = m_Width + x % m_Width;
 	}
@@ -341,7 +402,7 @@ CubeMap::CubeMap(std::vector<std::string> fileNames)
 	}
 }
 
-CubeMap::CubeMap(int width,int height)
+CubeMap::CubeMap(int width, int height)
 {
 	for (int i = 0; i < 6; i++)
 	{
@@ -410,7 +471,7 @@ int selectCubeMapFace(Eigen::Vector3f direction, Eigen::Vector2f* texcoord) {
 	}
 
 	texcoord->x() = (sc / ma + 1) / 2;
-	texcoord->y() =1 - (tc / ma + 1) / 2;
+	texcoord->y() = 1 - (tc / ma + 1) / 2;
 	return face_index;
 }
 

@@ -24,15 +24,6 @@ struct iblMap
 
 struct DataTruck
 {
-	std::vector<Eigen::Vector4f> DTpositionOS;
-	std::vector<Eigen::Vector3f> DTnormalOS;
-	std::vector<Eigen::Vector2f> DTuv0;
-	std::vector<Eigen::Vector4f> DTpositionWS;
-	std::vector<Eigen::Vector4f> DTpositionCS;
-	std::vector<Eigen::Vector4f> DTpositionSS;
-	std::vector<Eigen::Vector3f> DTnormalWS;
-
-	Eigen::Matrix4f matrixM;
 	Eigen::Matrix4f matrixVP;
 	Eigen::Vector3f lightDirTS;
 	Eigen::Matrix4f lightMatrixVP;
@@ -41,65 +32,68 @@ struct DataTruck
 	int HEIGHT;
 
 	Light mainLight;
-	Mesh* mesh;
 	Camera* camera;
 	FrameBuffer* shadowMap;
 	iblMap iblMap;
-
-	void Clear()
-	{
-		DTpositionOS.clear();
-		DTpositionWS.clear();
-		DTpositionCS.clear();
-		DTpositionSS.clear();
-		DTuv0.clear();
-		DTnormalOS.clear();
-		DTnormalWS.clear();
-	}
 };
 
+struct Attributes
+{
+	Eigen::Vector4f positionOS;
+	Eigen::Vector3f normalOS;
+	Eigen::Vector2f uv;
+	Eigen::Matrix4f matrixM;
+};
+
+struct Varyings
+{
+	Eigen::Vector4f positionWS;
+	Eigen::Vector4f positionCS;
+	Eigen::Vector3f normalWS;
+	Eigen::Vector2f uv;
+};
 
 class Shader
 {
 public:
 	DataTruck* dataTruck;
-	virtual void Vert() = 0;
-	virtual Eigen::Vector4f Frag(Face face, float a,float b,float c) = 0;//参数为三角插值结果1-u-v u v 
+	virtual Varyings Vert(Attributes vertex) = 0;
+	virtual Eigen::Vector4f Frag(Varyings input) = 0;
 };
 
 class LambertShader : public Shader
 {
 public:
-	virtual void Vert();
-	virtual Eigen::Vector4f Frag(Face face, float a, float b, float c);
+	virtual Varyings Vert(Attributes vertex);
+	virtual Eigen::Vector4f Frag(Varyings input);
 };
 
 class NormalMapShader : public Shader
 {
 public:
-	virtual void Vert();
-	virtual Eigen::Vector4f Frag(Face face, float a, float b, float c);
+	virtual Varyings Vert(Attributes vertex);
+	virtual Eigen::Vector4f Frag(Varyings input);
 };
 
 class ShadowMapShader : public Shader
 {
 public:
-	virtual void Vert();
-	virtual Eigen::Vector4f Frag(Face face, float a, float b, float c);
+	virtual Varyings Vert(Attributes vertex);
+	virtual Eigen::Vector4f Frag(Varyings input);
 };
 
 class PBRShader : public Shader
 {
 public:
-	virtual void Vert();
-	virtual Eigen::Vector4f Frag(Face face,float a, float b, float c);
+	virtual Varyings Vert(Attributes vertex);
+	virtual Eigen::Vector4f Frag(Varyings input);
 };
 
 class SkyBoxShader : public Shader
 {
 public:
-	virtual void Vert();
-	virtual Eigen::Vector4f Frag(Face face, float a, float b, float c);
+	virtual Varyings Vert(Attributes vertex);
+	virtual Eigen::Vector4f Frag(Varyings input);
 };
 
 //颜色相乘
@@ -114,11 +108,11 @@ static inline Eigen::Vector3f Vec3Mul(Eigen::Vector3f a, Eigen::Vector3f b)
 }
 
 //将uv坐标平移缩放
-static inline void TransformTex(std::vector<Eigen::Vector2f>* uv, Texture* texture, int idx) 
+static inline Eigen::Vector2f TransformTex(Eigen::Vector2f uv, Texture* texture) 
 {
-	float x = (*uv)[idx].x() * texture->GetTilling().x() + texture->GetOffset().x();
-	float y = (*uv)[idx].y() * texture->GetTilling().y() + texture->GetOffset().y();
-	(*uv)[idx] = Eigen::Vector2f(x, y);
+	float x = uv.x() * texture->GetTilling().x() + texture->GetOffset().x();
+	float y = uv.y() * texture->GetTilling().y() + texture->GetOffset().y();
+	return Eigen::Vector2f(x, y);
 }
  
 //根据uv坐标采样纹理
