@@ -10,6 +10,7 @@ struct VertRawData
 {
 	Eigen::Vector4f positionOS;
 	Eigen::Vector3f normalOS;
+	Eigen::Vector4f tangentOS;
 	Eigen::Vector2f uv;
 };
 

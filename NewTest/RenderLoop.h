@@ -152,6 +152,8 @@ static void ClipWithPlane(ClipPlane plane, std::vector<FragData>& inVec, std::ve
 			tmpdata.rawData.positionCS = Lerp(preVet, curVet, ratio);
 			tmpdata.rawData.positionWS = Lerp(inVec[prei].rawData.positionWS, inVec[curi].rawData.positionWS, ratio);
 			tmpdata.rawData.normalWS = Lerp(inVec[prei].rawData.normalWS, inVec[curi].rawData.normalWS, ratio);
+			tmpdata.rawData.tangentWS = Lerp(inVec[prei].rawData.tangentWS, inVec[curi].rawData.tangentWS, ratio);
+			tmpdata.rawData.binormalWS = Lerp(inVec[prei].rawData.binormalWS, inVec[curi].rawData.binormalWS, ratio);
 			tmpdata.rawData.uv = Lerp(inVec[prei].rawData.uv, inVec[curi].rawData.uv, ratio);
 			outVec.push_back(tmpdata);
 		}
@@ -163,6 +165,8 @@ static void ClipWithPlane(ClipPlane plane, std::vector<FragData>& inVec, std::ve
 			tmpdata.rawData.positionCS = curVet;
 			tmpdata.rawData.positionWS = inVec[curi].rawData.positionWS;
 			tmpdata.rawData.normalWS = inVec[curi].rawData.normalWS;
+			tmpdata.rawData.tangentWS = inVec[curi].rawData.tangentWS;
+			tmpdata.rawData.binormalWS =inVec[curi].rawData.binormalWS;
 			tmpdata.rawData.uv = inVec[curi].rawData.uv;
 			outVec.push_back(tmpdata);
 		}
@@ -234,7 +238,7 @@ void VertCal(Mesh* mesh, Eigen::Matrix4f matrixM, RenderConfig renderConfig)
 	FragDatas.resize(size);
 	for (int vertIdx = 0; vertIdx < size; vertIdx++)
 	{
-		VertData tmpdata = { {(*vertDatas)[vertIdx].positionOS,(*vertDatas)[vertIdx].normalOS,(*vertDatas)[vertIdx].uv,matrixM},shader };
+		VertData tmpdata = { {(*vertDatas)[vertIdx].positionOS,(*vertDatas)[vertIdx].normalOS,(*vertDatas)[vertIdx].tangentOS, (*vertDatas)[vertIdx].uv,matrixM},shader };
 		//threadpool.Enqueue(CalPreVert, vertIdx, tmpdata);
 		/*threadpool.Enqueue([=] {*/
 			//std::cout << vertIdx << std::endl;
@@ -332,11 +336,9 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			VertCal(mesh, model->GetModelMatrix(), renderConfig);
 			//背面剔除
 			CullBack(mesh);
-
-			//std::cout <<" after cull back "<< ClipQueue.size() << std::endl;
 			//齐次坐标裁剪
 			HomoClip();
-			//std::cout <<" after homo clip "<<ClipQueue.size() << std::endl;
+
 			//ThreadPool threadpool(4);
 
 			int cnt = 0;
@@ -391,6 +393,8 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 							tmpdata.rawData.positionWS = zn * (alpha * A.rawData.positionWS + beta * B.rawData.positionWS + gamma * C.rawData.positionWS);
 							tmpdata.rawData.positionCS = zn * (alpha * A.rawData.positionCS + beta * B.rawData.positionCS + gamma * C.rawData.positionCS);
 							tmpdata.rawData.normalWS = zn * (alpha * A.rawData.normalWS + beta * B.rawData.normalWS + gamma * C.rawData.normalWS);
+							tmpdata.rawData.tangentWS = zn * (alpha * A.rawData.tangentWS + beta * B.rawData.tangentWS + gamma * C.rawData.tangentWS);
+							tmpdata.rawData.binormalWS = zn * (alpha * A.rawData.binormalWS + beta * B.rawData.binormalWS + gamma * C.rawData.binormalWS);
 							tmpdata.rawData.uv = zn * (alpha * A.rawData.uv + beta * B.rawData.uv + gamma * C.rawData.uv);
 							//PixelDatas.push_back(tmpdata);
 							//运行片元着色器 

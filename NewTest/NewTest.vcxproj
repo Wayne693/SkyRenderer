@@ -128,7 +128,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\Kingsoft\source\repos\NewTest\NewTest\Stb_image;C:\Users\Kingsoft\source\repos\NewTest\NewTest\imGui;C:\Users\Kingsoft\source\repos\NewTest\NewTest\GLFW\include;C:\Users\Kingsoft\source\repos\NewTest\NewTest\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <Optimization>Full</Optimization>
+      <Optimization>MaxSpeed</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -464,6 +464,7 @@
     <ClInclude Include="imGui\imstb_rectpack.h" />
     <ClInclude Include="imGui\imstb_textedit.h" />
     <ClInclude Include="imGui\imstb_truetype.h" />
+    <ClInclude Include="mikktspace.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="NewTest.h" />
     <ClInclude Include="RenderLoop.h" />
@@ -485,6 +486,7 @@
     <ClCompile Include="imGui\imgui_tables.cpp" />
     <ClCompile Include="imGui\imgui_widgets.cpp" />
     <ClCompile Include="LambertShader.cpp" />
+    <ClCompile Include="mikktspace.c" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="NormalMapShader.cpp" />
     <ClCompile Include="PBRShader.cpp" />

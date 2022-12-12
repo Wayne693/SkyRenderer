@@ -55,6 +55,9 @@
     <Filter Include="源文件\ThreadPool">
       <UniqueIdentifier>{c7e3932e-2a6c-4b45-87ab-431766a3c0a1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\Mikk">
+      <UniqueIdentifier>{c1c59112-edf9-4b28-8fc3-60071096fe3e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -1056,6 +1059,9 @@
     <ClInclude Include="ThreadPool.h">
       <Filter>源文件\ThreadPool</Filter>
     </ClInclude>
+    <ClInclude Include="mikktspace.h">
+      <Filter>源文件\Mikk</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SkyRenderer.cpp">
@@ -1111,6 +1117,9 @@
     </ClCompile>
     <ClCompile Include="SkyBoxShader.cpp">
       <Filter>源文件\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="mikktspace.c">
+      <Filter>源文件\Mikk</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

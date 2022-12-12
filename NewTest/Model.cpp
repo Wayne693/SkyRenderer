@@ -2,6 +2,8 @@
 #include <fstream>
 #include <map>
 #include <iostream>
+#include "mikktspace.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 //#include "stb_image.h"
 #include "Stb_image/stb_image.h"
@@ -111,6 +113,111 @@ std::vector<Eigen::Vector4f> positions;
 std::vector<Eigen::Vector2f> texcoords;
 std::vector<Eigen::Vector3f> normals;
 std::map<Face, int> mp;
+
+//实现计算切线的接口
+struct VIData
+{
+	std::vector<VertRawData>* vertDatas;
+	std::vector<Face>* indexDatas;
+};
+int faceNum = 0;
+int GetNumFaces(const SMikkTSpaceContext* pContext)
+{
+	return faceNum;
+}
+int GetNumVerts(const SMikkTSpaceContext* pContext, const int iFace)
+{
+	return 3;
+}
+void GetPosition(const SMikkTSpaceContext* pContext, float fvPosOut[], const int iFace, const int iVert)
+{
+	VIData* vidata = (VIData*)pContext->m_pUserData;
+	Face face = (*vidata->indexDatas)[iFace];
+	Eigen::Vector3f pos;
+	if (iVert == 0)
+	{
+		pos = (*vidata->vertDatas)[face.A].positionOS.head(3);
+	}
+	else if (iVert == 1)
+	{
+		pos = (*vidata->vertDatas)[face.B].positionOS.head(3);
+	}
+	else if (iVert == 2)
+	{
+		pos = (*vidata->vertDatas)[face.C].positionOS.head(3);
+	}
+	fvPosOut[0] = pos.x();
+	fvPosOut[1] = pos.y();
+	fvPosOut[2] = pos.z();
+}
+void GetNormal(const SMikkTSpaceContext* pContext, float fvNormOut[], const int iFace, const int iVert)
+{
+	VIData* vidata = (VIData*)pContext->m_pUserData;
+	Face face = (*vidata->indexDatas)[iFace];
+	Eigen::Vector3f norm;
+	if (iVert == 0)
+	{
+		norm = (*vidata->vertDatas)[face.A].normalOS;
+	}
+	else if (iVert == 1)
+	{
+		norm = (*vidata->vertDatas)[face.B].normalOS;
+	}
+	else if (iVert == 2)
+	{
+		norm = (*vidata->vertDatas)[face.C].normalOS;
+	}
+	fvNormOut[0] = norm.x();
+	fvNormOut[1] = norm.y();
+	fvNormOut[2] = norm.z();
+}
+void GetTexcoord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const int iFace, const int iVert)
+{
+	VIData* vidata = (VIData*)pContext->m_pUserData;
+	Face face = (*vidata->indexDatas)[iFace];
+	Eigen::Vector2f uv;
+	if (iVert == 0)
+	{
+		uv = (*vidata->vertDatas)[face.A].uv;
+	}
+	else if (iVert == 1)
+	{
+		uv = (*vidata->vertDatas)[face.B].uv;
+	}
+	else if (iVert == 2)
+	{
+		uv = (*vidata->vertDatas)[face.C].uv;
+	}
+	fvTexcOut[0] = uv.x();
+	fvTexcOut[1] = uv.y();
+}
+void SetTSpace(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert)
+{
+	VIData* vidata = (VIData*)pContext->m_pUserData;
+	Face face = (*vidata->indexDatas)[iFace];
+	if (iVert == 0)
+	{
+		(*vidata->vertDatas)[face.A].tangentOS.x() = fvTangent[0];
+		(*vidata->vertDatas)[face.A].tangentOS.y() = fvTangent[1];
+		(*vidata->vertDatas)[face.A].tangentOS.z() = fvTangent[2];
+		(*vidata->vertDatas)[face.A].tangentOS.w() = fSign;
+	}
+	else if (iVert == 1)
+	{
+		(*vidata->vertDatas)[face.B].tangentOS.x() = fvTangent[0];
+		(*vidata->vertDatas)[face.B].tangentOS.y() = fvTangent[1];
+		(*vidata->vertDatas)[face.B].tangentOS.z() = fvTangent[2];
+		(*vidata->vertDatas)[face.B].tangentOS.w() = fSign;
+	}
+	else if (iVert == 2)
+	{
+		(*vidata->vertDatas)[face.C].tangentOS.x() = fvTangent[0];
+		(*vidata->vertDatas)[face.C].tangentOS.y() = fvTangent[1];
+		(*vidata->vertDatas)[face.C].tangentOS.z() = fvTangent[2];
+		(*vidata->vertDatas)[face.C].tangentOS.w() = fSign;
+	}
+}
+
 /*
 * Mesh
 * 加载时将数据处理为VertData和IndexData
@@ -130,6 +237,8 @@ Mesh::Mesh(std::string fileName)
 	std::string line;
 	int num;
 	int cnt = 0;
+	faceNum = 0;
+	//将obj文件中数据处理好
 	while (!in.eof())
 	{
 		std::getline(in, line);
@@ -181,7 +290,7 @@ Mesh::Mesh(std::string fileName)
 				mp[tmpA] = cnt++;
 				m_VertexData.push_back(vertA);
 			}
-			trangle.A = mp[tmpA]; 
+			trangle.A = mp[tmpA];
 
 			Face tmpB(x1 - 1, y1 - 1, z1 - 1);
 			if (mp.find(tmpB) == mp.end())
@@ -200,7 +309,26 @@ Mesh::Mesh(std::string fileName)
 			trangle.C = mp[tmpC];
 
 			m_IndexData.push_back(trangle);
+			faceNum++;
 		}
+	}
+	//计算切线数据
+	{
+		SMikkTSpaceContext tancon;
+		VIData vidata;
+		SMikkTSpaceInterface ssi;
+		vidata.vertDatas = &m_VertexData;
+		vidata.indexDatas = &m_IndexData;
+		tancon.m_pUserData = &vidata;
+		ssi.m_getNumFaces = GetNumFaces;
+		ssi.m_getNumVerticesOfFace = GetNumVerts;
+		ssi.m_getPosition = GetPosition;
+		ssi.m_getNormal = GetNormal;
+		ssi.m_getTexCoord = GetTexcoord;
+		ssi.m_setTSpaceBasic = SetTSpace;
+		ssi.m_setTSpace = nullptr;
+		tancon.m_pInterface = &ssi;
+		genTangSpaceDefault(&tancon);
 	}
 }
 
@@ -213,36 +341,6 @@ void Mesh::SetCommonShader(Shader* shader)
 {
 	m_CommonShader = shader;
 }
-
-//std::vector<Face>* Mesh::GetPositionFaces()
-//{
-//	return &m_FacePositions;
-//}
-//
-//std::vector<Face>* Mesh::GetUVFaces()
-//{
-//	return &m_FaceUVs;
-//}
-//
-//std::vector<Face>* Mesh::GetNormalFaces()
-//{
-//	return &m_FaceNormals;
-//}
-//
-//std::vector<Eigen::Vector4f>* Mesh::GetPositions()
-//{
-//	return &positions;
-//}
-//
-//std::vector<Eigen::Vector2f>* Mesh::GetTexcoords()
-//{
-//	return &texcoords;
-//}
-//
-//std::vector<Eigen::Vector3f>* Mesh::GetNormals()
-//{
-//	return &normals;
-//}
 
 void Mesh::SetCubeMap(CubeMap* cubeMap)
 {
