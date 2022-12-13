@@ -45,8 +45,13 @@ void InitSceneDiablo(Scene* mainScene)
 	ShadowMapShader* shadowShader = new ShadowMapShader;
 	diabloMesh->SetCommonShader(lambertShader);
 	diabloMesh->SetShadowShader(shadowShader);
+	Texture* diabloDiffuse = new Texture("OBJs\\diablo3_pose_diffuse.tga");
+	Texture* diabloNormal = new Texture("OBJs\\diablo3_pose_nm_tangent.tga");
+	diabloMesh->AddTexture(diabloDiffuse);
+	diabloMesh->AddTexture(diabloNormal);
 	mainScene->AddModel(diabloModel);
-
+	
+	
 	fileName = "OBJs\\floor.obj";
 	Mesh* floorMesh = new Mesh(fileName);
 	Model* floor = new Model();
@@ -56,6 +61,10 @@ void InitSceneDiablo(Scene* mainScene)
 	floor->AddMesh(floorMesh);
 	floorMesh->SetCommonShader(lambertShader);
 	floorMesh->SetShadowShader(shadowShader);
+	Texture* floorDiffuse = new Texture("OBJs\\floor_diffuse.tga");
+	Texture* floorNormal = new Texture("OBJs\\floor_nm_tangent.tga");
+	floorMesh->AddTexture(floorDiffuse);
+	floorMesh->AddTexture(floorNormal);
 	mainScene->AddModel(floor);
 
 	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
@@ -96,7 +105,6 @@ void InitSceneHelmet(Scene* mainScene)
 	
 
 	PBRShader* pbrShader = new PBRShader;
-	//LambertShader* lambertShader = new LambertShader;
 	helmetMesh->SetCommonShader(pbrShader);
 	ShadowMapShader* shadowMapShader = new ShadowMapShader;
 	helmetMesh->SetShadowShader(shadowMapShader);
@@ -113,15 +121,7 @@ void InitSceneHelmet(Scene* mainScene)
 	skyBox->AddMesh(skyBoxMesh);
 	SkyBoxShader* skyBoxShader = new SkyBoxShader;
 	skyBoxMesh->SetCommonShader(skyBoxShader);
-	/*std::vector<std::string> cubemapFiles
-	{
-		"OBJs\\right.jpg",
-		"OBJs\\left.jpg",
-		"OBJs\\top.jpg",
-		"OBJs\\bottom.jpg",
-		"OBJs\\front.jpg",
-		"OBJs\\back.jpg"
-	};*/
+
 	std::vector<std::string> cubemapFiles
 	{
 		"OBJs\\DOOMright.png",
@@ -135,7 +135,7 @@ void InitSceneHelmet(Scene* mainScene)
 	//将预处理好的irradianceMap设置给dataTruck
 	dataTruck.iblMap.irradianceMap = GenerateIrradianceMap(cubeMap);
 	dataTruck.iblMap.PrefilterMaps = GeneratePrefilterMap(cubeMap, 2);
-	dataTruck.iblMap.level = 3;
+	dataTruck.iblMap.level = 2;
 	fileName = "OBJs\\LUT.png";
 	dataTruck.iblMap.LUT = new Texture(fileName);
 	//skyBoxMesh->SetCubeMap(irrdance);

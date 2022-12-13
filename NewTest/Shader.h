@@ -35,6 +35,8 @@ struct DataTruck
 	Camera* camera;
 	FrameBuffer* shadowMap;
 	iblMap iblMap;
+
+	Mesh* mesh;
 };
 
 struct Attributes

@@ -2,10 +2,7 @@
 #include <iostream>
 #include "GlobalSettings.h"
 
-Texture* diabloDiffuse = new Texture("OBJs\\diablo3_pose_diffuse.tga");
-Texture* diabloNormal = new Texture("OBJs\\diablo3_pose_nm_tangent.tga");
-Texture* floorDiffuse = new Texture("OBJs\\floor_diffuse.tga");
-Texture* floorNormal = new Texture("OBJs\\floor_nm_tangent.tga");
+
 
 Varyings LambertShader::Vert(Attributes vertex)
 {
@@ -26,7 +23,7 @@ Varyings LambertShader::Vert(Attributes vertex)
 	o.normalWS = normalMatrix * vertex.normalOS;
 
 	//将顶点uv坐标处理好
-	o.uv = TransformTex(vertex.uv, diabloDiffuse);
+	o.uv = TransformTex(vertex.uv, (*dataTruck->mesh->GetTextures())[0]);
 	return o;
 }
 
@@ -43,12 +40,12 @@ Eigen::Vector4f LambertShader::Frag(Varyings i)
 		i.tangentWS.y(), i.binormalWS.y(), i.normalWS.y(),
 		i.tangentWS.z(), i.binormalWS.z(), i.normalWS.z();
 	//获得法线纹理中法线数据
-	Eigen::Vector3f bumpTS = UnpackNormal(diabloNormal, i.uv);
+	Eigen::Vector3f bumpTS = UnpackNormal((*dataTruck->mesh->GetTextures())[1], i.uv);
 	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 
 	//diffuse
 	float NdotL = bumpWS.dot(lightDirWS);
-	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D(diabloDiffuse, i.uv));
+	Eigen::Vector4f diffuse = mainLight.intensity * std::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D((*dataTruck->mesh->GetTextures())[0], i.uv));
 
 	float shadow = 0.f;
 	if (GlobalSettings::GetInstance()->settings.drawShadow)

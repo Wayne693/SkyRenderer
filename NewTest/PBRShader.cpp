@@ -79,8 +79,6 @@ Varyings PBRShader::Vert(Attributes vertex)
 {
 	auto matrixM = vertex.matrixM;
 	auto matrixVP = dataTruck->matrixVP;
-	int WIDTH = dataTruck->WIDTH;
-	int HEIGHT = dataTruck->HEIGHT;
 
 	Varyings o;
 
@@ -88,83 +86,68 @@ Varyings PBRShader::Vert(Attributes vertex)
 	o.positionWS = matrixM * vertex.positionOS;
 	//将positionWS转到positionCS
 	o.positionCS = matrixVP * o.positionWS;
-
+	//计算tangentWS、binormalWS
+	o.tangentWS = matrixM.block(0, 0, 3, 3) * vertex.tangentOS.head(3);
+	o.binormalWS = o.normalWS.cross(o.tangentWS) * vertex.tangentOS.w();
 	//将normalOS转到normalWS
 	Eigen::Matrix3f normalMatrix = matrixM.block(0, 0, 3, 3).inverse().transpose();
 	o.normalWS = normalMatrix * vertex.normalOS;
 
 	//将顶点uv坐标处理好
-	//o.uv = TransformTex(vertex.uv, diabloDiffuse);
+	o.uv = TransformTex(vertex.uv, (*dataTruck->mesh->GetTextures())[0]);
 	return o;
 }
 
 Eigen::Vector4f PBRShader::Frag(Varyings i)
 {
-	////计算TBN
-	//Eigen::Vector3f v1 = (dataTruck->DTpositionCS[face.B] / dataTruck->DTpositionCS[face.B].w() - dataTruck->DTpositionCS[face.A] / dataTruck->DTpositionCS[face.A].w()).head(3);
-	//Eigen::Vector3f v2 = (dataTruck->DTpositionCS[face.C] / dataTruck->DTpositionCS[face.C].w() - dataTruck->DTpositionCS[face.A] / dataTruck->DTpositionCS[face.A].w()).head(3);
-	//Eigen::Matrix3f A;
-	//A << v1.x(), v1.y(), v1.z(),
-	//	v2.x(), v2.y(), v2.z(),
-	//	normalWS.x(), normalWS.y(), normalWS.z();
-	//Eigen::Matrix3f AI = A.inverse();
+	//获取 texture
+	Texture* albedoTex = (*dataTruck->mesh->GetTextures())[0];
+	Texture* normalTex = (*dataTruck->mesh->GetTextures())[1];
+	Texture* roughnessTex = (*dataTruck->mesh->GetTextures())[2];
+	Texture* metallicTex = (*dataTruck->mesh->GetTextures())[3];
+	Texture* occlusionTex = (*dataTruck->mesh->GetTextures())[4];
+	Texture* emissionTex = (*dataTruck->mesh->GetTextures())[5];
+	//采样
+	Eigen::Vector3f albedo = Tex2D(albedoTex, i.uv).head(3);
+	float roughness = Tex2D(roughnessTex, i.uv).x();
+	float metallic = Tex2D(metallicTex, i.uv).x();
+	float ao = Tex2D(occlusionTex, i.uv).x();
+	Eigen::Vector3f emission = Tex2D(emissionTex, i.uv).head(3);
 
-	//Eigen::Vector3f i = AI * Eigen::Vector3f(dataTruck->DTuv0[face.B].x() - dataTruck->DTuv0[face.A].x(), dataTruck->DTuv0[face.C].x() - dataTruck->DTuv0[face.A].x(), 0);
-	//Eigen::Vector3f j = AI * Eigen::Vector3f(dataTruck->DTuv0[face.B].y() - dataTruck->DTuv0[face.A].y(), dataTruck->DTuv0[face.C].y() - dataTruck->DTuv0[face.A].y(), 0);
-	//i.normalize();
-	//j.normalize();
-	//Eigen::Matrix3f tbnMatrix;
-	//tbnMatrix << i.x(), j.x(), normalWS.x(),
-	//	i.y(), j.y(), normalWS.y(),
-	//	i.z(), j.z(), normalWS.z();
+	//计算TBN
+	Eigen::Matrix3f tbnMatrix;
+	tbnMatrix << i.tangentWS.x(), i.binormalWS.x(), i.normalWS.x(),
+		i.tangentWS.y(), i.binormalWS.y(), i.normalWS.y(),
+		i.tangentWS.z(), i.binormalWS.z(), i.normalWS.z();
+	//获得法线纹理中法线数据
+	Eigen::Vector3f bumpTS = UnpackNormal((*dataTruck->mesh->GetTextures())[1], i.uv);
+	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 
-	////std::cout << tbnMatrix << std::endl;
+	Eigen::Vector3f worldPos = i.positionWS.head(3);
+	Eigen::Vector3f viewDir = (dataTruck->camera->GetPosition() - worldPos).normalized();
+	
+	//计算Fresnel项
+	Eigen::Vector3f F0(0.04f, 0.04f, 0.04f);
+	F0 = F0 + (albedo - F0) * metallic;
+	Eigen::Vector3f F = FresnelSchlickRoughness(bumpWS, viewDir, F0, roughness);
+	Eigen::Vector3f Kd = Eigen::Vector3f(1.f, 1.f, 1.f) - F;
 
-	////获取 texture
-	//Texture* albedoTex = (*dataTruck->mesh->GetTextures())[0];
-	//Texture* normalTex = (*dataTruck->mesh->GetTextures())[1];
-	//Texture* roughnessTex = (*dataTruck->mesh->GetTextures())[2];
-	//Texture* metallicTex = (*dataTruck->mesh->GetTextures())[3];
-	//Texture* occlusionTex = (*dataTruck->mesh->GetTextures())[4];
-	//Texture* emissionTex = (*dataTruck->mesh->GetTextures())[5];
-	////采样
-	////std::cout << uv << std::endl;
-	//Eigen::Vector3f albedo = Tex2D(albedoTex, uv).head(3);
-	//float roughness = Tex2D(roughnessTex, uv).x();
-	//float metallic = Tex2D(metallicTex, uv).x();
-	//float ao = Tex2D(occlusionTex, uv).x();
-	//Eigen::Vector3f emission = Tex2D(emissionTex, uv).head(3);
+	Eigen::Vector3f irradiance = dataTruck->iblMap.irradianceMap->GetData(bumpWS).head(3);
+	//diffuse
+	Eigen::Vector3f diffuse = Vec3Mul(Vec3Mul(Kd, irradiance), albedo);
 
-	////获得法线纹理中法线数据
-	//Eigen::Vector3f bumpTS = UnpackNormal(normalTex, uv);
-	//Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
+	//specular
+	Eigen::Vector3f r = (2.f * viewDir.dot(bumpWS) * bumpWS - viewDir).normalized();
+	float nDotv = bumpWS.dot(viewDir);
+	Eigen::Vector2f lutuv(nDotv, roughness);
+	Eigen::Vector3f lut = Tex2D(dataTruck->iblMap.LUT, lutuv).head(3);
+	Eigen::Vector3f specular = F0 * lut.x() + Eigen::Vector3f(lut.y(),lut.y(),lut.y());
+	int level = roughness * dataTruck->iblMap.level;
+	Eigen::Vector3f prefilter = (*(dataTruck->iblMap.PrefilterMaps))[level]->GetData(r).head(3);
+	specular = Vec3Mul(specular, prefilter);
 
-	//Eigen::Vector3f worldPos = (a * dataTruck->DTpositionWS[face.A] + b * dataTruck->DTpositionWS[face.B] + c * dataTruck->DTpositionWS[face.C]).head(3);
-	//Eigen::Vector3f viewDir = (dataTruck->camera->GetPosition() - worldPos).normalized();
-	//
-	////计算Fresnel项
-	//Eigen::Vector3f F0(0.04f, 0.04f, 0.04f);
-	//F0 = F0 + (albedo - F0) * metallic;
-	//Eigen::Vector3f F = FresnelSchlickRoughness(normalWS, viewDir, F0, roughness);
-	//Eigen::Vector3f Kd = Eigen::Vector3f(1.f, 1.f, 1.f) - F;
+	Eigen::Vector3f fincol = (diffuse + specular) * ao + emission;
 
-	//Eigen::Vector3f irradiance = dataTruck->iblMap.irradianceMap->GetData(normalWS).head(3);
-	////diffuse
-	//Eigen::Vector3f diffuse = Vec3Mul(Vec3Mul(Kd, irradiance), albedo);
-
-	////specular
-	//Eigen::Vector3f r = (2.f * viewDir.dot(normalWS) * normalWS - viewDir).normalized();
-	//float nDotv = normalWS.dot(viewDir);
-	//Eigen::Vector2f lutuv(nDotv, roughness);
-	//Eigen::Vector3f lut = Tex2D(dataTruck->iblMap.LUT, lutuv).head(3);
-	//Eigen::Vector3f specular = F0 * lut.x() + Eigen::Vector3f(lut.y(),lut.y(),lut.y());
-	//int level = roughness * dataTruck->iblMap.level;
-	//Eigen::Vector3f prefilter = (*(dataTruck->iblMap.PrefilterMaps))[level]->GetData(r).head(3);
-	//specular = Vec3Mul(specular, prefilter);
-
-	//Eigen::Vector3f fincol = (diffuse + specular) * ao + emission;
-
-	//Eigen::Vector4f finalColor(fincol.x(), fincol.y(), fincol.z(), 1);
-	//return finalColor;
-	return Eigen::Vector4f(0, 0, 0, 0);
+	Eigen::Vector4f finalColor(fincol.x(), fincol.y(), fincol.z(), 1);
+	return finalColor;
 }
