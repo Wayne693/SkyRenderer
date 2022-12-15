@@ -189,8 +189,8 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	mainScene = new Scene;
-	InitSceneDiablo(mainScene);
-	//InitSceneHelmet(mainScene);
+	//InitSceneDiablo(mainScene);
+	InitSceneHelmet(mainScene);
 	
 	
 	//最终渲染到屏幕上的FrameBuffer

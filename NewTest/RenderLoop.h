@@ -71,14 +71,7 @@ std::queue<FragData> ClipQueue;		//裁剪后的顶点数据
 std::vector<FragData> ClipFragDatas;
 //std::vector<FragData> PixelDatas;
 std::mutex fbmutex;
-
-void foo()
-{
-	int a = 2;
-	int b = 1;
-	b = 1 + b + a;
-	//printf("b = %d\n", b);
-}
+std::thread th[4];
 
 
 //三角重心插值，返回1-u-v,u,v
@@ -222,6 +215,12 @@ void HomoClip()
 	}
 }
 
+void foo()
+{
+	int a = 1;
+	int b = 2;
+	a = b + a - 4;
+}
 
 //顶点着色MultiThread
 //void VertCal(Mesh* mesh, Eigen::Matrix4f matrixM, RenderConfig renderConfig)
@@ -279,7 +278,6 @@ void VertCal(Mesh* mesh, Eigen::Matrix4f matrixM, RenderConfig renderConfig)
 	//std::thread th(foo);
 	//th.join();
 	//const int workerNum = std::thread::hardware_concurrency();
-	std::thread th[4];
 	Shader* shader = nullptr;
 	if (renderConfig == RENDER_SHADOW)
 	{
@@ -445,15 +443,15 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 		{
 			FragDatas.clear();
 			ClipFragDatas.clear();
-			//		//ThreadPool threadpool(4);
-					//std::thread a[4];
+					//ThreadPool threadpool(4);
+			//std::thread a[4];
 			/*for (int i = 0; i < 1; i++)
 			{
-				a[i] = std::thread(foo);
+				th[i] = std::thread(foo);
 			}
 			for (int i = 0; i < 1; i++)
 			{
-				a[i].detach();
+				th[i].join();
 			}*/
 
 			auto mesh = (*meshes)[meshIdx];
@@ -474,7 +472,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			int cnt = 0;
 			time_t t1 = clock();
 			const int blockNum = 4;
-			std::thread th[4];
+			
 
 			//printf("size = %d\n", ClipFragDatas.size());
 
@@ -547,10 +545,10 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 									//运行片元着色器 
 
 									auto finalColor = tmpdata.shader->Frag(tmpdata.rawData);
-									fbmutex.lock();
+									//fbmutex.lock();
 									DrawPoint(frameBuffer, x, y, finalColor);
 									frameBuffer->SetZ(x, y, depth);
-									fbmutex.unlock();
+									//fbmutex.unlock();
 								}
 							}
 						}
