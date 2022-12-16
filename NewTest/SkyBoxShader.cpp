@@ -13,7 +13,7 @@ Eigen::Vector2f SampleSphericalMap(Eigen::Vector3f pos)
 
 Varyings SkyBoxShader::Vert(Attributes vertex)
 {
-	auto matrixM = vertex.matrixM;
+	auto matrixM = dataTruck->matrixM;
 	auto matrixP = dataTruck->camera->GetProjectionMatrix();
 	Eigen::Matrix4f matrixV = Eigen::Matrix4f::Zero();
 	matrixV << dataTruck->camera->GetViewMatrix().block(0, 0, 3, 3);
@@ -26,7 +26,6 @@ Varyings SkyBoxShader::Vert(Attributes vertex)
 	o.positionWS = matrixM * vertex.positionOS;
 	//将positionWS转到positionCS
 	o.positionCS = matrixP * matrixV * o.positionWS;
-	//o.positionCS.z() = o.positionCS.w();
 	return o;
 }
 
@@ -35,7 +34,5 @@ Eigen::Vector4f SkyBoxShader::Frag(Varyings i)
 	CubeMap* cubeMap = dataTruck->mesh->GetCubeMap();
 	//采样CubeMap
 	Eigen::Vector4f finalColor = cubeMap->GetData(i.positionWS.head(3).normalized());
-	//std::cout << finalColor << std::endl;
 	return finalColor;
-	//return Eigen::Vector4f(0, 0, 0, 0);
 }

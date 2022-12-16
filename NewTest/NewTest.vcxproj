@@ -127,7 +127,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Kingsoft\source\repos\NewTest\NewTest\Stb_image;C:\Users\Kingsoft\source\repos\NewTest\NewTest\imGui;C:\Users\Kingsoft\source\repos\NewTest\NewTest\GLFW\include;C:\Users\Kingsoft\source\repos\NewTest\NewTest\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.0\include;C:\Users\Kingsoft\source\repos\NewTest\NewTest\Stb_image;C:\Users\Kingsoft\source\repos\NewTest\NewTest\imGui;C:\Users\Kingsoft\source\repos\NewTest\NewTest\GLFW\include;C:\Users\Kingsoft\source\repos\NewTest\NewTest\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
     </ClCompile>
     <Link>
@@ -135,7 +135,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\Kingsoft\source\repos\NewTest\NewTest\GLFW\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.0\lib;C:\Users\Kingsoft\source\repos\NewTest\NewTest\GLFW\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Profile>true</Profile>
     </Link>
@@ -464,11 +464,14 @@
     <ClInclude Include="imGui\imstb_rectpack.h" />
     <ClInclude Include="imGui\imstb_textedit.h" />
     <ClInclude Include="imGui\imstb_truetype.h" />
+    <ClInclude Include="LowLevelAPI.h" />
+    <ClInclude Include="LowLevelData.h" />
     <ClInclude Include="mikktspace.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="NewTest.h" />
     <ClInclude Include="RenderLoop.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="Sampling.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Stb_image\stb_image.h" />
@@ -505,6 +508,8 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cuda.cu" />
+    <None Include="cuda.cuh" />
     <None Include="Eigen\Dense" />
     <None Include="GLFW\lib-vc2022\glfw3.dll" />
   </ItemGroup>

@@ -77,7 +77,7 @@ Eigen::Vector3f FresnelSchlickRoughness(Eigen::Vector3f n, Eigen::Vector3f v, Ei
 
 Varyings PBRShader::Vert(Attributes vertex)
 {
-	auto matrixM = vertex.matrixM;
+	auto matrixM = dataTruck->matrixM;
 	auto matrixVP = dataTruck->matrixVP;
 
 	Varyings o;
@@ -86,12 +86,13 @@ Varyings PBRShader::Vert(Attributes vertex)
 	o.positionWS = matrixM * vertex.positionOS;
 	//将positionWS转到positionCS
 	o.positionCS = matrixVP * o.positionWS;
-	//计算tangentWS、binormalWS
-	o.tangentWS = matrixM.block(0, 0, 3, 3) * vertex.tangentOS.head(3);
-	o.binormalWS = o.normalWS.cross(o.tangentWS) * vertex.tangentOS.w();
 	//将normalOS转到normalWS
 	Eigen::Matrix3f normalMatrix = matrixM.block(0, 0, 3, 3).inverse().transpose();
 	o.normalWS = normalMatrix * vertex.normalOS;
+	//计算tangentWS、binormalWS
+	o.tangentWS = matrixM.block(0, 0, 3, 3) * vertex.tangentOS.head(3);
+	o.binormalWS = o.normalWS.cross(o.tangentWS) * vertex.tangentOS.w();
+	
 
 	//将顶点uv坐标处理好
 	o.uv = TransformTex(vertex.uv, (*dataTruck->mesh->GetTextures())[0]);

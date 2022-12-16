@@ -106,9 +106,9 @@ void InitSceneHelmet(Scene* mainScene)
 
 	PBRShader* pbrShader = new PBRShader;
 	helmetMesh->SetCommonShader(pbrShader);
-	ShadowMapShader* shadowMapShader = new ShadowMapShader;
-	helmetMesh->SetShadowShader(shadowMapShader);
-	helmet->SetTranslation(Eigen::Vector3f(0, 0, 5.5));
+	//ShadowMapShader* shadowMapShader = new ShadowMapShader;
+	helmetMesh->SetShadowShader(nullptr);
+	helmet->SetTranslation(Eigen::Vector3f(0, 0, 3.56));
 	helmet->SetRotation(Eigen::Vector3f(220, 97.5, -87.5));
 	mainScene->AddModel(helmet);
 

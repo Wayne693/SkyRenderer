@@ -1,5 +1,5 @@
 #include "Scene.h"
-#include "iostream"
+
 Scene::Scene()
 {
 	m_MainLight.direction = Eigen::Vector3f(0, 0, 1);

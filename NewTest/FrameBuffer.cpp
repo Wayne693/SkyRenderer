@@ -1,7 +1,6 @@
 #include "FrameBuffer.h"
+#include "LowLevelAPI.h"
 #include <iostream>
-#include <stdlib.h>
-#include "Draw.h"
 
 const float initDepth = 1;
 

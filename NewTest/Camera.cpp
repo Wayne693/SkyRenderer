@@ -1,6 +1,4 @@
 #include "Camera.h"
-#include <vector>
-#include <iostream>
 
 Camera::Camera(Eigen::Vector3f position, Eigen::Vector3f lookat, Eigen::Vector3f up, float near, float far, float fov, float aspect) :
 	m_Position(position),

@@ -1,71 +1,22 @@
 #pragma once
-#include "imgui.h"
-#include "Dense"
 #include "FrameBuffer.h"
-#include <iostream>
-
-//常用颜色
-const Eigen::Vector4f white = Eigen::Vector4f(1, 1, 1, 1);
-const Eigen::Vector4f black = Eigen::Vector4f(0, 0, 0, 1);
-const Eigen::Vector4f red = Eigen::Vector4f(1, 0, 0, 1);
-const Eigen::Vector4f green = Eigen::Vector4f(0, 1, 0, 1);
-const Eigen::Vector4f blue = Eigen::Vector4f(0, 0, 1, 1);
-
-static inline unsigned int Vector4fToColor(Eigen::Vector4f color)
-{
-	unsigned int rtnColor = 0;
-	//小端CPU颜色编码
-	rtnColor |= static_cast<uint8_t>(color.w()) << 24;
-	rtnColor |= static_cast<uint8_t>(color.z()) << 16;
-	rtnColor |= static_cast<uint8_t>(color.y()) << 8;
-	rtnColor |= static_cast<uint8_t>(color.x()) << 0;
-	return rtnColor;
-}
-
-static inline Eigen::Vector4f ColorToVector4f(unsigned int color)
-{
-	return Eigen::Vector4f(color & 255, (color >> 8) & 255, (color >> 16) & 255, (color >> 24) & 255);
-}
-
-static inline Eigen::Vector4f normalColor(Eigen::Vector4f color)//将颜色分量截断在(0,255)
-{
-	return Eigen::Vector4f(std::min(255.f, std::max(0.f, color.x())), std::min(255.f, std::max(0.f, color.y())), std::min(255.f, std::max(0.f, color.z())), std::min(255.f, std::max(0.f, color.w())));
-}
+#include "LowLevelAPI.h"
 
 
-static inline float normalX(FrameBuffer* frameBuffer, float x)
-{
-	x = std::max(x, 0.0f);
-	x = std::min(x, (float)frameBuffer->width());
-	return x;
-}
-
-static inline float normalY(FrameBuffer* frameBuffer, float y)
-{
-	y = std::max(y, 0.0f);
-	y = std::min(y, (float)frameBuffer->height());
-	return y;
-}
-
-//在FrameBuffer的(x,y)位置画一个颜色为color的点,注意左上角坐标为(0,0)
+//在FrameBuffer的(x,y)位置画一个颜色为color的点,左下角坐标为(0,0)
 static inline void DrawPoint(FrameBuffer* frameBuffer, float x, float y, Eigen::Vector4f color = white)
 {
 	color *= 255;
 	frameBuffer->SetColor(x, y, Vector4fToColor(normalColor(color)));
 }
 
-
-//从FrameBuffer的(x0,y0)到(x1,y1)画一条颜色为color的线,左上角坐标为(0,0)
+//从FrameBuffer的(x0,y0)到(x1,y1)画一条颜色为color的线,左下角坐标为(0,0)
 static inline void DrawLine(FrameBuffer* frameBuffer, float x0, float y0, float x1, float y1, Eigen::Vector4f color = white)
 {
 	if (x0 < 0 || y0 < 0 || x0 >= frameBuffer->width() || y0 >= frameBuffer->height())
 		return;
 	if (x1 < 0 || y1 < 0 || x1 >= frameBuffer->width() || y1 >= frameBuffer->height())
 		return;
-	//x0 = normalX(frameBuffer,x0);////todo FIX
-	//x1 = normalX(frameBuffer,x1);
-	//y0 = normalY(frameBuffer,y0);
-	//y1 = normalY(frameBuffer,y1);
 
 	bool steep = false;
 	if (std::abs(x0 - x1) < std::abs(y0 - y1)) {

@@ -4,7 +4,7 @@
 
 Varyings ShadowMapShader::Vert(Attributes vertex)
 {
-	auto matrixM = vertex.matrixM;
+	auto matrixM = dataTruck->matrixM;
 	auto mainLight = dataTruck->mainLight;
 	auto camera = dataTruck->camera;
 

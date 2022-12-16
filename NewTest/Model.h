@@ -1,18 +1,11 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "Dense"
+#include "LowLevelData.h"
 #include "Draw.h"
 
 class Shader;
 
-struct VertRawData
-{
-	Eigen::Vector4f positionOS;
-	Eigen::Vector3f normalOS;
-	Eigen::Vector4f tangentOS;
-	Eigen::Vector2f uv;
-};
 
 //一个三角三个顶点的索引
 struct Face
@@ -50,8 +43,10 @@ private:
 	int m_Channel;
 	Eigen::Vector2f m_Tilling;
 	Eigen::Vector2f m_Offset;
-	uint32_t* m_RawBuffer;
+
 public:
+	uint32_t* m_RawBuffer;
+
 	Texture(std::string fileName);
 	Texture(int width,int height);
 	~Texture();
@@ -85,7 +80,7 @@ public:
 class Mesh
 {
 private:
-	std::vector<VertRawData> m_VertexData;
+	std::vector<Attributes> m_VertexData;
 	std::vector<Face> m_IndexData;
 
 	std::vector<Texture*> m_Textures;
@@ -98,7 +93,7 @@ public:
 	void SetCommonShader(Shader* shader);
 	void SetCubeMap(CubeMap* cubeMap);
 
-	std::vector<VertRawData>* GetVertDatas();
+	std::vector<Attributes>* GetVertDatas();
 	std::vector<Face>* GetIndexDatas();
 
 	void AddTexture(Texture* texture);

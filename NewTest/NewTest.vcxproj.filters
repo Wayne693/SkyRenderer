@@ -13,50 +13,62 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="源文件\Draw">
-      <UniqueIdentifier>{b391f8fa-6d17-44e2-8253-2a4ca40c24f4}</UniqueIdentifier>
+    <Filter Include="源文件\ThirdParty">
+      <UniqueIdentifier>{c3a21130-755c-4a05-81ea-d050b97dfc8a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\FrameBuffer">
-      <UniqueIdentifier>{853d83af-b6fa-4cb7-a152-b1901ded1a0e}</UniqueIdentifier>
+    <Filter Include="源文件\ThirdParty\Mikk">
+      <UniqueIdentifier>{c1c59112-edf9-4b28-8fc3-60071096fe3e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\RenderLoop">
-      <UniqueIdentifier>{966b8346-f8c5-44dc-b648-966125d9e486}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Shader">
-      <UniqueIdentifier>{1aacec75-7ce8-41fd-8c48-74e19309bdfc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\GlobalSettings">
-      <UniqueIdentifier>{b80aee5e-ad83-41bc-8b4d-182ab2fba36b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Pretreatment">
-      <UniqueIdentifier>{0ed3549c-f357-4115-9e2e-f2cdada57c6a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Object">
-      <UniqueIdentifier>{00a206c8-ce85-43cf-b07b-fd47da9f862b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Object\Camera">
-      <UniqueIdentifier>{b6441adb-34e2-49da-9bce-d8c2e9ed1667}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Object\Model">
-      <UniqueIdentifier>{a312ac24-6994-48fd-9874-1ff1f6868b96}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Object\Scene">
-      <UniqueIdentifier>{6d774205-ca0d-424c-b484-b05f9f87110a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\UI">
-      <UniqueIdentifier>{13614ffa-878e-454a-b912-64bca28c150b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\UI\imGui">
+    <Filter Include="源文件\ThirdParty\imGui">
       <UniqueIdentifier>{e2279312-4e33-4b63-965f-a87e536daddd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\UI\WindowsLoop">
+    <Filter Include="源文件\SourceCode">
+      <UniqueIdentifier>{f9c46fb2-0f63-47ce-baf0-2744b72a77be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data">
+      <UniqueIdentifier>{c42d3c9a-4905-47c5-8164-01879623ad2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data\FrameBuffer">
+      <UniqueIdentifier>{853d83af-b6fa-4cb7-a152-b1901ded1a0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\Draw">
+      <UniqueIdentifier>{b391f8fa-6d17-44e2-8253-2a4ca40c24f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\GlobalSettings">
+      <UniqueIdentifier>{b80aee5e-ad83-41bc-8b4d-182ab2fba36b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data\Object">
+      <UniqueIdentifier>{00a206c8-ce85-43cf-b07b-fd47da9f862b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data\Object\Camera">
+      <UniqueIdentifier>{b6441adb-34e2-49da-9bce-d8c2e9ed1667}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data\Object\Model">
+      <UniqueIdentifier>{a312ac24-6994-48fd-9874-1ff1f6868b96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data\Object\Scene">
+      <UniqueIdentifier>{6d774205-ca0d-424c-b484-b05f9f87110a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\ThreadPool">
+      <UniqueIdentifier>{dfffd62f-fe31-46f9-a6b5-b9f2bf6ffe87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\Pretreatment">
+      <UniqueIdentifier>{0ed3549c-f357-4115-9e2e-f2cdada57c6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\RenderLoop">
+      <UniqueIdentifier>{966b8346-f8c5-44dc-b648-966125d9e486}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data\Shader">
+      <UniqueIdentifier>{1aacec75-7ce8-41fd-8c48-74e19309bdfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\UI">
+      <UniqueIdentifier>{13614ffa-878e-454a-b912-64bca28c150b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\UI\WindowsLoop">
       <UniqueIdentifier>{9755dcae-e772-48a1-8728-9adaaeca8958}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\ThreadPool">
-      <UniqueIdentifier>{c7e3932e-2a6c-4b45-87ab-431766a3c0a1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\Mikk">
-      <UniqueIdentifier>{c1c59112-edf9-4b28-8fc3-60071096fe3e}</UniqueIdentifier>
+    <Filter Include="源文件\SourceCode\cuda">
+      <UniqueIdentifier>{81d8351b-9e78-466a-b5ca-980190a4e68b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1024,102 +1036,111 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
-      <Filter>源文件\Object\Camera</Filter>
+      <Filter>源文件\Data\Object\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Draw.h">
-      <Filter>源文件\Draw</Filter>
+      <Filter>源文件\SourceCode\Draw</Filter>
     </ClInclude>
     <ClInclude Include="FrameBuffer.h">
-      <Filter>源文件\FrameBuffer</Filter>
+      <Filter>源文件\Data\FrameBuffer</Filter>
     </ClInclude>
     <ClInclude Include="Model.h">
-      <Filter>源文件\Object\Model</Filter>
+      <Filter>源文件\Data\Object\Model</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
-      <Filter>源文件\Object\Scene</Filter>
+      <Filter>源文件\Data\Object\Scene</Filter>
     </ClInclude>
     <ClInclude Include="RenderLoop.h">
-      <Filter>源文件\RenderLoop</Filter>
+      <Filter>源文件\SourceCode\RenderLoop</Filter>
     </ClInclude>
     <ClInclude Include="Stb_image\stb_image.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Shader.h">
-      <Filter>源文件\Shader</Filter>
+      <Filter>源文件\Data\Shader</Filter>
     </ClInclude>
     <ClInclude Include="GlobalSettings.h">
-      <Filter>源文件\GlobalSettings</Filter>
+      <Filter>源文件\SourceCode\GlobalSettings</Filter>
     </ClInclude>
     <ClInclude Include="GlobalSettingWindowLoop.h">
-      <Filter>源文件\UI\WindowsLoop</Filter>
+      <Filter>源文件\SourceCode\UI\WindowsLoop</Filter>
     </ClInclude>
     <ClInclude Include="Pretreatment.h">
-      <Filter>源文件\Pretreatment</Filter>
-    </ClInclude>
-    <ClInclude Include="ThreadPool.h">
-      <Filter>源文件\ThreadPool</Filter>
+      <Filter>源文件\SourceCode\Pretreatment</Filter>
     </ClInclude>
     <ClInclude Include="mikktspace.h">
-      <Filter>源文件\Mikk</Filter>
+      <Filter>源文件\ThirdParty\Mikk</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadPool.h">
+      <Filter>源文件\SourceCode\ThreadPool</Filter>
+    </ClInclude>
+    <ClInclude Include="LowLevelAPI.h">
+      <Filter>源文件\SourceCode</Filter>
+    </ClInclude>
+    <ClInclude Include="LowLevelData.h">
+      <Filter>源文件\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Sampling.h">
+      <Filter>源文件\SourceCode</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SkyRenderer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="imGui\imgui.cpp">
-      <Filter>源文件\UI\imGui</Filter>
+      <Filter>源文件\ThirdParty\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_draw.cpp">
-      <Filter>源文件\UI\imGui</Filter>
+      <Filter>源文件\ThirdParty\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_impl_glfw.cpp">
-      <Filter>源文件\UI\imGui</Filter>
+      <Filter>源文件\ThirdParty\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_impl_opengl2.cpp">
-      <Filter>源文件\UI\imGui</Filter>
+      <Filter>源文件\ThirdParty\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_tables.cpp">
-      <Filter>源文件\UI\imGui</Filter>
+      <Filter>源文件\ThirdParty\imGui</Filter>
     </ClCompile>
     <ClCompile Include="imGui\imgui_widgets.cpp">
-      <Filter>源文件\UI\imGui</Filter>
+      <Filter>源文件\ThirdParty\imGui</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
-      <Filter>源文件\Object\Camera</Filter>
+      <Filter>源文件\Data\Object\Camera</Filter>
     </ClCompile>
     <ClCompile Include="FrameBuffer.cpp">
-      <Filter>源文件\FrameBuffer</Filter>
+      <Filter>源文件\Data\FrameBuffer</Filter>
     </ClCompile>
     <ClCompile Include="Model.cpp">
-      <Filter>源文件\Object\Model</Filter>
+      <Filter>源文件\Data\Object\Model</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
-      <Filter>源文件\Object\Scene</Filter>
+      <Filter>源文件\Data\Object\Scene</Filter>
     </ClCompile>
     <ClCompile Include="StatusWindowLoop.h">
-      <Filter>源文件\UI\WindowsLoop</Filter>
+      <Filter>源文件\SourceCode\UI\WindowsLoop</Filter>
     </ClCompile>
     <ClCompile Include="NormalMapShader.cpp">
-      <Filter>源文件\Shader</Filter>
+      <Filter>源文件\Data\Shader</Filter>
     </ClCompile>
     <ClCompile Include="LambertShader.cpp">
-      <Filter>源文件\Shader</Filter>
+      <Filter>源文件\Data\Shader</Filter>
     </ClCompile>
     <ClCompile Include="ShadowMapShader.cpp">
-      <Filter>源文件\Shader</Filter>
+      <Filter>源文件\Data\Shader</Filter>
     </ClCompile>
     <ClCompile Include="GlobalSettings.cpp">
-      <Filter>源文件\GlobalSettings</Filter>
+      <Filter>源文件\SourceCode\GlobalSettings</Filter>
     </ClCompile>
     <ClCompile Include="PBRShader.cpp">
-      <Filter>源文件\Shader</Filter>
+      <Filter>源文件\Data\Shader</Filter>
     </ClCompile>
     <ClCompile Include="SkyBoxShader.cpp">
-      <Filter>源文件\Shader</Filter>
+      <Filter>源文件\Data\Shader</Filter>
     </ClCompile>
     <ClCompile Include="mikktspace.c">
-      <Filter>源文件\Mikk</Filter>
+      <Filter>源文件\ThirdParty\Mikk</Filter>
+    </ClCompile>
+    <ClCompile Include="SkyRenderer.cpp">
+      <Filter>源文件\SourceCode</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1138,6 +1159,12 @@
   <ItemGroup>
     <None Include="GLFW\lib-vc2022\glfw3.dll" />
     <None Include="Eigen\Dense" />
+    <None Include="cuda.cu">
+      <Filter>源文件\SourceCode\cuda</Filter>
+    </None>
+    <None Include="cuda.cuh">
+      <Filter>源文件\SourceCode\cuda</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="GLFW\lib-vc2022\glfw3.lib" />

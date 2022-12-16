@@ -4,8 +4,8 @@
 class FrameBuffer
 {
 private:
-	unsigned int* m_RawBuffer;
-	float* m_ZBuffer;
+	unsigned int* m_RawBuffer;	//Color Buffer
+	float* m_ZBuffer;			//Depth Buffer
 	unsigned int m_Width;
 	unsigned int m_Height;
 

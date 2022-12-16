@@ -4,7 +4,7 @@
 
 Varyings NormalMapShader::Vert(Attributes vertex)
 {
-	auto matrixM = vertex.matrixM;
+	auto matrixM = dataTruck->matrixM;
 	auto matrixVP = dataTruck->matrixVP;
 	int WIDTH = dataTruck->WIDTH;
 	int HEIGHT = dataTruck->HEIGHT;

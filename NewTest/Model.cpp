@@ -117,7 +117,7 @@ std::map<Face, int> mp;
 //实现计算切线的接口
 struct VIData
 {
-	std::vector<VertRawData>* vertDatas;
+	std::vector<Attributes>* vertDatas;
 	std::vector<Face>* indexDatas;
 };
 int faceNum = 0;
@@ -268,7 +268,7 @@ Mesh::Mesh(std::string fileName)
 			int x0, y0, z0, x1, y1, z1, x2, y2, z2;
 			num = sscanf_s(line.c_str(), "f %d/%d/%d %d/%d/%d %d/%d/%d", &x0, &y0, &z0, &x1, &y1, &z1, &x2, &y2, &z2);
 			assert(num == 9);
-			VertRawData vertA, vertB, vertC;
+			Attributes vertA, vertB, vertC;
 
 			vertA.positionOS = positions[x0 - 1];
 			vertA.uv = texcoords[y0 - 1];
@@ -348,7 +348,7 @@ void Mesh::SetCubeMap(CubeMap* cubeMap)
 }
 
 
-std::vector<VertRawData>* Mesh::GetVertDatas()
+std::vector<Attributes>* Mesh::GetVertDatas()
 {
 	return &m_VertexData;
 }
