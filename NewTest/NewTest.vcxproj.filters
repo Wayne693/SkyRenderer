@@ -1159,9 +1159,6 @@
   <ItemGroup>
     <None Include="GLFW\lib-vc2022\glfw3.dll" />
     <None Include="Eigen\Dense" />
-    <None Include="cuda.cu">
-      <Filter>源文件\SourceCode\cuda</Filter>
-    </None>
     <None Include="cuda.cuh">
       <Filter>源文件\SourceCode\cuda</Filter>
     </None>
@@ -1170,5 +1167,10 @@
     <Library Include="GLFW\lib-vc2022\glfw3.lib" />
     <Library Include="GLFW\lib-vc2022\glfw3_mt.lib" />
     <Library Include="GLFW\lib-vc2022\glfw3dll.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="cuda.cu">
+      <Filter>源文件\SourceCode\cuda</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

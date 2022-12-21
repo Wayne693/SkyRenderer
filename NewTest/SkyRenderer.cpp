@@ -189,8 +189,8 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	mainScene = new Scene;
-	//InitSceneDiablo(mainScene);
-	InitSceneHelmet(mainScene);
+	InitSceneDiablo(mainScene);
+	//InitSceneHelmet(mainScene);
 	
 	
 	//最终渲染到屏幕上的FrameBuffer
@@ -224,11 +224,11 @@ int main()
 		ShadowMapShader smshader;
 
 		Eigen::Vector3f lightMatrixVP;
-		//渲染阴影
-		if (GlobalSettings::GetInstance()->settings.drawShadow)
-		{
-			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
-		}
+		////渲染阴影
+		//if (GlobalSettings::GetInstance()->settings.drawShadow)
+		//{
+		//	RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
+		//}
 		
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);

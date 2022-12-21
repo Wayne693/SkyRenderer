@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include "Shader.h"
 #include "Sampling.h"
+#include "cuda.cuh"
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
@@ -209,27 +210,28 @@ void VertCal(Mesh* mesh, Eigen::Matrix4f matrixM, Shader* shader)
 	int size = vertDatas->size();
 	FragDatas.resize(size);
 
-	const int blockNum = 4;
-	int blocksize = size / blockNum + (size % blockNum != 0);
-	for (int i = 0; i < blockNum; i++)
-	{
-		int begin = i * blocksize;
-		int end = std::min(size, (i + 1) * blocksize);
-		th[i] = std::thread([=] {
-			for (int vertIdx = begin; vertIdx < end; vertIdx++)
-			{
-				Attributes tmpdata = { (*vertDatas)[vertIdx].positionOS,(*vertDatas)[vertIdx].normalOS,(*vertDatas)[vertIdx].tangentOS, (*vertDatas)[vertIdx].uv };
-				FragDatas[vertIdx] = shader->Vert((*vertDatas)[vertIdx]);
-			}
-			});
-	}
-	for (int i = 0; i < blockNum; i++)
-	{
-		if (th[i].joinable())
-		{
-			th[i].join();
-		}
-	}
+	VertKernel(vertDatas, &FragDatas, &dataTruck, shader);
+	//const int blockNum = 4;
+	//int blocksize = size / blockNum + (size % blockNum != 0);
+	//for (int i = 0; i < blockNum; i++)
+	//{
+	//	int begin = i * blocksize;
+	//	int end = std::min(size, (i + 1) * blocksize);
+	//	th[i] = std::thread([=] {
+	//		for (int vertIdx = begin; vertIdx < end; vertIdx++)
+	//		{
+	//			Attributes tmpdata = { (*vertDatas)[vertIdx].positionOS,(*vertDatas)[vertIdx].normalOS,(*vertDatas)[vertIdx].tangentOS, (*vertDatas)[vertIdx].uv };
+	//			FragDatas[vertIdx] = shader->Vert((*vertDatas)[vertIdx]);
+	//		}
+	//		});
+	//}
+	//for (int i = 0; i < blockNum; i++)
+	//{
+	//	if (th[i].joinable())
+	//	{
+	//		th[i].join();
+	//	}
+	//}
 }
 
 
@@ -372,7 +374,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			
 			//顶点着色
 			VertCal(mesh, model->GetModelMatrix(), currentShader);
-
+			
 			//背面剔除
 			CullBack(mesh, model->IsSkyBox());
 
@@ -382,7 +384,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 
 			int cnt = 0;
 			const int blockNum = 4;
-			clock_t c1 = clock();
+			//clock_t c1 = clock();
 			for (int i = 0; i < blockNum; i++)
 			{
 				int sizeM3 = ClipFragDatas.size() / 3;
@@ -471,7 +473,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			{
 				th[i].join();
 			}
-			clock_t c2 = clock();
+			//clock_t c2 = clock();
 			//printf("%lf\n", difftime(c2, c1));
 		}
 	}
