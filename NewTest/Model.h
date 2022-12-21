@@ -37,14 +37,14 @@ struct Face
 //纹理
 class Texture
 {
-private:
+public:
 	int m_Width;
 	int m_Height;
 	int m_Channel;
 	Eigen::Vector2f m_Tilling;
 	Eigen::Vector2f m_Offset;
 
-public:
+
 	uint32_t* m_RawBuffer;
 
 	Texture(std::string fileName);
@@ -79,7 +79,7 @@ public:
 //网格体
 class Mesh
 {
-private:
+public:
 	std::vector<Attributes> m_VertexData;
 	std::vector<Face> m_IndexData;
 
@@ -87,7 +87,7 @@ private:
 	CubeMap* m_CubeMap;
 	Shader* m_ShadowShader;
 	Shader* m_CommonShader;
-public:
+
 	Mesh(std::string filePath);
 	void SetShadowShader(Shader* shader);
 	void SetCommonShader(Shader* shader);
@@ -110,7 +110,7 @@ class Model
 private:
 	
 	std::vector<Mesh*> m_Meshes;
-	bool m_IsskyBox;//todo 看看有没有用
+	bool m_IsskyBox;				//是否为skybox
 
 	Eigen::Vector3f m_Translation;	//平移
 	Eigen::Vector3f m_Rotation;		//旋转

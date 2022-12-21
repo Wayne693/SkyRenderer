@@ -6,4 +6,4 @@
 #include <stdio.h>
 
 
-cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Attributes>* fragDatas, DataTruck* dataTruck, Shader* shader);
+cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, Shader* shader);
