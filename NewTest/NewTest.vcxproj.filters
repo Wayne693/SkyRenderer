@@ -70,6 +70,9 @@
     <Filter Include="源文件\SourceCode\cuda">
       <UniqueIdentifier>{81d8351b-9e78-466a-b5ca-980190a4e68b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\Data\DataPool">
+      <UniqueIdentifier>{ffc63aea-1f3d-41df-a5a9-d4042e9bd827}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -1082,6 +1085,9 @@
     </ClInclude>
     <ClInclude Include="Sampling.h">
       <Filter>源文件\SourceCode</Filter>
+    </ClInclude>
+    <ClInclude Include="DataPool.h">
+      <Filter>源文件\Data\DataPool</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -8,7 +8,7 @@ const Eigen::Vector4f red = Eigen::Vector4f(1, 0, 0, 1);
 const Eigen::Vector4f green = Eigen::Vector4f(0, 1, 0, 1);
 const Eigen::Vector4f blue = Eigen::Vector4f(0, 0, 1, 1);
 
-static inline unsigned int Vector4fToColor(Eigen::Vector4f color)
+static inline uint32_t Vector4fToColor(Eigen::Vector4f color)
 {
 	unsigned int rtnColor = 0;
 	//Ð¡¶ËCPUÑÕÉ«±àÂë

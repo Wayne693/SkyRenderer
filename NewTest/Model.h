@@ -40,12 +40,12 @@ class Texture
 public:
 	int m_Width;
 	int m_Height;
+	int m_ID;
+
 	int m_Channel;
 	Eigen::Vector2f m_Tilling;
 	Eigen::Vector2f m_Offset;
 
-
-	uint32_t* m_RawBuffer;
 
 	Texture(std::string fileName);
 	Texture(int width,int height);

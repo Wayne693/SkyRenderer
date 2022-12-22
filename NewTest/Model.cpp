@@ -3,6 +3,7 @@
 #include <map>
 #include <iostream>
 #include "mikktspace.h"
+#include "DataPool.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 //#include "stb_image.h"
@@ -386,14 +387,17 @@ CubeMap* Mesh::GetCubeMap()
 //Texture
 Texture::Texture(std::string fileName)
 {
-	m_RawBuffer = (uint32_t*)stbi_load(fileName.c_str(), &m_Width, &m_Height, &m_Channel, 4);//load texture
+	auto rawdata = (uint32_t*)stbi_load(fileName.c_str(), &m_Width, &m_Height, &m_Channel, 4);//load texture
+	m_ID = AddTextureData(rawdata, m_Width * m_Height);
+	//printf("%d\n", textureRawData.size());
 	m_Tilling = Eigen::Vector2f(1, 1);
 	m_Offset = Eigen::Vector2f(0, 0);
 }
 
 Texture::Texture(int width, int height)
 {
-	m_RawBuffer = (uint32_t*)malloc(sizeof(uint32_t) * width * height);
+	auto rawdata = (uint32_t*)malloc(sizeof(uint32_t) * width * height);
+	m_ID = AddTextureData(rawdata, width * height);
 	m_Tilling = Eigen::Vector2f(1, 1);
 	m_Offset = Eigen::Vector2f(0, 0);
 	m_Width = width;
@@ -403,7 +407,7 @@ Texture::Texture(int width, int height)
 
 Texture::~Texture()
 {
-	free(m_RawBuffer);
+	
 }
 
 void Texture::SetTilling(Eigen::Vector2f tilling)
@@ -425,7 +429,7 @@ void Texture::SetData(Eigen::Vector2f uv, Eigen::Vector4f color)
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
 	{
 		color *= 255;
-		m_RawBuffer[pos] = Vector4fToColor(color);
+		SetRawData(m_ID, pos, Vector4fToColor(color));
 	}
 }
 
@@ -445,7 +449,8 @@ Eigen::Vector4f Texture::GetData(int x, int y)
 	int pos = (m_Height - y - 1) * m_Width + x;
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
 	{
-		uint32_t n = m_RawBuffer[pos];
+		uint32_t n = GetRawData(m_ID, pos);
+		//printf("id = %d pos = %d \n", m_ID, pos);
 		uint8_t mask = 255;
 		Eigen::Vector4f data(n & mask, (n >> 8) & mask, (n >> 16) & mask, (n >> 24) & mask);
 		data /= 255.f;

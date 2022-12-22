@@ -365,7 +365,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			{
 				currentShader = mesh->GetCommonShader();
 			}
-			//将所选shader的dataTruck指向为renderLoop的dataTruck
 			if (!currentShader)
 			{
 				return;
