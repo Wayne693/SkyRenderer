@@ -4,7 +4,7 @@
 
 class Camera
 {
-private:
+public:
 	Eigen::Vector3f m_Position;							//相机世界坐标
 	Eigen::Vector3f m_LookAt;							//相机前方方向(world space)
 	Eigen::Vector3f m_Up;								//相机上方方向(world space)

@@ -365,7 +365,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			HomoClip();
 
 			int cnt = 0;
-			const int blockNum = 1;
+			const int blockNum = 4;
 			//clock_t c1 = clock();
 			for (int i = 0; i < blockNum; i++)
 			{
@@ -453,8 +453,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			{
 				th[i].join();
 			}
-			
-			auto col = frameBuffer->GetRaw(640, 360);
+		
 
 			//clock_t c2 = clock();
 			//printf("%lf\n", difftime(c2, c1));

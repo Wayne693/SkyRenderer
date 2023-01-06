@@ -80,6 +80,29 @@ __global__ void ShadowMapVert(Attributes* vertDatas, Varyings* fragDatas, DataTr
 	fragDatas[idx] = o;
 }
 
+__global__ void SkyBoxVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* dataTruck, int* vertNum)
+{
+	int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+	if (idx >= *vertNum)
+	{
+		return;
+	}
+	Attributes vertex = vertDatas[idx];
+
+	auto matrixP = dataTruck->camera.m_ProjectionMtx;
+	Eigen::Matrix4f matrixV = Eigen::Matrix4f::Zero();
+	matrixV << dataTruck->camera.m_ViewMtx.block(0, 0, 3, 3);
+	matrixV(3, 3) = 1;
+
+	Varyings o;
+
+	//将positionOS转到positionWS
+	o.positionWS = dataTruck->matrixM * vertex.positionOS;
+	//将positionWS转到positionCS
+	o.positionCS = matrixP * matrixV * o.positionWS;
+	fragDatas[idx] = o;
+}
+
 cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID)
 {
 	cudaError_t cudaStatus;
@@ -187,6 +210,7 @@ cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>
 		PBRVert <<<blockNum, threadNum >>> (cudaVertDatas, cudaFragDatas, cudaDataTruck, cudaVertNum);
 		break;
 	case SKYBOX_SHADER:
+		SkyBoxVert << <blockNum, threadNum >> > (cudaVertDatas, cudaFragDatas, cudaDataTruck, cudaVertNum);
 		break;
 	}
 	

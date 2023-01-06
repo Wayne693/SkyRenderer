@@ -2,6 +2,7 @@
 #include <iostream>
 #include "GlobalSettings.h"
 
+//²ÉÑùHDRÌùÍ¼ 
 const Eigen::Vector2f invAtan = Eigen::Vector2f(0.1591, 0.3183);
 Eigen::Vector2f SampleSphericalMap(Eigen::Vector3f pos)
 {
