@@ -12,6 +12,10 @@ Camera::Camera(Eigen::Vector3f position, Eigen::Vector3f lookat, Eigen::Vector3f
 
 }
 
+Camera::Camera()
+{
+}
+
 void Camera::SetPosition(Eigen::Vector3f position)
 {
 	m_Position = position;

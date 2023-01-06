@@ -3,13 +3,15 @@
 
 class FrameBuffer
 {
-private:
-	unsigned int* m_RawBuffer;	//Color Buffer
-	float* m_ZBuffer;			//Depth Buffer
+public:
+	//unsigned int* m_RawBuffer;	//Color Buffer
+	//float* m_ZBuffer;			//Depth Buffer
+	int m_ColorBufferID;
+	int m_ZBufferID;
 	unsigned int m_Width;
 	unsigned int m_Height;
 
-public:
+	FrameBuffer();
 	FrameBuffer(int width,int height);
 	FrameBuffer(int width, int height, unsigned int color);
 	~FrameBuffer();

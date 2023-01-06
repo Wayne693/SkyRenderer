@@ -333,14 +333,14 @@ Mesh::Mesh(std::string fileName)
 	}
 }
 
-void Mesh::SetShadowShader(Shader* shader)
+void Mesh::SetShadowShader(int shaderID)
 {
-	m_ShadowShader = shader;
+	m_ShadowShaderID = shaderID;
 }
 
-void Mesh::SetCommonShader(Shader* shader)
+void Mesh::SetCommonShader(int shaderID)
 {
-	m_CommonShader = shader;
+	m_CommonShaderID = shaderID;
 }
 
 void Mesh::SetCubeMap(CubeMap* cubeMap)
@@ -361,22 +361,22 @@ std::vector<Face>* Mesh::GetIndexDatas()
 
 void Mesh::AddTexture(Texture* texture)
 {
-	m_Textures.push_back(texture);
+	m_Textures.push_back(*texture);
 }
 
-std::vector<Texture*>* Mesh::GetTextures()
+std::vector<Texture>* Mesh::GetTextures()
 {
 	return &m_Textures;
 }
 
-Shader* Mesh::GetShadowShader()
+int Mesh::GetShadowShaderID()
 {
-	return m_ShadowShader;
+	return m_ShadowShaderID;
 }
 
-Shader* Mesh::GetCommonShader()
+int Mesh::GetCommonShaderID()
 {
-	return m_CommonShader;
+	return m_CommonShaderID;
 }
 
 CubeMap* Mesh::GetCubeMap()
@@ -500,8 +500,7 @@ CubeMap::CubeMap(std::vector<std::string> fileNames)
 {
 	for (int i = 0; i < fileNames.size(); i++)
 	{
-		Texture* tmpTex = new Texture(fileNames[i]);
-		m_Textures.push_back(tmpTex);
+		m_Textures.push_back(Texture(fileNames[i]));
 	}
 }
 
@@ -509,20 +508,17 @@ CubeMap::CubeMap(int width, int height)
 {
 	for (int i = 0; i < 6; i++)
 	{
-		Texture* tmpTex = new Texture(width, height);
-		m_Textures.push_back(tmpTex);
+		m_Textures.push_back(Texture(width, height));
 	}
+}
+
+CubeMap::CubeMap()
+{
 }
 
 CubeMap::~CubeMap()
 {
-	for (int i = 0; i < m_Textures.size(); i++)
-	{
-		if (m_Textures[i])
-		{
-			delete m_Textures[i];
-		}
-	}
+
 }
 
 //todo understand
@@ -582,12 +578,12 @@ void CubeMap::SetData(Eigen::Vector3f direction, Eigen::Vector4f col)
 {
 	Eigen::Vector2f uv;
 	int idx = selectCubeMapFace(direction, &uv);
-	m_Textures[idx]->SetData(uv, col);
+	m_Textures[idx].SetData(uv, col);
 }
 
 Eigen::Vector4f CubeMap::GetData(Eigen::Vector3f direction)
 {
 	Eigen::Vector2f uv;
 	int idx = selectCubeMapFace(direction, &uv);
-	return m_Textures[idx]->GetData(uv);
+	return m_Textures[idx].GetData(uv);
 }

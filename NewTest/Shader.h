@@ -1,5 +1,4 @@
 #pragma once
-
 #include "LowLevelAPI.h"
 #include "LowLevelData.h"
 #include "vector"
@@ -7,6 +6,12 @@
 #include "FrameBuffer.h"
 #include "Sampling.h"
 #include <iostream>
+
+#define NONE -1
+#define LAMBERT_SHADER 0
+#define PBR_SHADER 1
+#define SHADOWMAP_SHADER 2
+#define SKYBOX_SHADER 3
 
 extern const int WIDTH;
 extern const int HEIGHT;
@@ -33,12 +38,13 @@ struct DataTruck
 	Eigen::Vector3f lightDirTS;
 	Eigen::Matrix4f lightMatrixVP;
 
+	Light mainLight;
+	Camera camera;
+	FrameBuffer shadowMap;
+
+	//不更新
 	int WIDTH;
 	int HEIGHT;
-
-	Light mainLight;
-	Camera* camera;
-	FrameBuffer* shadowMap;
 	iblMap iblMap;
 	
 	/*
@@ -49,7 +55,9 @@ struct DataTruck
 	/*
 	* 每个mesh更新
 	*/
-	Mesh* mesh;
+	Texture* textures;
+	int texNum;
+	CubeMap cubeMap;
 };
 
 class Shader
@@ -94,6 +102,3 @@ public:
 	virtual Varyings Vert(Attributes vertex);
 	virtual Eigen::Vector4f Frag(Varyings input);
 };
-
-
-

@@ -482,6 +482,7 @@
     <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DataPool.cu" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="GlobalSettings.cpp" />
     <ClCompile Include="imGui\imgui.cpp" />

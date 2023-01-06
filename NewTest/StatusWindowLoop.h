@@ -65,22 +65,22 @@ static inline void StatusWindowLoop(Scene* mainScene)
 					auto textures = (*meshP)[idxm]->GetTextures();
 					for (int idxt = 0; idxt < textures->size(); idxt++)
 					{
-						Texture* currentTex = (*textures)[idxt];
-						ImGui::PushID(currentTex);
+						Texture currentTex = (*textures)[idxt];
+						ImGui::PushID(idxt);
 						ImGui::Text("texture %d", idxt + 1);
-						Eigen::Vector2f tmp = currentTex->GetTilling();
+						Eigen::Vector2f tmp = currentTex.GetTilling();
 						float tilling[2] = { tmp.x(),tmp.y() };
 						ImGui::DragFloat2("tilling", tilling, 0.01);
 						//ImGui::PopID();
 						tmp = Eigen::Map<Eigen::Vector2f>(tilling);
-						currentTex->SetTilling(tmp);
+						currentTex.SetTilling(tmp);
 
-						tmp = currentTex->GetOffset();
+						tmp = currentTex.GetOffset();
 						float offset[2] = { tmp.x(),tmp.y() };
 						//ImGui::PushID(idxt);
 						ImGui::DragFloat2("offset", offset, 0.01);
 						tmp = Eigen::Map<Eigen::Vector2f>(offset);
-						currentTex->SetOffset(tmp);
+						currentTex.SetOffset(tmp);
 
 						ImGui::PopID();
 					}

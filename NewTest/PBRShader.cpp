@@ -95,19 +95,19 @@ Varyings PBRShader::Vert(Attributes vertex)
 	
 
 	//将顶点uv坐标处理好
-	o.uv = TransformTex(vertex.uv, (*dataTruck->mesh->GetTextures())[0]);
+	//o.uv = TransformTex(vertex.uv, &(*dataTruck->mesh->GetTextures())[0]);
 	return o;
 }
 
 Eigen::Vector4f PBRShader::Frag(Varyings i)
 {
 	//获取 texture
-	Texture* albedoTex = (*dataTruck->mesh->GetTextures())[0];
-	Texture* normalTex = (*dataTruck->mesh->GetTextures())[1];
-	Texture* roughnessTex = (*dataTruck->mesh->GetTextures())[2];
-	Texture* metallicTex = (*dataTruck->mesh->GetTextures())[3];
-	Texture* occlusionTex = (*dataTruck->mesh->GetTextures())[4];
-	Texture* emissionTex = (*dataTruck->mesh->GetTextures())[5];
+	Texture* albedoTex = &dataTruck->textures[0];
+	Texture* normalTex = &dataTruck->textures[1];
+	Texture* roughnessTex = &dataTruck->textures[2];
+	Texture* metallicTex = &dataTruck->textures[3];
+	Texture* occlusionTex = &dataTruck->textures[4];
+	Texture* emissionTex = &dataTruck->textures[5];
 	//采样
 	Eigen::Vector3f albedo = Tex2D(albedoTex, i.uv).head(3);
 	float roughness = Tex2D(roughnessTex, i.uv).x();
@@ -121,11 +121,11 @@ Eigen::Vector4f PBRShader::Frag(Varyings i)
 		i.tangentWS.y(), i.binormalWS.y(), i.normalWS.y(),
 		i.tangentWS.z(), i.binormalWS.z(), i.normalWS.z();
 	//获得法线纹理中法线数据
-	Eigen::Vector3f bumpTS = UnpackNormal((*dataTruck->mesh->GetTextures())[1], i.uv);
+	Eigen::Vector3f bumpTS = UnpackNormal(&dataTruck->textures[1], i.uv);
 	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 
 	Eigen::Vector3f worldPos = i.positionWS.head(3);
-	Eigen::Vector3f viewDir = (dataTruck->camera->GetPosition() - worldPos).normalized();
+	Eigen::Vector3f viewDir = (dataTruck->camera.GetPosition() - worldPos).normalized();
 	
 	//计算Fresnel项
 	Eigen::Vector3f F0(0.04f, 0.04f, 0.04f);

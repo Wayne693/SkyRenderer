@@ -181,7 +181,6 @@ static void HomoClipPreTrangle()
 	ClipWithPlane(NEAR, clipVec2, clipVec1);
 	ClipWithPlane(FAR, clipVec1, clipVec2);
 
-	//cqmutex.lock();
 	int size = clipVec2.size() - 2;
 	for (int i = 0; i < size; i++)
 	{
@@ -189,49 +188,23 @@ static void HomoClipPreTrangle()
 		ClipFragDatas.push_back(clipVec2[i + 1]);
 		ClipFragDatas.push_back(clipVec2[i + 2]);
 	}
-	//cqmutex.unlock();
 }
 void HomoClip()
 {
-	//ThreadPool threadpool(4);
 	int size = ClipQueue.size();
 	for (int i = 0; i < size - 2; i += 3)
 	{
-		//threadpool.Enqueue(HomoClipPreTrangle, i);
 		HomoClipPreTrangle();
 	}
 }
 
-void VertCal(Mesh* mesh, Eigen::Matrix4f matrixM, Shader* shader)
+void VertCal(Mesh* mesh, Eigen::Matrix4f matrixM, int shader)
 {
-	
-	shader->dataTruck = &dataTruck;
 	auto vertDatas = mesh->GetVertDatas();
 	int size = vertDatas->size();
 	FragDatas.resize(size);
 
 	VertKernel(vertDatas, &FragDatas, &dataTruck, shader);
-	//const int blockNum = 4;
-	//int blocksize = size / blockNum + (size % blockNum != 0);
-	//for (int i = 0; i < blockNum; i++)
-	//{
-	//	int begin = i * blocksize;
-	//	int end = std::min(size, (i + 1) * blocksize);
-	//	th[i] = std::thread([=] {
-	//		for (int vertIdx = begin; vertIdx < end; vertIdx++)
-	//		{
-	//			Attributes tmpdata = { (*vertDatas)[vertIdx].positionOS,(*vertDatas)[vertIdx].normalOS,(*vertDatas)[vertIdx].tangentOS, (*vertDatas)[vertIdx].uv };
-	//			FragDatas[vertIdx] = shader->Vert((*vertDatas)[vertIdx]);
-	//		}
-	//		});
-	//}
-	//for (int i = 0; i < blockNum; i++)
-	//{
-	//	if (th[i].joinable())
-	//	{
-	//		th[i].join();
-	//	}
-	//}
 }
 
 
@@ -249,11 +222,9 @@ void CullFace(Face face, bool IsSkyBox)
 	{
 		return;
 	}
-	//cqmutex.lock();
 	ClipQueue.push(FragDatas[face.A]);
 	ClipQueue.push(FragDatas[face.B]);
 	ClipQueue.push(FragDatas[face.C]);
-	//cqmutex.unlock();
 }
 void CullBack(Mesh* mesh, bool IsSkyBox)
 {
@@ -271,7 +242,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 	auto camera = (*mainScene->GetCameras())[0];//目前只有一个相机
 
 	//将Global Data载入dataTruck
-	dataTruck.camera = camera;
+	dataTruck.camera = *camera;
 	camera->UpdateVPMatrix();
 	camera->CalculateVisualCone();
 	dataTruck.matrixVP = camera->GetVPMatrix();
@@ -279,9 +250,14 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 	dataTruck.mainLight = mainLight;
 	dataTruck.WIDTH = WIDTH;
 	dataTruck.HEIGHT = HEIGHT;
-	dataTruck.shadowMap = shadowMap;
+	
 
-	Shader* currentShader = nullptr;
+	int currentShaderID = -1;
+	Shader* currentShader = nullptr;//todo 暂时Frag着色使用
+
+	dataTruck.shadowMap = *shadowMap;
+
+
 	if (renderConfig == RENDER_SHADOW)
 	{
 		Eigen::Vector3f sCameraLookat = mainLight.direction.normalized();
@@ -338,8 +314,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 		dataTruck.lightMatrixVP = matrixVP;
 	}
 
-
-
 	auto models = mainScene->GetModels();
 	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)
 	{
@@ -353,26 +327,36 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 		{
 			FragDatas.clear();
 			ClipFragDatas.clear();
-			currentShader = nullptr;
+			currentShaderID = -1;
+			currentShader = nullptr;//todo
 			auto mesh = (*meshes)[meshIdx];
-			dataTruck.mesh = mesh;
+			dataTruck.textures = mesh->GetTextures()->data();
+			dataTruck.texNum = mesh->GetTextures()->size();
+			if (mesh->m_CubeMap != nullptr)
+			{
+				dataTruck.cubeMap = *mesh->GetCubeMap();
+			}
+			
 
 			if (renderConfig == RENDER_SHADOW)
 			{
-				currentShader = mesh->GetShadowShader();
+				currentShaderID = mesh->GetShadowShaderID();
+				currentShader = mesh->m_ShadowShader;//todo
 			}
 			else if (renderConfig == RENDER_BY_PASS)
 			{
-				currentShader = mesh->GetCommonShader();
+				currentShaderID = mesh->GetCommonShaderID();
+				currentShader = mesh->m_CommonShader;//todo
 			}
-			if (!currentShader)
+			if (currentShaderID == -1)
 			{
 				return;
 			}
 
+			currentShader->dataTruck = &dataTruck;//todo
 			
 			//顶点着色
-			VertCal(mesh, model->GetModelMatrix(), currentShader);
+			VertCal(mesh, model->GetModelMatrix(), currentShaderID);
 			
 			//背面剔除
 			CullBack(mesh, model->IsSkyBox());
@@ -380,9 +364,8 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			//齐次坐标裁剪
 			HomoClip();
 
-
 			int cnt = 0;
-			const int blockNum = 4;
+			const int blockNum = 1;
 			//clock_t c1 = clock();
 			for (int i = 0; i < blockNum; i++)
 			{
@@ -413,12 +396,13 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 						{
 							for (int y = miny; y <= maxy; y++)
 							{
+
 								//三角插值
 								Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
-								////像素在三角形内
+								//像素在三角形内
 								if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
 								{
-								//	//插值出深度
+									//插值出深度
 									float depth;
 									if (!model->IsSkyBox())
 									{
@@ -429,8 +413,9 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 										depth = 1.0f;
 									}
 
-								//	//深度测试
-									if (depth > frameBuffer->GetZ(x, y))
+									float bdepth = frameBuffer->GetZ(x, y);
+									//深度测试
+									if (depth > bdepth)
 									{
 										continue;
 									}
@@ -452,14 +437,10 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 										tmpdata.uv = zn * (alpha * A.uv + beta * B.uv + gamma * C.uv);
 									}
 									
-									
 									//运行片元着色器 
 									auto finalColor = currentShader->Frag(tmpdata);
-									//auto finalColor = Eigen::Vector4f(0, 0, 0, 0);
-									//fbmutex.lock();
 									DrawPoint(frameBuffer, x, y, finalColor);
 									frameBuffer->SetZ(x, y, depth);
-									//fbmutex.unlock();
 								}
 							}
 						}
@@ -472,6 +453,9 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			{
 				th[i].join();
 			}
+			
+			auto col = frameBuffer->GetRaw(640, 360);
+
 			//clock_t c2 = clock();
 			//printf("%lf\n", difftime(c2, c1));
 		}

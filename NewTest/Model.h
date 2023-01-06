@@ -4,6 +4,7 @@
 #include "LowLevelData.h"
 #include "Draw.h"
 
+
 class Shader;
 
 
@@ -67,10 +68,11 @@ class CubeMap
 {
 public:
 	//px nx py ny pz nz
-	std::vector<Texture*> m_Textures;
+	std::vector<Texture> m_Textures;
 
 	CubeMap(std::vector<std::string> fileNames);
 	CubeMap(int width, int height);
+	CubeMap();
 	~CubeMap();
 	void SetData(Eigen::Vector3f vector, Eigen::Vector4f col);
 	Eigen::Vector4f GetData(Eigen::Vector3f vector);
@@ -83,23 +85,26 @@ public:
 	std::vector<Attributes> m_VertexData;
 	std::vector<Face> m_IndexData;
 
-	std::vector<Texture*> m_Textures;
+	std::vector<Texture> m_Textures;
 	CubeMap* m_CubeMap;
+	int m_ShadowShaderID;
+	int m_CommonShaderID;
+
 	Shader* m_ShadowShader;
 	Shader* m_CommonShader;
 
 	Mesh(std::string filePath);
-	void SetShadowShader(Shader* shader);
-	void SetCommonShader(Shader* shader);
+	void SetShadowShader(int shaderID);
+	void SetCommonShader(int shaderID);
 	void SetCubeMap(CubeMap* cubeMap);
 
 	std::vector<Attributes>* GetVertDatas();
 	std::vector<Face>* GetIndexDatas();
 
 	void AddTexture(Texture* texture);
-	std::vector<Texture*>* GetTextures();
-	Shader*  GetShadowShader();
-	Shader*  GetCommonShader();
+	std::vector<Texture>* GetTextures();
+	int GetShadowShaderID();
+	int GetCommonShaderID();
 	CubeMap* GetCubeMap();
 };
 

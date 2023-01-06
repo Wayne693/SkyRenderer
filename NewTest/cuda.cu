@@ -2,7 +2,17 @@
 #include "Model.h"
 #include "Dense"
 
-__global__ void CalVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* dataTruck, int* vertNum)
+uint32_t* cudaTexData;
+int* cudaTexOffset;
+
+__device__ Eigen::Vector2f CudaTransformTex(Eigen::Vector2f uv, Texture* texture)
+{
+	float x = uv.x() * texture->m_Tilling.x() + texture->m_Offset.x();
+	float y = uv.y() * texture->m_Tilling.y() + texture->m_Offset.y();
+	return Eigen::Vector2f(x, y);
+}
+
+__global__ void LambertVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* dataTruck, int* vertNum)
 {
 	int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
 	
@@ -23,93 +33,163 @@ __global__ void CalVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* d
 	o.tangentWS = dataTruck->matrixM.block(0, 0, 3, 3) * vertex.tangentOS.head(3);
 	o.binormalWS = o.normalWS.cross(o.tangentWS) * vertex.tangentOS.w();
 	//将顶点uv坐标处理好
-	float x = vertex.uv.x();
-	float y = vertex.uv.y(); 
-	o.uv = Eigen::Vector2f(x, y);
+	o.uv = CudaTransformTex(vertex.uv, &dataTruck->textures[0]);
+	fragDatas[idx] = o;
+}
+
+__global__ void PBRVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* dataTruck, int* vertNum)
+{
+	int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+	if (idx >= *vertNum)
+	{
+		return;
+	}
+	Attributes vertex = vertDatas[idx];
+	Varyings o;
+	o.positionWS = dataTruck->matrixM * vertex.positionOS;
+	//将positionWS转到positionCS
+	o.positionCS = dataTruck->matrixVP * o.positionWS;
+	//将normalOS转到normalWS
+	Eigen::Matrix3f normalMatrix = dataTruck->matrixM.block(0, 0, 3, 3).transpose();
+	Eigen::Matrix3f nn = normalMatrix.inverse();
+	o.normalWS = nn * vertex.normalOS;
+	//计算tangentWS、binormalWS
+	o.tangentWS = dataTruck->matrixM.block(0, 0, 3, 3) * vertex.tangentOS.head(3);
+	o.binormalWS = o.normalWS.cross(o.tangentWS) * vertex.tangentOS.w();
+	//将顶点uv坐标处理好
+	o.uv = CudaTransformTex(vertex.uv, &dataTruck->textures[0]);
+	fragDatas[idx] = o;
+}
+
+__global__ void ShadowMapVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* dataTruck, int* vertNum)
+{
+	int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+	if (idx >= *vertNum)
+	{
+		return;
+	}
+	Attributes vertex = vertDatas[idx];
+	Varyings o;
+	//将positionOS转到positionWS
+	o.positionWS = dataTruck->matrixM * vertex.positionOS;
+	//将positionWS转到positionCS
+	o.positionCS = dataTruck->lightMatrixVP * o.positionWS;
 
 	fragDatas[idx] = o;
 }
 
-
-cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, Shader* shader)
+cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID)
 {
+	cudaError_t cudaStatus;
+
+
 	Attributes* cudaVertDatas = nullptr;
 	Varyings* cudaFragDatas = nullptr;
 	DataTruck* cudaDataTruck = nullptr;
 	int* cudaVertNum = nullptr;
-	//Texture** cudaTextures = nullptr;
+	Texture* cudatmptextures = nullptr;
 
-	cudaError_t cudaStatus;
 	const int threadNum = 192;
 	int vertNum = vertDatas->size();
 	int blockNum = vertDatas->size() / threadNum + (vertNum % threadNum != 0);
 
-	cudaStatus = cudaSetDevice(0);
+	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
 	{
-		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
 		goto Error;
 	}
 
-	//给GPU分配内存
+	//拷贝数据到GPU内存
 	{
+		//顶点数据
 		cudaStatus = cudaMalloc((void**)&cudaVertDatas, sizeof(Attributes) * vertDatas->size());
 		if (cudaStatus != cudaSuccess)
 		{
-			fprintf(stderr, "cudaMalloc failed!");
+			fprintf(stderr, "cudaMalloc failed! cudaVertDatas");
 			goto Error;
 		}
-
-		cudaStatus = cudaMalloc((void**)&cudaFragDatas, sizeof(Varyings) * fragDatas->size());
-		if (cudaStatus != cudaSuccess)
-		{
-			fprintf(stderr, "cudaMalloc failed!");
-			goto Error;
-		}
-		cudaStatus = cudaMalloc((void**)&cudaDataTruck, sizeof(DataTruck));
-		if (cudaStatus != cudaSuccess)
-		{
-			fprintf(stderr, "cudaMalloc failed!");
-			goto Error;
-		}
-		cudaMalloc((void**)&cudaVertNum, sizeof(int));
-		cudaMemcpy(cudaVertNum, &vertNum, sizeof(int), cudaMemcpyHostToDevice);
-		//auto textures = dataTruck->mesh->GetTextures();
-		////以cudaTextures为首地址分配TextureList的内存
-		//cudaStatus = cudaMalloc((void**)&cudaTextures, sizeof(Texture*) * textures->size());
-		////printf("%d\n", sizeof(*cudaTextures));
-		//for (int i = 0; i < textures->size(); i++)
-		//{
-		//	//Texture* currentTextureAdd = ;
-		//	cudaStatus = cudaMalloc((void**)cudaTextures[i], sizeof(Texture));
-		//	cudaMemcpy(cudaTextures[i], (*textures)[i], sizeof(Texture), cudaMemcpyHostToDevice);
-
-		//	auto rawData = cudaTextures[i]->m_RawBuffer;
-		//	cudaStatus = cudaMalloc((void**)&cudaTextures[i], sizeof((*textures)[i]->m_RawBuffer));
-		//	cudaMemcpy(rawData, (*textures)[i]->m_RawBuffer, sizeof((*textures)[i]->m_RawBuffer), cudaMemcpyHostToDevice);
-		//}
-
-	}
-
-
-	//数据拷贝
-	{
 		cudaStatus = cudaMemcpy(cudaVertDatas, vertDatas->data(), vertNum * sizeof(Attributes), cudaMemcpyHostToDevice);
 		if (cudaStatus != cudaSuccess)
 		{
-			fprintf(stderr, "cudaMemcpy failed!");
+			fprintf(stderr, "cudaMemcpy failed! cudaVertDatas");
 			goto Error;
 		}
-		cudaStatus = cudaMemcpy(cudaDataTruck, dataTruck, sizeof(DataTruck), cudaMemcpyHostToDevice);
+
+		//顶点着色后数据
+		cudaStatus = cudaMalloc((void**)&cudaFragDatas, sizeof(Varyings) * fragDatas->size());
 		if (cudaStatus != cudaSuccess)
 		{
-			fprintf(stderr, "cudaMemcpy failed!");
+			fprintf(stderr, "cudaMalloc failed! cudaFragDatas");
+			goto Error;
+		}
+		//dataTruck
+		/*
+		* 结构体中含指针变量拷贝内存方法参考此文
+		* https://devforum.nvidia.cn/forum.php?mod=viewthread&tid=6820&extra=&page=1
+		*/
+		
+		cudaStatus = cudaMalloc((void**)&cudatmptextures, dataTruck->texNum * sizeof(Texture));
+		if (cudaStatus != cudaSuccess)
+		{
+			fprintf(stderr, "cudaMalloc failed! cudatmptextures");
+			goto Error;
+		}
+		cudaStatus = cudaMemcpy(cudatmptextures, dataTruck->textures, dataTruck->texNum * sizeof(Texture), cudaMemcpyHostToDevice);
+		if (cudaStatus != cudaSuccess)
+		{
+			fprintf(stderr, "cudaMemecpy failed! cudatmptextures");
+			goto Error;
+		}
+		
+		auto tmpDataTruck = *dataTruck;
+		tmpDataTruck.textures = cudatmptextures;
+
+		cudaStatus = cudaMalloc((void**)&cudaDataTruck, sizeof(DataTruck));
+		if (cudaStatus != cudaSuccess)
+		{
+			fprintf(stderr, "cudaMalloc failed! cudaDataTruck");
+			goto Error;
+		}
+		cudaStatus = cudaMemcpy(cudaDataTruck, &tmpDataTruck, sizeof(DataTruck), cudaMemcpyHostToDevice);
+		if (cudaStatus != cudaSuccess)
+		{
+			fprintf(stderr, "cudaMemcpy failed! cudaDataTruck");
+			goto Error;
+		}
+
+		//vertNum
+		cudaStatus = cudaMalloc((void**)&cudaVertNum, sizeof(int));
+		cudaStatus = cudaMemcpy(cudaVertNum, &vertNum, sizeof(int), cudaMemcpyHostToDevice);
+
+		cudaStatus = cudaGetLastError();
+		if (cudaStatus != cudaSuccess)
+		{
+			printf("cudaFailed vertNum : %s", cudaGetErrorString(cudaStatus));
 			goto Error;
 		}
 	}
 
 	//运行Kernel函数
-	CalVert <<<blockNum, threadNum >>> (cudaVertDatas, cudaFragDatas, cudaDataTruck,cudaVertNum);
+	switch (shaderID)
+	{
+	case NONE:
+		break;
+	case LAMBERT_SHADER:
+		LambertVert <<<blockNum, threadNum >>> (cudaVertDatas, cudaFragDatas, cudaDataTruck, cudaVertNum);
+		break;
+	case SHADOWMAP_SHADER:
+		ShadowMapVert <<<blockNum, threadNum >>> (cudaVertDatas, cudaFragDatas, cudaDataTruck, cudaVertNum);
+		break;
+	case PBR_SHADER:
+		PBRVert <<<blockNum, threadNum >>> (cudaVertDatas, cudaFragDatas, cudaDataTruck, cudaVertNum);
+		break;
+	case SKYBOX_SHADER:
+		break;
+	}
+	
 
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess) {
@@ -133,7 +213,34 @@ Error:
 	cudaFree(cudaVertDatas);
 	cudaFree(cudaFragDatas);
 	cudaFree(cudaDataTruck);
+	cudaFree(cudatmptextures);
+	cudaFree(cudaVertNum);
+	return cudaStatus;
+}
 
+cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* offset)
+{
+	cudaError_t cudaStatus;
+
+	cudaMalloc((void**)&cudaTexData, rawData->size() * sizeof(uint32_t));
+	cudaMalloc((void**)&cudaTexOffset, offset->size() * sizeof(int));
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+	cudaMemcpy(cudaTexData, rawData->data(), rawData->size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaTexOffset, offset->data(), offset->size() * sizeof(int), cudaMemcpyHostToDevice);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+Error:
 	return cudaStatus;
 }
 

@@ -1148,6 +1148,9 @@
     <ClCompile Include="SkyRenderer.cpp">
       <Filter>源文件\SourceCode</Filter>
     </ClCompile>
+    <ClCompile Include="DataPool.cu">
+      <Filter>源文件\Data\DataPool</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NewTest.rc">

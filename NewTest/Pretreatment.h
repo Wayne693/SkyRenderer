@@ -124,7 +124,7 @@ static inline CubeMap* GenerateIrradianceMap(CubeMap* cubeMap)
 				}
 				irradiance = PI * irradiance * (1.f / numSamples);
 				Eigen::Vector4f irr(irradiance.x(), irradiance.y(), irradiance.z(), 1);
-				irradianceMap->m_Textures[facei]->SetData(Eigen::Vector2f(1.f * x / irSize, 1.f * y / irSize), irr);
+				irradianceMap->m_Textures[facei].SetData(Eigen::Vector2f(1.f * x / irSize, 1.f * y / irSize), irr);
 			}
 		}
 	}
@@ -187,7 +187,7 @@ static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int 
 						}
 						prefilterColor /= totalWeight;
 						Eigen::Vector4f pcolor(prefilterColor.x(), prefilterColor.y(), prefilterColor.z(), 1);
-						preMap->m_Textures[facei]->SetData(Eigen::Vector2f(1.f * x / size, 1.f * y / size), pcolor);
+						preMap->m_Textures[facei].SetData(Eigen::Vector2f(1.f * x / size, 1.f * y / size), pcolor);
 					}
 				}
 				});

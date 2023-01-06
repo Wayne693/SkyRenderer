@@ -17,6 +17,7 @@
 #include "GlobalSettingWindowLoop.h"
 #include "GlobalSettings.h"
 #include "Pretreatment.h"
+#include "DataPool.h"
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -43,8 +44,10 @@ void InitSceneDiablo(Scene* mainScene)
 	diabloModel->AddMesh(diabloMesh);
 	LambertShader* lambertShader = new LambertShader;
 	ShadowMapShader* shadowShader = new ShadowMapShader;
-	diabloMesh->SetCommonShader(lambertShader);
-	diabloMesh->SetShadowShader(shadowShader);
+	diabloMesh->SetCommonShader(LAMBERT_SHADER);
+	diabloMesh->SetShadowShader(SHADOWMAP_SHADER);
+	diabloMesh->m_CommonShader = lambertShader;//todo
+	diabloMesh->m_ShadowShader = shadowShader;//todo
 	Texture* diabloDiffuse = new Texture("OBJs\\diablo3_pose_diffuse.tga");
 	Texture* diabloNormal = new Texture("OBJs\\diablo3_pose_nm_tangent.tga");
 	diabloMesh->AddTexture(diabloDiffuse);
@@ -59,8 +62,10 @@ void InitSceneDiablo(Scene* mainScene)
 	floor->SetTranslation(Eigen::Vector3f(0, 0, 4.360));
 	floor->SetScale(Eigen::Vector3f(1.33f, 1, 1.33f));
 	floor->AddMesh(floorMesh);
-	floorMesh->SetCommonShader(lambertShader);
-	floorMesh->SetShadowShader(shadowShader);
+	floorMesh->SetCommonShader(LAMBERT_SHADER);
+	floorMesh->SetShadowShader(SHADOWMAP_SHADER);
+	floorMesh->m_CommonShader = lambertShader;//todo
+	floorMesh->m_ShadowShader = shadowShader;//todo
 	Texture* floorDiffuse = new Texture("OBJs\\floor_diffuse.tga");
 	Texture* floorNormal = new Texture("OBJs\\floor_nm_tangent.tga");
 	floorMesh->AddTexture(floorDiffuse);
@@ -75,6 +80,7 @@ void InitSceneDiablo(Scene* mainScene)
 	mainLight.color = Eigen::Vector4f(1, 1, 1, 1);
 	mainLight.intensity = 1.5f;
 	mainScene->SetLight(mainLight);
+
 }
 //PBR/IBL/SkyBox
 void InitSceneHelmet(Scene* mainScene)
@@ -105,9 +111,10 @@ void InitSceneHelmet(Scene* mainScene)
 	
 
 	PBRShader* pbrShader = new PBRShader;
-	helmetMesh->SetCommonShader(pbrShader);
+	helmetMesh->SetCommonShader(PBR_SHADER);
+	helmetMesh->m_CommonShader = pbrShader;//todo
 	//ShadowMapShader* shadowMapShader = new ShadowMapShader;
-	helmetMesh->SetShadowShader(nullptr);
+	helmetMesh->SetShadowShader(NONE);
 	helmet->SetTranslation(Eigen::Vector3f(0, 0, 3.56));
 	helmet->SetRotation(Eigen::Vector3f(220, 97.5, -87.5));
 	mainScene->AddModel(helmet);
@@ -120,8 +127,8 @@ void InitSceneHelmet(Scene* mainScene)
 	skyBox->SetIsSkyBox(true);
 	skyBox->AddMesh(skyBoxMesh);
 	SkyBoxShader* skyBoxShader = new SkyBoxShader;
-	skyBoxMesh->SetCommonShader(skyBoxShader);
-
+	skyBoxMesh->SetCommonShader(SKYBOX_SHADER);
+	skyBoxMesh->m_CommonShader = skyBoxShader;
 	std::vector<std::string> cubemapFiles
 	{
 		"OBJs\\DOOMright.png",
@@ -198,6 +205,10 @@ int main()
 	//shadowMap
 	FrameBuffer* shadowMap = new FrameBuffer(WIDTH ,HEIGHT , Vector4fToColor(black));
 
+	//将texture raw data 加载到GPU内存
+	auto datap = RawData();
+	auto offsetp = Offset();
+	LoadTextureData(datap, offsetp);
 	// Main loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -224,11 +235,11 @@ int main()
 		ShadowMapShader smshader;
 
 		Eigen::Vector3f lightMatrixVP;
-		////渲染阴影
-		//if (GlobalSettings::GetInstance()->settings.drawShadow)
-		//{
-		//	RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
-		//}
+		//渲染阴影
+		if (GlobalSettings::GetInstance()->settings.drawShadow)
+		{
+			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
+		}
 		
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
@@ -246,6 +257,7 @@ int main()
 		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 		drawList->AddImage(imguiId, ImVec2(0, 0), ImVec2(WIDTH, HEIGHT));
 
+		//auto testcol = displayBuffer->GetRaw(640, 360);
 		
 		// Rendering
 		ImGui::Render();

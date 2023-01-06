@@ -21,6 +21,7 @@ private:
 
 public:
 	Camera(Eigen::Vector3f position, Eigen::Vector3f lookat, Eigen::Vector3f up, float near, float far, float fov, float aspect);
+	Camera();
 	void SetPosition(Eigen::Vector3f position);
 	void SetLookAt(Eigen::Vector3f lookAt);
 	void SetUp(Eigen::Vector3f up);
