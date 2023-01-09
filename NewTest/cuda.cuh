@@ -9,3 +9,4 @@
 cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID);
 
 cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* offset);
+ 

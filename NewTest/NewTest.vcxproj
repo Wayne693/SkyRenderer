@@ -111,6 +111,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\Kingsoft\source\repos\NewTest\NewTest\GLFW\include;C:\Users\Kingsoft\source\repos\NewTest\NewTest\Eigen;C:\Users\Kingsoft\source\repos\NewTest\NewTest\imGui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -130,6 +131,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.0\include;C:\Users\Kingsoft\source\repos\NewTest\NewTest\Stb_image;C:\Users\Kingsoft\source\repos\NewTest\NewTest\imGui;C:\Users\Kingsoft\source\repos\NewTest\NewTest\GLFW\include;C:\Users\Kingsoft\source\repos\NewTest\NewTest\Eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

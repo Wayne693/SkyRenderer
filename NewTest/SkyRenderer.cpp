@@ -1,4 +1,5 @@
-﻿#include "imgui.h"
+﻿#pragma once
+#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
 #include "Draw.h"
@@ -53,8 +54,6 @@ void InitSceneDiablo(Scene* mainScene)
 	diabloMesh->AddTexture(diabloDiffuse);
 	diabloMesh->AddTexture(diabloNormal);
 	mainScene->AddModel(diabloModel);
-	
-	
 	fileName = "OBJs\\floor.obj";
 	Mesh* floorMesh = new Mesh(fileName);
 	Model* floor = new Model();
@@ -198,7 +197,7 @@ int main()
 	mainScene = new Scene;
 	InitSceneDiablo(mainScene);
 	//InitSceneHelmet(mainScene);
-	
+
 	
 	//最终渲染到屏幕上的FrameBuffer
 	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));

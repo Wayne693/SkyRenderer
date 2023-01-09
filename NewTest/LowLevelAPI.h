@@ -1,5 +1,7 @@
 #pragma once
 #include "Dense"
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 //常用颜色
 const Eigen::Vector4f white = Eigen::Vector4f(255, 255, 255, 255);
@@ -31,12 +33,12 @@ static inline Eigen::Vector4f normalColor(Eigen::Vector4f color)
 }
 
 //颜色相乘
-static inline Eigen::Vector4f Vec4Mul(Eigen::Vector4f a, Eigen::Vector4f b)
+__host__ __device__ static Eigen::Vector4f Vec4Mul(Eigen::Vector4f a, Eigen::Vector4f b)
 {
 	return Eigen::Vector4f(a.x() * b.x(), a.y() * b.y(), a.z() * b.z(), a.w() * b.w());
 }
 
-static inline Eigen::Vector3f Vec3Mul(Eigen::Vector3f a, Eigen::Vector3f b)
+__host__ __device__ static Eigen::Vector3f Vec3Mul(Eigen::Vector3f a, Eigen::Vector3f b)
 {
 	return Eigen::Vector3f(a.x() * b.x(), a.y() * b.y(), a.z() * b.z());
 }

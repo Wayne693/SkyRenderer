@@ -5,12 +5,6 @@
 uint32_t* cudaTexData;
 int* cudaTexOffset;
 
-__device__ Eigen::Vector2f CudaTransformTex(Eigen::Vector2f uv, Texture* texture)
-{
-	float x = uv.x() * texture->m_Tilling.x() + texture->m_Offset.x();
-	float y = uv.y() * texture->m_Tilling.y() + texture->m_Offset.y();
-	return Eigen::Vector2f(x, y);
-}
 
 __global__ void LambertVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* dataTruck, int* vertNum)
 {
@@ -33,7 +27,7 @@ __global__ void LambertVert(Attributes* vertDatas, Varyings* fragDatas, DataTruc
 	o.tangentWS = dataTruck->matrixM.block(0, 0, 3, 3) * vertex.tangentOS.head(3);
 	o.binormalWS = o.normalWS.cross(o.tangentWS) * vertex.tangentOS.w();
 	//将顶点uv坐标处理好
-	o.uv = CudaTransformTex(vertex.uv, &dataTruck->textures[0]);
+	o.uv = TransformTex(vertex.uv, &dataTruck->textures[0]);
 	fragDatas[idx] = o;
 }
 
@@ -58,7 +52,7 @@ __global__ void PBRVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* d
 	o.tangentWS = dataTruck->matrixM.block(0, 0, 3, 3) * vertex.tangentOS.head(3);
 	o.binormalWS = o.normalWS.cross(o.tangentWS) * vertex.tangentOS.w();
 	//将顶点uv坐标处理好
-	o.uv = CudaTransformTex(vertex.uv, &dataTruck->textures[0]);
+	o.uv = TransformTex(vertex.uv, &dataTruck->textures[0]);
 	fragDatas[idx] = o;
 }
 
