@@ -1,6 +1,7 @@
 #pragma once
 #include "Dense"
 #include "Model.h"
+#include "FrameBuffer.h"
 #include "DataPool.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -66,4 +67,21 @@ __host__ __device__ static Eigen::Vector3f UnpackNormal(Texture* normalTexture, 
 __host__ __device__ static Eigen::Vector4f ComputeScreenPos(Eigen::Vector4f positionCS)
 {
 	return Eigen::Vector4f(positionCS.x() * WIDTH / (2 * positionCS.w()) + WIDTH / 2, positionCS.y() * HEIGHT / (2 * positionCS.w()) + HEIGHT / 2, positionCS.z() / positionCS.w(), positionCS.w());
+}
+
+//采样FrameBuffer的ZBuffer
+__host__ __device__ static float GetZ(FrameBuffer* buffer, int x, int y)
+{
+	auto height = buffer->m_Height;
+	auto width = buffer->m_Width;
+
+	int pos = (height - y - 1) * width + x;
+	if (x >= 0 && x < width && y >= 0 && y < height && pos >= 0 && pos < height * width)
+	{
+		uint32_t depth = GetBufferData(buffer->m_ZBufferID, pos);
+		//将uint32_t按字节转为float
+		float rt = *(float*)&depth;
+		return rt;
+	}
+	return 1;
 }

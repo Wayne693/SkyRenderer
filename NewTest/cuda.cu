@@ -4,7 +4,8 @@
 
 uint32_t* cudaTexData;
 int* cudaTexOffset;
-
+uint32_t* cudaBufData;
+int* cudaBufOffset;
 
 __global__ void LambertVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck* dataTruck, int* vertNum)
 {
@@ -97,6 +98,7 @@ __global__ void SkyBoxVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck
 	fragDatas[idx] = o;
 }
 
+//加载数据与调用核函数与释放内存
 cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID)
 {
 	cudaError_t cudaStatus;
@@ -236,6 +238,7 @@ Error:
 	return cudaStatus;
 }
 
+//加载纹理数据(RenderLoop前加载)
 cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* offset)
 {
 	cudaError_t cudaStatus;
@@ -262,3 +265,37 @@ Error:
 	return cudaStatus;
 }
 
+//加载FrameBuffer数据(每帧加载)
+cudaError_t LoadBufferData(std::vector<uint32_t>* rawData, std::vector<int>* offset)
+{
+	cudaError_t cudaStatus;
+
+	cudaMalloc((void**)&cudaBufData, rawData->size() * sizeof(uint32_t));
+	cudaMalloc((void**)&cudaBufOffset, offset->size() * sizeof(int));
+	
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+	cudaMemcpy(cudaBufData, rawData->data(), rawData->size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaBufOffset, offset->data(), offset->size() * sizeof(int), cudaMemcpyHostToDevice);
+
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+Error:
+	return cudaStatus;
+}
+
+void CudaFreeBufferData()
+{
+	cudaFree(cudaBufData);
+	cudaFree(cudaBufOffset);
+}

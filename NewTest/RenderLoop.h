@@ -64,7 +64,7 @@ std::thread th[4];
 
 
 //三角重心插值，返回1-u-v,u,v
-Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P)
+__host__ __device__ Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P)
 {
 	Eigen::Vector3f u = Eigen::Vector3f(B.x() - A.x(), C.x() - A.x(), A.x() - P.x()).cross(Eigen::Vector3f(B.y() - A.y(), C.y() - A.y(), A.y() - P.y()));// u v 1
 	return Eigen::Vector3f(1.f - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z());
@@ -404,7 +404,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 								{
 									//插值出深度
 									float depth;
-									if (!model->IsSkyBox())
+									if (!model->IsSkyBox())/////////////////////////////////////todo
 									{
 										depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
 									}

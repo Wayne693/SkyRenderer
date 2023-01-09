@@ -39,7 +39,7 @@ Eigen::Vector4f LambertShader::Frag(Varyings i)
 		i.tangentWS.y(), i.binormalWS.y(), i.normalWS.y(),
 		i.tangentWS.z(), i.binormalWS.z(), i.normalWS.z();
 	//获得法线纹理中法线数据
-	Eigen::Vector3f bumpTS = UnpackNormal(&dataTruck->textures[1], i.uv);////////////////////////todo 转cuda
+	Eigen::Vector3f bumpTS = UnpackNormal(&dataTruck->textures[1], i.uv);////////////////////////todo 转cuda DONE
 	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 
 	//diffuse
@@ -49,17 +49,18 @@ Eigen::Vector4f LambertShader::Frag(Varyings i)
 	float shadow = 0.f;
 	//if (GlobalSettings::GetInstance()->settings.drawShadow)////////////////////todo 要不直接删了得了
 	//{
-		Eigen::Vector4f positionLSS = ComputeScreenPos(dataTruck->lightMatrixVP * i.positionWS);
-		float bias = std::max(0.05 * (1 - bumpWS.dot(lightDirWS)), 0.01);
-		//PCF
-		for (int i = -1; i <= 1; i++)
+	Eigen::Vector4f positionLSS = ComputeScreenPos(dataTruck->lightMatrixVP * i.positionWS);
+	float bias = std::max(0.05 * (1 - bumpWS.dot(lightDirWS)), 0.01);
+	//PCF
+	for (int i = -1; i <= 1; i++)
+	{
+		for (int j = -1; j <= 1; j++)
 		{
-			for (int j = -1; j <= 1; j++)
-			{
-				shadow += (positionLSS.z() > dataTruck->shadowMap.GetZ(positionLSS.x() + i, positionLSS.y() + j) + bias);////////////////////todo frameBuffer 采样改cuda
-			}
+			//dataTruck->shadowMap.GetZ(positionLSS.x() + i, positionLSS.y() + j)
+			shadow += (positionLSS.z() > GetZ(&dataTruck->shadowMap, positionLSS.x() + i, positionLSS.y() + j) + bias);////////////////////todo frameBuffer 采样改cuda DONE
 		}
-		shadow = std::min(0.7f, shadow / 9);
+	}
+	shadow = std::min(0.7f, shadow / 9);
 	//}
 
 	Eigen::Vector4f finalColor = (1 - shadow) * diffuse;

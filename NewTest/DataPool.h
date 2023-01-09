@@ -6,7 +6,6 @@
 //low-level API
 __host__ __device__  uint32_t GetData(uint32_t* rawData, int* offset, int id, int pos);
 
-
 __host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int pos, uint32_t color);
 
  int AddData(std::vector<uint32_t>& dstRawData, std::vector<int>& offset, uint32_t* srcRawData, int size);
