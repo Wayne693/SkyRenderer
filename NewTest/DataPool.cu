@@ -1,5 +1,9 @@
 #include"DataPool.h"
 
+/*
+*主存中数据
+* CPU端使用
+*/
 //纹理数据
  int textureNum;
  std::vector<int> textureOffset;
@@ -9,6 +13,15 @@
  int bufferNum;
  std::vector<int> bufferOffset;
  std::vector<uint32_t> bufferData;
+
+ /*
+ * 显存中数据
+ * GPU端使用
+ */
+ uint32_t* cudaTexData;
+ int* cudaTexOffset;
+ uint32_t* cudaBufData;
+ int* cudaBufOffset;
 
 //low-level API
 __host__ __device__  uint32_t GetData(uint32_t* rawData, int* offset, int id, int pos)
@@ -47,7 +60,6 @@ __host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int po
 //处理纹理数据函数
  int AddTextureData(uint32_t* rawData, int size)
 {
-	//printf("**size = %d", &textureRawData);/////////////////////////////////////test
 	if (AddData(textureRawData, textureOffset, rawData, size) == 0)
 	{
 		return textureNum++;
@@ -66,17 +78,25 @@ __host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int po
 	return &textureOffset;
 }
 
-__host__ __device__  uint32_t GetRawData(int id, int pos)
+uint32_t GetRawData(int id, int pos)
 {
-	//printf("texture data address = %d\n", &textureRawData);
 	return GetData(textureRawData.data(), textureOffset.data(), id, pos);
 }
 
-__host__ __device__  void SetRawData(int id, int pos, uint32_t color)
+__device__ uint32_t CudaGetRawData(int id, int pos)
+{
+	return GetData(cudaTexData, cudaTexOffset, id, pos);
+}
+
+void SetRawData(int id, int pos, uint32_t color)
 {
 	SetData(textureRawData.data(), textureOffset.data(), id, pos, color);
 }
 
+__device__ void CudaSetRawData(int id, int pos, uint32_t color)
+{
+	SetData(cudaTexData, cudaTexOffset, id, pos, color);
+}
 
 //处理FrameBuffer数据函数
 std::vector<uint32_t>* BufferData()
@@ -99,21 +119,31 @@ int AddBufferData(uint32_t* rawData, int size)
 	return -1;
 }
 
-__host__ __device__  uint32_t GetBufferData(int id, int pos)
+uint32_t GetBufferData(int id, int pos)
 {
 	return GetData(bufferData.data(), bufferOffset.data(), id, pos);
 }
 
- uint32_t* GetBuffer(int id)
+__device__ uint32_t CudaGetBufferData(int id, int pos)
+{
+	return GetData(cudaBufData, cudaBufOffset, id, pos);
+}
+
+uint32_t* GetBuffer(int id)
 {
 	return bufferData.data() + bufferOffset[id];
 }
 
-__host__ __device__  void SetBufferData(int id, int pos, uint32_t color)
+void SetBufferData(int id, int pos, uint32_t color)
 {
 	SetData(bufferData.data(), bufferOffset.data(), id, pos, color);
 }
 
+__device__ void CudaSetBufferData(int id, int pos, uint32_t color)
+{
+	return;
+	//SetData(cudaBufData, cudaBufOffset, id, pos, color);
+}
 
 void ClearBuffer(int id, int size, uint32_t color) 
 {
@@ -123,4 +153,66 @@ void ClearBuffer(int id, int size, uint32_t color)
 void ClearBuffer(int id, int size, float color)
 {
 	initData(bufferData.data() + bufferOffset[id], *(uint32_t*)&color, size);
+}
+
+
+cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* offset)
+{
+	cudaError_t cudaStatus;
+
+	cudaMalloc((void**)&cudaTexData, rawData->size() * sizeof(uint32_t));
+	cudaMalloc((void**)&cudaTexOffset, offset->size() * sizeof(int));
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+	cudaMemcpy(cudaTexData, rawData->data(), rawData->size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaTexOffset, offset->data(), offset->size() * sizeof(int), cudaMemcpyHostToDevice);
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+Error:
+	return cudaStatus;
+}
+
+
+cudaError_t LoadBufferData(std::vector<uint32_t>* rawData, std::vector<int>* offset)
+{
+	cudaError_t cudaStatus;
+
+	cudaMalloc((void**)&cudaBufData, rawData->size() * sizeof(uint32_t));
+	cudaMalloc((void**)&cudaBufOffset, offset->size() * sizeof(int));
+
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaBufData Failed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+	cudaMemcpy(cudaBufData, rawData->data(), rawData->size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaBufOffset, offset->data(), offset->size() * sizeof(int), cudaMemcpyHostToDevice);
+
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaBufOffsetFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
+Error:
+	return cudaStatus;
+}
+
+void CudaFreeBufferData()
+{
+	cudaFree(cudaBufData);
+	cudaFree(cudaBufOffset);
 }

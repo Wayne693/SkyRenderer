@@ -5,6 +5,8 @@
 #include "mikktspace.h"
 #include "DataPool.h"
 
+#include "Test.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 //#include "stb_image.h"
 #include "Stb_image/stb_image.h"

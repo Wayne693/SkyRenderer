@@ -3,6 +3,8 @@
 #include "DataPool.h"
 #include <iostream>
 
+#include "Test.h"
+
 const float initDepth = 1;
 
 FrameBuffer::FrameBuffer()
@@ -121,11 +123,6 @@ unsigned int FrameBuffer::width()
 
 void FrameBuffer::Clear(unsigned int clearColor)
 {
-	/*for (int i = 0; i < m_Height * m_Width; i++)
-	{
-		m_RawBuffer[i] = clearColor;
-	}
-	std::fill_n(m_ZBuffer, m_Height * m_Width, initDepth);*/
 	ClearBuffer(m_ColorBufferID, m_Height * m_Width, clearColor);
 	ClearBuffer(m_ZBufferID, m_Height * m_Width, initDepth);
 }

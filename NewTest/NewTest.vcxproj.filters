@@ -1089,6 +1089,9 @@
     <ClInclude Include="DataPool.h">
       <Filter>源文件\Data\DataPool</Filter>
     </ClInclude>
+    <ClInclude Include="Test.h">
+      <Filter>源文件\SourceCode\Draw</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imGui\imgui.cpp">
@@ -1180,6 +1183,12 @@
   <ItemGroup>
     <CudaCompile Include="cuda.cu">
       <Filter>源文件\SourceCode\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Draw.cu">
+      <Filter>源文件\SourceCode\Draw</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Test.cu">
+      <Filter>源文件\SourceCode\Draw</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

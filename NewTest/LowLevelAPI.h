@@ -10,7 +10,7 @@ const Eigen::Vector4f red = Eigen::Vector4f(255, 0, 0, 255);
 const Eigen::Vector4f green = Eigen::Vector4f(0, 255, 0, 255);
 const Eigen::Vector4f blue = Eigen::Vector4f(0, 0, 255, 255);
 
-static inline uint32_t Vector4fToColor(Eigen::Vector4f color)
+__host__ __device__ static uint32_t Vector4fToColor(Eigen::Vector4f color)
 {
 	unsigned int rtnColor = 0;
 	//小端CPU颜色编码
@@ -21,13 +21,13 @@ static inline uint32_t Vector4fToColor(Eigen::Vector4f color)
 	return rtnColor;
 }
 
-static inline Eigen::Vector4f ColorToVector4f(unsigned int color)
+__host__ __device__ static Eigen::Vector4f ColorToVector4f(unsigned int color)
 {
 	return Eigen::Vector4f(color & 255, (color >> 8) & 255, (color >> 16) & 255, (color >> 24) & 255);
 }
 
 //将颜色分量截断在(0,255)
-static inline Eigen::Vector4f normalColor(Eigen::Vector4f color)
+__host__ __device__ static Eigen::Vector4f normalColor(Eigen::Vector4f color)
 {
 	return Eigen::Vector4f(std::min(255.f, std::max(0.f, color.x())), std::min(255.f, std::max(0.f, color.y())), std::min(255.f, std::max(0.f, color.z())), std::min(255.f, std::max(0.f, color.w())));
 }

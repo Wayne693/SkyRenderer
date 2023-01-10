@@ -63,12 +63,7 @@ std::mutex fbmutex;
 std::thread th[4];
 
 
-//三角重心插值，返回1-u-v,u,v
-__host__ __device__ Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P)
-{
-	Eigen::Vector3f u = Eigen::Vector3f(B.x() - A.x(), C.x() - A.x(), A.x() - P.x()).cross(Eigen::Vector3f(B.y() - A.y(), C.y() - A.y(), A.y() - P.y()));// u v 1
-	return Eigen::Vector3f(1.f - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z());
-}
+
 
 static int IsInsidePlane(ClipPlane plane, Eigen::Vector4f vertex)
 {
@@ -314,6 +309,10 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 		dataTruck.lightMatrixVP = matrixVP;
 	}
 
+	//加载FrameBuffer数据到GPU内存
+	LoadBufferData(BufferData(), BufferOffset());
+	LoadFrameBuffer(frameBuffer);
+
 	auto models = mainScene->GetModels();
 	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)
 	{
@@ -364,99 +363,106 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			//齐次坐标裁剪
 			HomoClip();
 
-			int cnt = 0;
-			const int blockNum = 4;
-			//clock_t c1 = clock();
-			for (int i = 0; i < blockNum; i++)
-			{
-				int sizeM3 = ClipFragDatas.size() / 3;
-				int blockSize = sizeM3 / blockNum + (sizeM3 % blockNum != 0);
-				blockSize *= 3;
-				th[i] = std::thread([=] {
-					int begin = i * blockSize;
-					int end = std::min((int)ClipFragDatas.size(), (i + 1) * blockSize);
 
-					for (int vidx = begin; vidx < end; vidx += 3)
-					{
-						Varyings A, B, C;
+			FragKernel(&ClipFragDatas, &dataTruck, currentShaderID);
+			//int cnt = 0;
+			//const int blockNum = 4;
+			////clock_t c1 = clock();
+			//for (int i = 0; i < blockNum; i++)
+			//{
+			//	int sizeM3 = ClipFragDatas.size() / 3;
+			//	int blockSize = sizeM3 / blockNum + (sizeM3 % blockNum != 0);
+			//	blockSize *= 3;
+			//	th[i] = std::thread([=] {
+			//		int begin = i * blockSize;
+			//		int end = std::min((int)ClipFragDatas.size(), (i + 1) * blockSize);
 
-						A = ClipFragDatas[vidx];
-						B = ClipFragDatas[vidx + 1];
-						C = ClipFragDatas[vidx + 2];
+			//		for (int vidx = begin; vidx < end; vidx += 3)
+			//		{
+			//			Varyings A, B, C;
 
-						auto a = ComputeScreenPos(A.positionCS);
-						auto b = ComputeScreenPos(B.positionCS);
-						auto c = ComputeScreenPos(C.positionCS);
-						int minx = std::max(0, std::min(WIDTH, (int)std::min(a.x(), std::min(b.x(), c.x()))));
-						int miny = std::max(0, std::min(HEIGHT, (int)std::min(a.y(), std::min(b.y(), c.y()))));
-						int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
-						int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
+			//			A = ClipFragDatas[vidx];
+			//			B = ClipFragDatas[vidx + 1];
+			//			C = ClipFragDatas[vidx + 2];
 
-						for (int x = minx; x <= maxx; x++)
-						{
-							for (int y = miny; y <= maxy; y++)
-							{
+			//			auto a = ComputeScreenPos(A.positionCS);
+			//			auto b = ComputeScreenPos(B.positionCS);
+			//			auto c = ComputeScreenPos(C.positionCS);
+			//			int minx = std::max(0, std::min(WIDTH, (int)std::min(a.x(), std::min(b.x(), c.x()))));
+			//			int miny = std::max(0, std::min(HEIGHT, (int)std::min(a.y(), std::min(b.y(), c.y()))));
+			//			int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
+			//			int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
 
-								//三角插值
-								Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
-								//像素在三角形内
-								if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
-								{
-									//插值出深度
-									float depth;
-									if (!model->IsSkyBox())/////////////////////////////////////todo
-									{
-										depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
-									}
-									else
-									{
-										depth = 1.0f;
-									}
+			//			for (int x = minx; x <= maxx; x++)
+			//			{
+			//				for (int y = miny; y <= maxy; y++)
+			//				{
 
-									float bdepth = frameBuffer->GetZ(x, y);
-									//深度测试
-									if (depth > bdepth)
-									{
-										continue;
-									}
+			//					//三角插值
+			//					Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
+			//					//像素在三角形内
+			//					if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
+			//					{
+			//						//插值出深度
+			//						float depth;
+			//						if (!model->IsSkyBox())/////////////////////////////////////todo
+			//						{
+			//							depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
+			//						}
+			//						else
+			//						{
+			//							depth = 1.0f;
+			//						}
+
+			//						float bdepth = frameBuffer->GetZ(x, y);
+			//						//深度测试
+			//						if (depth > bdepth)
+			//						{
+			//							continue;
+			//						}
 
 
-									float alpha = u.x() / A.positionCS.w();
-									float beta = u.y() / B.positionCS.w();
-									float gamma = u.z() / C.positionCS.w();
-									float zn = 1 / (alpha + beta + gamma);
+			//						float alpha = u.x() / A.positionCS.w();
+			//						float beta = u.y() / B.positionCS.w();
+			//						float gamma = u.z() / C.positionCS.w();
+			//						float zn = 1 / (alpha + beta + gamma);
 
-									Varyings tmpdata;
-									tmpdata.positionWS = zn * (alpha * A.positionWS + beta * B.positionWS + gamma * C.positionWS);
-									if (!model->IsSkyBox())
-									{
-										tmpdata.positionCS = zn * (alpha * A.positionCS + beta * B.positionCS + gamma * C.positionCS);
-										tmpdata.normalWS = zn * (alpha * A.normalWS + beta * B.normalWS + gamma * C.normalWS);
-										tmpdata.tangentWS = zn * (alpha * A.tangentWS + beta * B.tangentWS + gamma * C.tangentWS);
-										tmpdata.binormalWS = zn * (alpha * A.binormalWS + beta * B.binormalWS + gamma * C.binormalWS);
-										tmpdata.uv = zn * (alpha * A.uv + beta * B.uv + gamma * C.uv);
-									}
-									
-									//运行片元着色器 
-									auto finalColor = currentShader->Frag(tmpdata);
-									DrawPoint(frameBuffer, x, y, finalColor);
-									frameBuffer->SetZ(x, y, depth);
-								}
-							}
-						}
-					}
+			//						Varyings tmpdata;
+			//						tmpdata.positionWS = zn * (alpha * A.positionWS + beta * B.positionWS + gamma * C.positionWS);
+			//						if (!model->IsSkyBox())
+			//						{
+			//							tmpdata.positionCS = zn * (alpha * A.positionCS + beta * B.positionCS + gamma * C.positionCS);
+			//							tmpdata.normalWS = zn * (alpha * A.normalWS + beta * B.normalWS + gamma * C.normalWS);
+			//							tmpdata.tangentWS = zn * (alpha * A.tangentWS + beta * B.tangentWS + gamma * C.tangentWS);
+			//							tmpdata.binormalWS = zn * (alpha * A.binormalWS + beta * B.binormalWS + gamma * C.binormalWS);
+			//							tmpdata.uv = zn * (alpha * A.uv + beta * B.uv + gamma * C.uv);
+			//						}
+			//						
+			//						//运行片元着色器 
+			//						auto finalColor = currentShader->Frag(tmpdata);
+			//						DrawPoint(frameBuffer, x, y, finalColor);
+			//						SetZ(frameBuffer, x, y, depth);
+			//						//frameBuffer->SetZ(x, y, depth);
+			//					}
+			//				}
+			//			}
+			//		}
 
-					});
-			}
+			//		});
+			//}
 
-			for (int i = 0; i < blockNum; i++)
-			{
-				th[i].join();
-			}
+			//for (int i = 0; i < blockNum; i++)
+			//{
+			//	th[i].join();
+			//}
 		
 
 			//clock_t c2 = clock();
 			//printf("%lf\n", difftime(c2, c1));
 		}
 	}
+
+	//释放GPU内存中FrameBuffer数据
+	CudaFreeBufferData();
+	CudaFreeFrameBuffer();
 }
