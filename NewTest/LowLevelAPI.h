@@ -1,5 +1,6 @@
 #pragma once
 #include "Dense"
+#include "thrust/extrema.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -27,9 +28,9 @@ __host__ __device__ static Eigen::Vector4f ColorToVector4f(unsigned int color)
 }
 
 //将颜色分量截断在(0,255)
-__host__ __device__ static Eigen::Vector4f normalColor(Eigen::Vector4f color)
+__device__ static Eigen::Vector4f normalColor(Eigen::Vector4f color)
 {
-	return Eigen::Vector4f(std::min(255.f, std::max(0.f, color.x())), std::min(255.f, std::max(0.f, color.y())), std::min(255.f, std::max(0.f, color.z())), std::min(255.f, std::max(0.f, color.w())));
+	return Eigen::Vector4f(thrust::min(255.f, thrust::max(0.f, color.x())), thrust::min(255.f, thrust::max(0.f, color.y())), thrust::min(255.f, thrust::max(0.f, color.z())), thrust::min(255.f, thrust::max(0.f, color.w())));
 }
 
 //颜色相乘

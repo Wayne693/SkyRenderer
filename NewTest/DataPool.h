@@ -50,3 +50,5 @@ cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* of
 cudaError_t LoadBufferData(std::vector<uint32_t>* rawData, std::vector<int>* offset);
 void CudaFreeBufferData();
 
+//Ð´»ØÊý¾Ý
+cudaError_t LoadBufferDeviceToHost();

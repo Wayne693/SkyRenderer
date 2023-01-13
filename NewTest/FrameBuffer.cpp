@@ -3,8 +3,6 @@
 #include "DataPool.h"
 #include <iostream>
 
-#include "Test.h"
-
 const float initDepth = 1;
 
 FrameBuffer::FrameBuffer()

@@ -18,10 +18,13 @@
  * 显存中数据
  * GPU端使用
  */
- uint32_t* cudaTexData;
- int* cudaTexOffset;
- uint32_t* cudaBufData;
- int* cudaBufOffset;
+ __device__ uint32_t* cudaTexData;
+ __device__ int* cudaTexOffset;
+ __device__ uint32_t* cudaBufData;
+ __device__ int* cudaBufOffset;
+ //用于中转和释放device内存的变量
+ uint32_t* cudaBufDataHost = nullptr;
+ int* cudaBufOffsetHost = nullptr;
 
 //low-level API
 __host__ __device__  uint32_t GetData(uint32_t* rawData, int* offset, int id, int pos)
@@ -29,9 +32,9 @@ __host__ __device__  uint32_t GetData(uint32_t* rawData, int* offset, int id, in
 	return rawData[offset[id] + pos];
 }
 
-__host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int pos, uint32_t color)
+__host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int pos, uint32_t val)
 {
-	rawData[offset[id] + pos] = color;
+	rawData[offset[id] + pos] = val;
 }
 
  int AddData(std::vector<uint32_t>& dstRawData, std::vector<int>& offset, uint32_t* srcRawData, int size)
@@ -141,8 +144,7 @@ void SetBufferData(int id, int pos, uint32_t color)
 
 __device__ void CudaSetBufferData(int id, int pos, uint32_t color)
 {
-	return;
-	//SetData(cudaBufData, cudaBufOffset, id, pos, color);
+	SetData(cudaBufData, cudaBufOffset, id, pos, color);
 }
 
 void ClearBuffer(int id, int size, uint32_t color) 
@@ -160,8 +162,23 @@ cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* of
 {
 	cudaError_t cudaStatus;
 
-	cudaMalloc((void**)&cudaTexData, rawData->size() * sizeof(uint32_t));
-	cudaMalloc((void**)&cudaTexOffset, offset->size() * sizeof(int));
+	//用于中转的临时变量
+	uint32_t* cudaTexDataTmp = nullptr;
+	int* cudaTexOffsetTmp = nullptr;
+
+	//给临时变量在device端分配内存
+	cudaMalloc((void**)&cudaTexDataTmp, rawData->size() * sizeof(uint32_t));
+	cudaMalloc((void**)&cudaTexOffsetTmp, offset->size() * sizeof(int));
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+	
+	//给临时变量在device端拷贝数据
+	cudaMemcpy(cudaTexDataTmp, rawData->data(), rawData->size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaTexOffsetTmp, offset->data(), offset->size() * sizeof(int), cudaMemcpyHostToDevice);
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
 	{
@@ -169,15 +186,15 @@ cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* of
 		goto Error;
 	}
 
-	cudaMemcpy(cudaTexData, rawData->data(), rawData->size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
-	cudaMemcpy(cudaTexOffset, offset->data(), offset->size() * sizeof(int), cudaMemcpyHostToDevice);
+	//将临时变量所存地址赋值给device变量
+	cudaMemcpyToSymbol(cudaTexData, &cudaTexDataTmp, sizeof(uint32_t*));
+	cudaMemcpyToSymbol(cudaTexOffset, &cudaTexOffsetTmp, sizeof(int*));
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
 	{
 		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
 		goto Error;
 	}
-
 Error:
 	return cudaStatus;
 }
@@ -187,9 +204,9 @@ cudaError_t LoadBufferData(std::vector<uint32_t>* rawData, std::vector<int>* off
 {
 	cudaError_t cudaStatus;
 
-	cudaMalloc((void**)&cudaBufData, rawData->size() * sizeof(uint32_t));
-	cudaMalloc((void**)&cudaBufOffset, offset->size() * sizeof(int));
-
+	//给临时变量在device端分配内存
+	cudaMalloc((void**)&cudaBufDataHost, rawData->size() * sizeof(uint32_t));
+	cudaMalloc((void**)&cudaBufOffsetHost, offset->size() * sizeof(int));
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
 	{
@@ -197,9 +214,9 @@ cudaError_t LoadBufferData(std::vector<uint32_t>* rawData, std::vector<int>* off
 		goto Error;
 	}
 
-	cudaMemcpy(cudaBufData, rawData->data(), rawData->size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
-	cudaMemcpy(cudaBufOffset, offset->data(), offset->size() * sizeof(int), cudaMemcpyHostToDevice);
-
+	//给临时变量在device端拷贝数据
+	cudaMemcpy(cudaBufDataHost, rawData->data(), rawData->size() * sizeof(uint32_t), cudaMemcpyHostToDevice);
+	cudaMemcpy(cudaBufOffsetHost, offset->data(), offset->size() * sizeof(int), cudaMemcpyHostToDevice);
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
 	{
@@ -207,12 +224,34 @@ cudaError_t LoadBufferData(std::vector<uint32_t>* rawData, std::vector<int>* off
 		goto Error;
 	}
 
+	//将临时变量所存地址赋值给device变量
+	cudaMemcpyToSymbol(cudaBufData, &cudaBufDataHost, sizeof(uint32_t*));
+	cudaMemcpyToSymbol(cudaBufOffset, &cudaBufOffsetHost, sizeof(int*));
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("cudaFailed : %s", cudaGetErrorString(cudaStatus));
+		goto Error;
+	}
+
 Error:
 	return cudaStatus;
 }
 
+cudaError_t LoadBufferDeviceToHost()
+{
+	cudaMemcpy(bufferData.data(), cudaBufDataHost, bufferData.size() * sizeof(uint32_t), cudaMemcpyDeviceToHost);
+	cudaMemcpy(bufferOffset.data(), cudaBufOffsetHost, bufferOffset.size() * sizeof(int), cudaMemcpyDeviceToHost);
+	cudaError_t cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("LoadBufferDataDeviceToHostFailed : %s", cudaGetErrorString(cudaStatus));
+	}
+	return cudaStatus;
+}	
+
 void CudaFreeBufferData()
 {
-	cudaFree(cudaBufData);
-	cudaFree(cudaBufOffset);
+	cudaFree(cudaBufDataHost);
+	cudaFree(cudaBufOffsetHost);
 }

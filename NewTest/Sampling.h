@@ -9,8 +9,6 @@
 extern const int WIDTH;
 extern const int HEIGHT;
 
-#include "Test.h"
-
 //将uv坐标平移缩放
 __host__ __device__ static Eigen::Vector2f TransformTex(Eigen::Vector2f uv, Texture* texture)
 {

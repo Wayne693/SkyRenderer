@@ -2,8 +2,8 @@
 #include "Model.h"
 #include "Dense"
 #include "thrust/extrema.h"
-
-__device__ FrameBuffer* cudaBuffer = nullptr;
+//#include "device_atomic_functions.hpp"
+//FrameBuffer cudaBuffer;
 
 //三角重心插值，返回1-u-v,u,v
 __host__ __device__ Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P)
@@ -103,82 +103,125 @@ __global__ void SkyBoxVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck
 	fragDatas[idx] = o;
 }
 
-__global__ void CaculatePixel(Varyings* fragDatas, DataTruck* dataTruck, Varyings* vertA, Varyings* vertB, Varyings* vertC, int x0, int y0, int w, int h)
+__global__ void test()
 {
+	printf("test ");
+}
+
+__global__ void CaculatePixel(FrameBuffer* frameBuffer, Varyings* fragDatas, DataTruck* dataTruck, Varyings* vertA, Varyings* vertB, Varyings* vertC, int x0, int y0, int w, int h)
+{
+	//printf("test1 ");
 	const int x = x0 + blockIdx.x * blockDim.x + threadIdx.x;
 	const int y = y0 + blockIdx.y * blockDim.y + threadIdx.y;
 
-	auto a = ComputeScreenPos(cudaBuffer, vertA->positionCS);
-	auto b = ComputeScreenPos(cudaBuffer, vertB->positionCS);
-	auto c = ComputeScreenPos(cudaBuffer, vertC->positionCS);
+	auto a = ComputeScreenPos(frameBuffer, vertA->positionCS);
+	auto b = ComputeScreenPos(frameBuffer, vertB->positionCS);
+	auto c = ComputeScreenPos(frameBuffer, vertC->positionCS);
+	//printf("height = %d width = %d\n", frameBuffer->m_Height, frameBuffer->m_Width);
+	//printf("%lf %lf %lf %lf\n", a.x(), a.y(), a.z(), a.w());
+	//Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
+	//if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
+	//{
+	//	float depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
 
-	Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
-	if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
-	{
-		float depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
+	//	if (depth > GetZ(&dataTruck->shadowMap, x, y))
+	//	{
+	//		return;
+	//	}
 
-		if (depth > GetZ(&dataTruck->shadowMap, x, y))
-		{
-			return;
-		}
+	//	float alpha = u.x() / vertA->positionCS.w();
+	//	float beta = u.y() / vertB->positionCS.w();
+	//	float gamma = u.z() / vertC->positionCS.w();
+	//	float zn = 1 / (alpha + beta + gamma);
 
-		float alpha = u.x() / vertA->positionCS.w();
-		float beta = u.y() / vertB->positionCS.w();
-		float gamma = u.z() / vertC->positionCS.w();
-		float zn = 1 / (alpha + beta + gamma);
+	//	//插值
+	//	Varyings tmpdata;
+	//	tmpdata.positionWS = zn * (alpha * vertA->positionWS + beta * vertB->positionWS + gamma * vertC->positionWS);
+	//	tmpdata.positionCS = zn * (alpha * vertA->positionCS + beta * vertB->positionCS + gamma * vertC->positionCS);
+	//	tmpdata.normalWS = zn * (alpha * vertA->normalWS + beta * vertB->normalWS + gamma * vertC->normalWS);
+	//	tmpdata.tangentWS = zn * (alpha * vertA->tangentWS + beta * vertB->tangentWS + gamma * vertC->tangentWS);
+	//	tmpdata.binormalWS = zn * (alpha * vertA->binormalWS + beta * vertB->binormalWS + gamma * vertC->binormalWS);
+	//	tmpdata.uv = zn * (alpha * vertA->uv + beta * vertB->uv + gamma * vertC->uv);
 
-		//插值
-		Varyings tmpdata;
-		tmpdata.positionWS = zn * (alpha * vertA->positionWS + beta * vertB->positionWS + gamma * vertC->positionWS);
-		tmpdata.positionCS = zn * (alpha * vertA->positionCS + beta * vertB->positionCS + gamma * vertC->positionCS);
-		tmpdata.normalWS = zn * (alpha * vertA->normalWS + beta * vertB->normalWS + gamma * vertC->normalWS);
-		tmpdata.tangentWS = zn * (alpha * vertA->tangentWS + beta * vertB->tangentWS + gamma * vertC->tangentWS);
-		tmpdata.binormalWS = zn * (alpha * vertA->binormalWS + beta * vertB->binormalWS + gamma * vertC->binormalWS);
-		tmpdata.uv = zn * (alpha * vertA->uv + beta * vertB->uv + gamma * vertC->uv);
+	//	/*****************************************************LambertFrag*****************************************************/
 
-		/*****************************************************LambertFrag*****************************************************/
+	//	Varyings i = tmpdata;
 
-		Varyings i = tmpdata;
+	//	auto mainLight = dataTruck->mainLight;
+	//	Eigen::Vector3f lightDirWS = -1 * mainLight.direction;
+	//	lightDirWS.normalize();
 
-		auto mainLight = dataTruck->mainLight;
-		Eigen::Vector3f lightDirWS = -1 * mainLight.direction;
-		lightDirWS.normalize();
+	//	//计算TBN
+	//	Eigen::Matrix3f tbnMatrix;
+	//	tbnMatrix << i.tangentWS.x(), i.binormalWS.x(), i.normalWS.x(),
+	//		i.tangentWS.y(), i.binormalWS.y(), i.normalWS.y(),
+	//		i.tangentWS.z(), i.binormalWS.z(), i.normalWS.z();
+	//	//获得法线纹理中法线数据
+	//	Eigen::Vector3f bumpTS = UnpackNormal(&dataTruck->textures[1], i.uv);
+	//	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
 
-		//计算TBN
-		Eigen::Matrix3f tbnMatrix;
-		tbnMatrix << i.tangentWS.x(), i.binormalWS.x(), i.normalWS.x(),
-			i.tangentWS.y(), i.binormalWS.y(), i.normalWS.y(),
-			i.tangentWS.z(), i.binormalWS.z(), i.normalWS.z();
-		//获得法线纹理中法线数据
-		Eigen::Vector3f bumpTS = UnpackNormal(&dataTruck->textures[1], i.uv);
-		Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
+	//	//diffuse
+	//	float NdotL = bumpWS.dot(lightDirWS);
+	//	Eigen::Vector4f diffuse = mainLight.intensity * thrust::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D(&dataTruck->textures[0], i.uv));
 
-		//diffuse
-		float NdotL = bumpWS.dot(lightDirWS);
-		Eigen::Vector4f diffuse = mainLight.intensity * thrust::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D(&dataTruck->textures[0], i.uv));
+	//	float shadow = 0.f;
+	//	Eigen::Vector4f positionLSS = ComputeScreenPos(frameBuffer, dataTruck->lightMatrixVP * i.positionWS);
+	//	float bias = thrust::max(0.05 * (1 - bumpWS.dot(lightDirWS)), 0.01);
+	//	//PCF
+	//	for (int i = -1; i <= 1; i++)
+	//	{
+	//		for (int j = -1; j <= 1; j++)
+	//		{
+	//			shadow += (positionLSS.z() > GetZ(&dataTruck->shadowMap, positionLSS.x() + i, positionLSS.y() + j) + bias);
+	//		}
+	//	}
+	//	shadow = thrust::min(0.7f, shadow / 9);
 
-		float shadow = 0.f;
-		Eigen::Vector4f positionLSS = ComputeScreenPos(cudaBuffer, dataTruck->lightMatrixVP * i.positionWS);
-		float bias = thrust::max(0.05 * (1 - bumpWS.dot(lightDirWS)), 0.01);
-		//PCF
-		for (int i = -1; i <= 1; i++)
-		{
-			for (int j = -1; j <= 1; j++)
-			{
-				shadow += (positionLSS.z() > GetZ(&dataTruck->shadowMap, positionLSS.x() + i, positionLSS.y() + j) + bias);
-			}
-		}
-		shadow = thrust::min(0.7f, shadow / 9);
-
-		Eigen::Vector4f finalColor = (1 - shadow) * diffuse;
-
-		/*******************************************************写入数据************************************************************/
-		DrawPoint(cudaBuffer, x, y, finalColor);
-		SetZ(cudaBuffer, x, y, depth);
-	}
+	//	Eigen::Vector4f finalColor = (1 - shadow) * diffuse;
+	//	//printf("color = (%lf %lf %lf %lf)\n", finalColor.x(), finalColor.y(), finalColor.z(), finalColor.w());
+	//	/*******************************************************写入数据************************************************************/
+	//	DrawPoint(frameBuffer, x, y, finalColor);
+	//	SetZ(frameBuffer, x, y, depth);
+	//}
 }
 
-__global__ void CaculateTrangle(Varyings* fragDatas, DataTruck* dataTruck, int* trangleNum)
+__device__ Eigen::Vector4f LambertFrag(Varyings i, DataTruck* dataTruck, FrameBuffer* frameBuffer)
+{
+	auto mainLight = dataTruck->mainLight;
+	Eigen::Vector3f lightDirWS = -1 * mainLight.direction;
+	lightDirWS.normalize();
+	
+	//计算TBN
+	Eigen::Matrix3f tbnMatrix;
+	tbnMatrix << i.tangentWS.x(), i.binormalWS.x(), i.normalWS.x(),
+		i.tangentWS.y(), i.binormalWS.y(), i.normalWS.y(),
+		i.tangentWS.z(), i.binormalWS.z(), i.normalWS.z();
+	//获得法线纹理中法线数据
+	Eigen::Vector3f bumpTS = UnpackNormal(&dataTruck->textures[1], i.uv);
+	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
+
+	//diffuse
+	float NdotL = bumpWS.dot(lightDirWS);
+	Eigen::Vector4f diffuse = mainLight.intensity * thrust::max(NdotL, 0.f) * Vec4Mul(mainLight.color, Tex2D(&dataTruck->textures[0], i.uv));
+
+	float shadow = 0.f;
+	Eigen::Vector4f positionLSS = ComputeScreenPos(frameBuffer, dataTruck->lightMatrixVP * i.positionWS);
+	float bias = thrust::max(0.05 * (1 - bumpWS.dot(lightDirWS)), 0.01);
+	//PCF
+	for (int i = -1; i <= 1; i++)
+	{
+		for (int j = -1; j <= 1; j++)
+		{
+			shadow += (positionLSS.z() > GetZ(&dataTruck->shadowMap, positionLSS.x() + i, positionLSS.y() + j) + bias);
+		}
+	}
+	shadow = thrust::min(0.7f, shadow / 9);
+
+	Eigen::Vector4f finalColor = (1 - shadow) * diffuse;
+	return finalColor;
+}
+
+__global__ void CaculateTrangle(FrameBuffer frameBuffer, Varyings* fragDatas, DataTruck* dataTruck, int* trangleNum)
 {
 	int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
 
@@ -191,26 +234,85 @@ __global__ void CaculateTrangle(Varyings* fragDatas, DataTruck* dataTruck, int* 
 	auto vertB = fragDatas[idx * 3 + 1];
 	auto vertC = fragDatas[idx * 3 + 2];
 
-	auto a = ComputeScreenPos(cudaBuffer, vertA.positionCS);
-	auto b = ComputeScreenPos(cudaBuffer, vertB.positionCS);
-	auto c = ComputeScreenPos(cudaBuffer, vertC.positionCS);
+	auto a = ComputeScreenPos(&frameBuffer, vertA.positionCS);
+	auto b = ComputeScreenPos(&frameBuffer, vertB.positionCS);
+	auto c = ComputeScreenPos(&frameBuffer, vertC.positionCS);
+	/*printf("%d %d\n", frameBuffer.m_Height, frameBuffer.m_Width);*/
+	//printf("%lf %lf %lf %lf\n", a.x(), a.y(), a.z(), a.w());
 	// caculate AABB box
-	int minx = thrust::max(0, thrust::min((int)cudaBuffer->m_Height, (int)thrust::min(a.x(), thrust::min(b.x(), c.x()))));
-	int miny = thrust::max(0, thrust::min((int)cudaBuffer->m_Width, (int)thrust::min(a.y(), thrust::min(b.y(), c.y()))));
-	int maxx = thrust::min((int)cudaBuffer->m_Width, thrust::max(0, (int)thrust::max(a.x(), thrust::max(b.x(), c.x()))));
-	int maxy = thrust::min((int)cudaBuffer->m_Height, thrust::max(0, (int)thrust::max(a.y(), thrust::max(b.y(), c.y()))));
+	int minx = thrust::max(0, thrust::min((int)frameBuffer.m_Height, (int)thrust::min(a.x(), thrust::min(b.x(), c.x()))));
+	int miny = thrust::max(0, thrust::min((int)frameBuffer.m_Width, (int)thrust::min(a.y(), thrust::min(b.y(), c.y()))));
+	int maxx = thrust::min((int)frameBuffer.m_Width, thrust::max(0, (int)thrust::max(a.x(), thrust::max(b.x(), c.x()))));
+	int maxy = thrust::min((int)frameBuffer.m_Height, thrust::max(0, (int)thrust::max(a.y(), thrust::max(b.y(), c.y()))));
 	//AABB包围盒的宽高
-	int h = maxy - miny + 1;
+	/*int h = maxy - miny + 1;
 	int w = maxx - minx + 1;
 
 	const int threadNum = 32;
 
 	dim3 blockNum(w / threadNum + (w % threadNum != 0), h / threadNum + (h % threadNum));
-	dim3 blockSize(threadNum, threadNum);
+	dim3 blockSize(threadNum, threadNum);*/
+	//test << <1, 1 >> > ();
 
-	CaculatePixel <<<blockNum, blockSize >>> (fragDatas, dataTruck, &vertA, &vertB, &vertC, minx, miny, w, h);
+	//printf("minx = %d maxx = %d miny = %d maxy = %d h = %d w = %d\n", minx, maxx, miny, maxy, h, w);
+	//printf("idx = %d blockSize = (%d, %d) w = %d w/threadNum = %d\n", idx, w / threadNum + (w % threadNum != 0), h / threadNum + (h % threadNum), w, w / threadNum);
+	//CaculatePixel <<<blockNum, blockSize >>> (&frameBuffer, fragDatas, dataTruck, &vertA, &vertB, &vertC, minx, miny, w, h);
 	
-	
+	//cudaError_t cudaStatus = cudaGetLastError();
+	//if (cudaStatus != cudaSuccess)
+	//{
+	//	printf("cuda Failed! : %s\n", cudaGetErrorString(cudaStatus));
+	//}
+
+	for (int x = minx; x <= maxx; x++)
+	{
+		for (int y = miny; y <= maxy; y++)
+		{
+			//三角插值
+			Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
+			//像素在三角形内
+			if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
+			{
+				//插值出深度
+				float depth;
+				depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
+
+				/*int writeindepth = depth;
+				atomicMin(&writeindepth, (int)GetZ(&dataTruck->shadowMap, x, y));*/
+				
+				//Z-Test
+				if (depth > GetZ(&frameBuffer, x, y))
+				{
+					continue;
+				}
+				SetZ(&frameBuffer, x, y, depth);
+
+				float alpha = u.x() / vertA.positionCS.w();
+				float beta = u.y() / vertB.positionCS.w();
+				float gamma = u.z() / vertC.positionCS.w();
+				float zn = 1 / (alpha + beta + gamma);
+
+				//插值
+				Varyings tmpdata;
+				tmpdata.positionWS = zn * (alpha * vertA.positionWS + beta * vertB.positionWS + gamma * vertC.positionWS);
+				tmpdata.positionCS = zn * (alpha * vertA.positionCS + beta * vertB.positionCS + gamma * vertC.positionCS);
+				tmpdata.normalWS = zn * (alpha * vertA.normalWS + beta * vertB.normalWS + gamma * vertC.normalWS);
+				tmpdata.tangentWS = zn * (alpha * vertA.tangentWS + beta * vertB.tangentWS + gamma * vertC.tangentWS);
+				tmpdata.binormalWS = zn * (alpha * vertA.binormalWS + beta * vertB.binormalWS + gamma * vertC.binormalWS);
+				tmpdata.uv = zn * (alpha * vertA.uv + beta * vertB.uv + gamma * vertC.uv);
+
+				//运行片元着色器 
+				auto finalColor = LambertFrag(tmpdata, dataTruck, &frameBuffer);
+				//printf("color = %lf %lf %lf %lf\n", finalColor.x(), finalColor.y(), finalColor.z(), finalColor.w());
+				//if (depth == GetZ(&frameBuffer, x, y))
+				//{
+					DrawPoint(&frameBuffer, x, y, finalColor);
+				//}
+				
+				//printf("depth = %lf zBuffer = %lf\n", depth, GetZ(&frameBuffer, x, y));
+			}
+		}
+	}
 }
 
 cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID)
@@ -351,7 +453,7 @@ Error:
 	return cudaStatus;
 }
 
-cudaError_t FragKernel(std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID)
+cudaError_t FragKernel(FrameBuffer frameBuffer, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID)
 {
 	cudaError_t cudaStatus;
 
@@ -367,7 +469,7 @@ cudaError_t FragKernel(std::vector<Varyings>* fragDatas, DataTruck* dataTruck, i
 	
 	//fragData
 	cudaMalloc((void**)&cudaFragDatas, fragDatas->size() * sizeof(Varyings));
-	cudaMemcpy((void**)&cudaFragDatas, fragDatas->data(), fragDatas->size() * sizeof(Varyings), cudaMemcpyDeviceToHost);
+	cudaMemcpy(cudaFragDatas, fragDatas->data(), fragDatas->size() * sizeof(Varyings), cudaMemcpyHostToDevice);
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
 	{
@@ -414,7 +516,7 @@ cudaError_t FragKernel(std::vector<Varyings>* fragDatas, DataTruck* dataTruck, i
 		goto Error;
 	}
 
-	CaculateTrangle <<<blockNum, threadNum >>> (cudaFragDatas,cudaDataTruck,cudaTrangleNum);
+	CaculateTrangle <<<blockNum, threadNum >>> (frameBuffer, cudaFragDatas, cudaDataTruck, cudaTrangleNum);
 
 	cudaStatus = cudaDeviceSynchronize();
 	if (cudaStatus != cudaSuccess) {
@@ -433,25 +535,25 @@ Error:
 
 
 
-cudaError_t LoadFrameBuffer(FrameBuffer* frameBuffer)
-{
-	cudaError_t cudaStatus;
-
-	cudaMalloc((void**)&cudaBuffer, sizeof(FrameBuffer));
-	cudaMemcpy(cudaBuffer, frameBuffer, sizeof(FrameBuffer), cudaMemcpyHostToDevice);
-
-	cudaStatus = cudaGetLastError();
-	if (cudaStatus != cudaSuccess)
-	{
-		printf("cudaDisplay Failed : %s", cudaGetErrorString(cudaStatus));
-		goto Error;
-	}
-
-Error:
-	return cudaStatus;
-}
-
-void CudaFreeFrameBuffer()
-{
-	cudaFree(cudaBuffer);
-}
+//cudaError_t LoadFrameBuffer(FrameBuffer* frameBuffer)
+//{
+//	cudaError_t cudaStatus;
+//
+//	cudaMalloc((void**)&cudaBuffer, sizeof(FrameBuffer));
+//	cudaMemcpy(cudaBuffer, frameBuffer, sizeof(FrameBuffer), cudaMemcpyHostToDevice);
+//
+//	cudaStatus = cudaGetLastError();
+//	if (cudaStatus != cudaSuccess)
+//	{
+//		printf("cudaDisplay Failed : %s", cudaGetErrorString(cudaStatus));
+//		goto Error;
+//	}
+//
+//Error:
+//	return cudaStatus;
+//}
+//
+//void CudaFreeFrameBuffer()
+//{
+//	cudaFree(cudaBuffer);
+//}

@@ -1089,9 +1089,6 @@
     <ClInclude Include="DataPool.h">
       <Filter>源文件\Data\DataPool</Filter>
     </ClInclude>
-    <ClInclude Include="Test.h">
-      <Filter>源文件\SourceCode\Draw</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imGui\imgui.cpp">
@@ -1151,9 +1148,6 @@
     <ClCompile Include="SkyRenderer.cpp">
       <Filter>源文件\SourceCode</Filter>
     </ClCompile>
-    <ClCompile Include="DataPool.cu">
-      <Filter>源文件\Data\DataPool</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NewTest.rc">
@@ -1187,8 +1181,8 @@
     <CudaCompile Include="Draw.cu">
       <Filter>源文件\SourceCode\Draw</Filter>
     </CudaCompile>
-    <CudaCompile Include="Test.cu">
-      <Filter>源文件\SourceCode\Draw</Filter>
+    <CudaCompile Include="DataPool.cu">
+      <Filter>源文件\Data\DataPool</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

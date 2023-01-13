@@ -11,12 +11,12 @@ __host__ __device__ Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector
 //加载数据与调用核函数与释放内存
 cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID);
 
-cudaError_t FragKernel(std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID);
+cudaError_t FragKernel(FrameBuffer frameBuffer, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID);
 
-//加载FrameBuffer数据(每帧加载)
-cudaError_t LoadFrameBuffer(FrameBuffer* frameBuffer);
-
-//释放FrameBuffer数据(每帧释放)
-void CudaFreeFrameBuffer();
+////加载FrameBuffer数据(每帧加载)
+//cudaError_t LoadFrameBuffer(FrameBuffer* frameBuffer);
+//
+////释放FrameBuffer数据(每帧释放)
+//void CudaFreeFrameBuffer();
 
  

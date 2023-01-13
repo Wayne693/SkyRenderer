@@ -235,10 +235,10 @@ int main()
 
 		Eigen::Vector3f lightMatrixVP;
 		//渲染阴影
-		if (GlobalSettings::GetInstance()->settings.drawShadow)
+		/*if (GlobalSettings::GetInstance()->settings.drawShadow)
 		{
 			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
-		}
+		}*/
 		
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
@@ -256,7 +256,6 @@ int main()
 		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 		drawList->AddImage(imguiId, ImVec2(0, 0), ImVec2(WIDTH, HEIGHT));
 
-		//auto testcol = displayBuffer->GetRaw(640, 360);
 		
 		// Rendering
 		ImGui::Render();

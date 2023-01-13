@@ -1,12 +1,14 @@
 #pragma once
 #include "FrameBuffer.h"
 #include "LowLevelAPI.h"
+
 #include "DataPool.h"
 
 //在FrameBuffer的(x,y)位置画一个颜色为color的点,左下角坐标为(0,0)
 __device__ void DrawPoint(FrameBuffer* frameBuffer, float x, float y, Eigen::Vector4f color);
 
 __device__ void SetZ(FrameBuffer* frameBuffer, int x, int y, float depth);
+
 
 ////从FrameBuffer的(x0,y0)到(x1,y1)画一条颜色为color的线,左下角坐标为(0,0)
 //static inline void DrawLine(FrameBuffer* frameBuffer, float x0, float y0, float x1, float y1, Eigen::Vector4f color = white)

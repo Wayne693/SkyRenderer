@@ -311,7 +311,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 
 	//加载FrameBuffer数据到GPU内存
 	LoadBufferData(BufferData(), BufferOffset());
-	LoadFrameBuffer(frameBuffer);
+	//LoadFrameBuffer(frameBuffer);
 
 	auto models = mainScene->GetModels();
 	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)
@@ -363,11 +363,14 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			//齐次坐标裁剪
 			HomoClip();
 
+			clock_t c1 = clock();
+			FragKernel(*frameBuffer, &ClipFragDatas, &dataTruck, currentShaderID);
+			clock_t c2 = clock();
+			printf("%lf\n", difftime(c2, c1));
 
-			FragKernel(&ClipFragDatas, &dataTruck, currentShaderID);
 			//int cnt = 0;
 			//const int blockNum = 4;
-			////clock_t c1 = clock();
+			
 			//for (int i = 0; i < blockNum; i++)
 			//{
 			//	int sizeM3 = ClipFragDatas.size() / 3;
@@ -457,12 +460,12 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			//}
 		
 
-			//clock_t c2 = clock();
-			//printf("%lf\n", difftime(c2, c1));
+			
 		}
 	}
-
+	//写回数据
+	LoadBufferDeviceToHost();
 	//释放GPU内存中FrameBuffer数据
 	CudaFreeBufferData();
-	CudaFreeFrameBuffer();
+	//CudaFreeFrameBuffer();
 }
