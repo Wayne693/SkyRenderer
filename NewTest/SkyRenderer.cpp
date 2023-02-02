@@ -234,15 +234,18 @@ int main()
 		ShadowMapShader smshader;
 
 		Eigen::Vector3f lightMatrixVP;
+
+		//clock_t begin = clock();
 		//渲染阴影
-		/*if (GlobalSettings::GetInstance()->settings.drawShadow)
+		if (GlobalSettings::GetInstance()->settings.drawShadow)
 		{
 			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
-		}*/
+		}
 		
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
-		
+		//clock_t end = clock();
+		//printf("diff time = %lf\n", difftime(end, begin));
 
 		ImTextureID imguiId = (ImTextureID)renderTexture;
 		if (GlobalSettings::GetInstance()->settings.debug)

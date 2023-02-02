@@ -14,7 +14,7 @@ public:
 	FrameBuffer();
 	FrameBuffer(int width,int height);
 	FrameBuffer(int width, int height, unsigned int color);
-	~FrameBuffer();
+	//~FrameBuffer();
 
 	unsigned int* GetRawBuffer();
 	float* GetZbuffer();

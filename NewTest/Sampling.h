@@ -79,7 +79,6 @@ __device__ static float GetZ(FrameBuffer* buffer, int x, int y)
 	if (x >= 0 && x < width && y >= 0 && y < height && pos >= 0 && pos < height * width)
 	{
 		uint32_t depth = CudaGetBufferData(buffer->m_ZBufferID, pos);
-		//将uint32_t按字节转为float
 		float rt = *(float*)&depth;
 		return rt;
 	}

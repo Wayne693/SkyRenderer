@@ -45,10 +45,10 @@ FrameBuffer::FrameBuffer(int width, int height, unsigned int color) :m_Width(wid
 	}
 }
 
-FrameBuffer::~FrameBuffer()
-{
-
-}
+//FrameBuffer::~FrameBuffer()
+//{
+//
+//}
 
 unsigned int* FrameBuffer::GetRawBuffer()
 {

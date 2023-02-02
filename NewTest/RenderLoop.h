@@ -59,11 +59,6 @@ std::vector<Varyings> FragDatas;		//经顶点着色后的顶点数据
 std::queue<Varyings> ClipQueue;			//裁剪后的顶点数据
 std::vector<Varyings> ClipFragDatas;
 
-std::mutex fbmutex;
-std::thread th[4];
-
-
-
 
 static int IsInsidePlane(ClipPlane plane, Eigen::Vector4f vertex)
 {
@@ -248,7 +243,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 	
 
 	int currentShaderID = -1;
-	Shader* currentShader = nullptr;//todo 暂时Frag着色使用
 
 	dataTruck.shadowMap = *shadowMap;
 
@@ -327,7 +321,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			FragDatas.clear();
 			ClipFragDatas.clear();
 			currentShaderID = -1;
-			currentShader = nullptr;//todo
 			auto mesh = (*meshes)[meshIdx];
 			dataTruck.textures = mesh->GetTextures()->data();
 			dataTruck.texNum = mesh->GetTextures()->size();
@@ -340,33 +333,31 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			if (renderConfig == RENDER_SHADOW)
 			{
 				currentShaderID = mesh->GetShadowShaderID();
-				currentShader = mesh->m_ShadowShader;//todo
 			}
 			else if (renderConfig == RENDER_BY_PASS)
 			{
 				currentShaderID = mesh->GetCommonShaderID();
-				currentShader = mesh->m_CommonShader;//todo
 			}
 			if (currentShaderID == -1)
 			{
 				return;
 			}
 
-			currentShader->dataTruck = &dataTruck;//todo
-			
 			//顶点着色
 			VertCal(mesh, model->GetModelMatrix(), currentShaderID);
 			
 			//背面剔除
 			CullBack(mesh, model->IsSkyBox());
-
+			//clock_t c1 = clock();
 			//齐次坐标裁剪
 			HomoClip();
-
-			clock_t c1 = clock();
+			//clock_t c2 = clock();
+			//printf("%lf\n", difftime(c2, c1));
+			//clock_t c1 = clock();
+			//光栅化&像素着色
 			FragKernel(*frameBuffer, &ClipFragDatas, &dataTruck, currentShaderID);
-			clock_t c2 = clock();
-			printf("%lf\n", difftime(c2, c1));
+			//clock_t c2 = clock();
+			//printf("%lf\n", difftime(c2, c1));
 
 			//int cnt = 0;
 			//const int blockNum = 4;
@@ -467,5 +458,4 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 	LoadBufferDeviceToHost();
 	//释放GPU内存中FrameBuffer数据
 	CudaFreeBufferData();
-	//CudaFreeFrameBuffer();
 }
