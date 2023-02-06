@@ -4,6 +4,7 @@
 #include <iostream>
 #include "mikktspace.h"
 #include "DataPool.h"
+#include "Sampling.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 //#include "stb_image.h"
@@ -405,9 +406,9 @@ Texture::Texture(int width, int height)
 	//assert(!m_RawBuffer);
 }
 
-Texture::~Texture()
+Texture::Texture()
 {
-	
+
 }
 
 void Texture::SetTilling(Eigen::Vector2f tilling)
@@ -450,7 +451,6 @@ Eigen::Vector4f Texture::GetData(int x, int y)
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
 	{
 		uint32_t n = GetRawData(m_ID, pos);
-		//printf("id = %d pos = %d \n", m_ID, pos);
 		uint8_t mask = 255;
 		Eigen::Vector4f data(n & mask, (n >> 8) & mask, (n >> 16) & mask, (n >> 24) & mask);
 		data /= 255.f;
@@ -498,92 +498,88 @@ Eigen::Vector2f Texture::GetOffset()
 //Cube Map
 CubeMap::CubeMap(std::vector<std::string> fileNames)
 {
-	for (int i = 0; i < fileNames.size(); i++)
+	if (fileNames.size() != 6)
 	{
-		m_Textures.push_back(Texture(fileNames[i]));
+		printf("Create CubeMap Failed : SizeError");
+		return;
 	}
+	px = Texture(fileNames[0]);
+	nx = Texture(fileNames[1]);
+	py = Texture(fileNames[2]);
+	ny = Texture(fileNames[3]);
+	pz = Texture(fileNames[4]);
+	nz = Texture(fileNames[5]);
 }
 
 CubeMap::CubeMap(int width, int height)
 {
-	for (int i = 0; i < 6; i++)
-	{
-		m_Textures.push_back(Texture(width, height));
-	}
+	px = Texture(width, height);
+	nx = Texture(width, height);
+	py = Texture(width, height);
+	ny = Texture(width, height);
+	pz = Texture(width, height);
+	nz = Texture(width, height);
 }
 
 CubeMap::CubeMap()
 {
 }
 
-CubeMap::~CubeMap()
-{
 
-}
 
-//todo understand
-int selectCubeMapFace(Eigen::Vector3f direction, Eigen::Vector2f* texcoord) {
-	float abs_x = (float)fabs(direction.x());
-	float abs_y = (float)fabs(direction.y());
-	float abs_z = (float)fabs(direction.z());
-	float ma, sc, tc;
-	int face_index;
-
-	if (abs_x > abs_y && abs_x > abs_z) {   /* major axis -> x */
-		ma = abs_x;
-		if (direction.x() > 0) {                  /* positive x */
-			face_index = 0;
-			sc = -direction.z();
-			tc = -direction.y();
-		}
-		else {                                /* negative x */
-			face_index = 1;
-			sc = +direction.z();
-			tc = -direction.y();
-		}
-	}
-	else if (abs_y > abs_z) {             /* major axis -> y */
-		ma = abs_y;
-		if (direction.y() > 0) {                  /* positive y */
-			face_index = 2;
-			sc = +direction.x();
-			tc = +direction.z();
-		}
-		else {                                /* negative y */
-			face_index = 3;
-			sc = +direction.x();
-			tc = -direction.z();
-		}
-	}
-	else {                                /* major axis -> z */
-		ma = abs_z;
-		if (direction.z() > 0) {                  /* positive z */
-			face_index = 4;
-			sc = +direction.x();
-			tc = -direction.y();
-		}
-		else {                                /* negative z */
-			face_index = 5;
-			sc = -direction.x();
-			tc = -direction.y();
-		}
-	}
-
-	texcoord->x() = (sc / ma + 1) / 2;
-	texcoord->y() = 1 - (tc / ma + 1) / 2;
-	return face_index;
-}
 
 void CubeMap::SetData(Eigen::Vector3f direction, Eigen::Vector4f col)
 {
 	Eigen::Vector2f uv;
 	int idx = selectCubeMapFace(direction, &uv);
-	m_Textures[idx].SetData(uv, col);
+	Texture* tmp = &px;
+	switch (idx)
+	{
+	case 0:
+		break;
+	case 1:
+		tmp = &nx;
+		break;
+	case 2:
+		tmp = &py;
+		break;
+	case 3:
+		tmp = &ny;
+		break;
+	case 4:
+		tmp = &pz;
+		break;
+	case 5:
+		tmp = &nz;
+		break;
+	}
+	tmp->SetData(uv, col);
 }
 
 Eigen::Vector4f CubeMap::GetData(Eigen::Vector3f direction)
 {
 	Eigen::Vector2f uv;
 	int idx = selectCubeMapFace(direction, &uv);
-	return m_Textures[idx].GetData(uv);
+	Texture* tmp = &px;
+	switch (idx)
+	{
+	case 0:
+		break;
+	case 1:
+		tmp = &nx;
+		break;
+	case 2:
+		tmp = &py;
+		break;
+	case 3:
+		tmp = &ny;
+		break;
+	case 4:
+		tmp = &pz;
+		break;
+	case 5:
+		tmp = &nz;
+		break;
+	}
+	return tmp->GetData(uv);
 }

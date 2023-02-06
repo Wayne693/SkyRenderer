@@ -19,6 +19,7 @@
 #include "GlobalSettings.h"
 #include "Pretreatment.h"
 #include "DataPool.h"
+//#include "cuda.cuh"
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -111,7 +112,7 @@ void InitSceneHelmet(Scene* mainScene)
 
 	PBRShader* pbrShader = new PBRShader;
 	helmetMesh->SetCommonShader(PBR_SHADER);
-	helmetMesh->m_CommonShader = pbrShader;//todo
+	//helmetMesh->m_CommonShader = pbrShader;//todo
 	//ShadowMapShader* shadowMapShader = new ShadowMapShader;
 	helmetMesh->SetShadowShader(NONE);
 	helmet->SetTranslation(Eigen::Vector3f(0, 0, 3.56));
@@ -125,9 +126,10 @@ void InitSceneHelmet(Scene* mainScene)
 	skyBox->SetTranslation(Eigen::Vector3f(0, 0, 0));
 	skyBox->SetIsSkyBox(true);
 	skyBox->AddMesh(skyBoxMesh);
-	SkyBoxShader* skyBoxShader = new SkyBoxShader;
+	//SkyBoxShader* skyBoxShader = new SkyBoxShader;
 	skyBoxMesh->SetCommonShader(SKYBOX_SHADER);
-	skyBoxMesh->m_CommonShader = skyBoxShader;
+	skyBoxMesh->SetShadowShader(NONE);
+	//skyBoxMesh->m_CommonShader = skyBoxShader;
 	std::vector<std::string> cubemapFiles
 	{
 		"OBJs\\DOOMright.png",
@@ -143,7 +145,7 @@ void InitSceneHelmet(Scene* mainScene)
 	dataTruck.iblMap.PrefilterMaps = GeneratePrefilterMap(cubeMap, 2);
 	dataTruck.iblMap.level = 2;
 	fileName = "OBJs\\LUT.png";
-	dataTruck.iblMap.LUT = new Texture(fileName);
+	dataTruck.iblMap.LUT = Texture(fileName);
 	//skyBoxMesh->SetCubeMap(irrdance);
 	skyBoxMesh->SetCubeMap(cubeMap);
 	mainScene->AddModel(skyBox);
@@ -195,8 +197,8 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	mainScene = new Scene;
-	InitSceneDiablo(mainScene);
-	//InitSceneHelmet(mainScene);
+	//InitSceneDiablo(mainScene);
+	InitSceneHelmet(mainScene);
 
 	
 	//最终渲染到屏幕上的FrameBuffer
@@ -208,6 +210,7 @@ int main()
 	auto datap = RawData();
 	auto offsetp = Offset();
 	LoadTextureData(datap, offsetp);
+	LoadPrefilterMaps(dataTruck.iblMap.PrefilterMaps);
 	// Main loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -228,10 +231,6 @@ int main()
 		{
 			GlobalSettingWindowLoop();
 		}
-
-		LambertShader lshader;
-		NormalMapShader nmshader;
-		ShadowMapShader smshader;
 
 		Eigen::Vector3f lightMatrixVP;
 

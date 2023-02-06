@@ -9,6 +9,60 @@
 extern const int WIDTH;
 extern const int HEIGHT;
 
+//todo understand
+__host__ __device__
+inline int selectCubeMapFace(Eigen::Vector3f direction, Eigen::Vector2f* texcoord) {
+	float abs_x = (float)fabs(direction.x());
+	float abs_y = (float)fabs(direction.y());
+	float abs_z = (float)fabs(direction.z());
+	float ma, sc, tc;
+	int face_index;
+
+	if (abs_x > abs_y && abs_x > abs_z) {   /* major axis -> x */
+		ma = abs_x;
+		if (direction.x() > 0) {                  /* positive x */
+			face_index = 0;
+			sc = -direction.z();
+			tc = -direction.y();
+		}
+		else {                                /* negative x */
+			face_index = 1;
+			sc = +direction.z();
+			tc = -direction.y();
+		}
+	}
+	else if (abs_y > abs_z) {             /* major axis -> y */
+		ma = abs_y;
+		if (direction.y() > 0) {                  /* positive y */
+			face_index = 2;
+			sc = +direction.x();
+			tc = +direction.z();
+		}
+		else {                                /* negative y */
+			face_index = 3;
+			sc = +direction.x();
+			tc = -direction.z();
+		}
+	}
+	else {                                /* major axis -> z */
+		ma = abs_z;
+		if (direction.z() > 0) {                  /* positive z */
+			face_index = 4;
+			sc = +direction.x();
+			tc = -direction.y();
+		}
+		else {                                /* negative z */
+			face_index = 5;
+			sc = -direction.x();
+			tc = -direction.y();
+		}
+	}
+
+	texcoord->x() = (sc / ma + 1) / 2;
+	texcoord->y() = 1 - (tc / ma + 1) / 2;
+	return face_index;
+}
+
 //将uv坐标平移缩放
 __host__ __device__ static Eigen::Vector2f TransformTex(Eigen::Vector2f uv, Texture* texture)
 {
@@ -20,7 +74,6 @@ __host__ __device__ static Eigen::Vector2f TransformTex(Eigen::Vector2f uv, Text
 //根据uv坐标采样纹理
 __device__ static Eigen::Vector4f Tex2D(Texture* texture, Eigen::Vector2f uv)
 {
-	//std::cout << "texture data address = " << textureRawData.data() << std::endl;
 	auto width = texture->m_Width;
 	auto height = texture->m_Height;
 
@@ -55,7 +108,6 @@ __device__ static Eigen::Vector4f Tex2D(Texture* texture, Eigen::Vector2f uv)
 		return data;
 	}
 	return Eigen::Vector4f(0, 0, 0, 0);
-	//return texture->GetData(uv);
 }
 
 __device__ static Eigen::Vector3f UnpackNormal(Texture* normalTexture, Eigen::Vector2f uv)
@@ -83,4 +135,34 @@ __device__ static float GetZ(FrameBuffer* buffer, int x, int y)
 		return rt;
 	}
 	return 1;
+}
+
+//采样CubeMap
+__device__ 
+inline Eigen::Vector4f CubeMapGetData(CubeMap* cubeMap, Eigen::Vector3f dir)
+{
+	Eigen::Vector2f uv;
+	int idx = selectCubeMapFace(dir, &uv);
+	Texture* tmp = &cubeMap->px;
+	switch (idx)
+	{
+	case 0:
+		break;
+	case 1:
+		tmp = &cubeMap->nx;
+		break;
+	case 2:
+		tmp = &cubeMap->py;
+		break;
+	case 3:
+		tmp = &cubeMap->ny;
+		break;
+	case 4:
+		tmp = &cubeMap->pz;
+		break;
+	case 5:
+		tmp = &cubeMap->nz;
+		break;
+	}
+	return Tex2D(tmp, uv);
 }

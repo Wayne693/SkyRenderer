@@ -314,7 +314,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 		model->UpdateModelMatrix();
 		auto meshes = model->GetMeshes();
 		dataTruck.matrixM = model->GetModelMatrix();
-
+		
 		//遍历每个模型的所有mesh
 		for (int meshIdx = 0; meshIdx < meshes->size(); meshIdx++)
 		{
@@ -338,9 +338,9 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			{
 				currentShaderID = mesh->GetCommonShaderID();
 			}
-			if (currentShaderID == -1)
+			if (currentShaderID == NONE)
 			{
-				return;
+				goto EXIT;
 			}
 
 			//顶点着色
@@ -358,104 +358,11 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			FragKernel(*frameBuffer, &ClipFragDatas, &dataTruck, currentShaderID);
 			//clock_t c2 = clock();
 			//printf("%lf\n", difftime(c2, c1));
-
-			//int cnt = 0;
-			//const int blockNum = 4;
-			
-			//for (int i = 0; i < blockNum; i++)
-			//{
-			//	int sizeM3 = ClipFragDatas.size() / 3;
-			//	int blockSize = sizeM3 / blockNum + (sizeM3 % blockNum != 0);
-			//	blockSize *= 3;
-			//	th[i] = std::thread([=] {
-			//		int begin = i * blockSize;
-			//		int end = std::min((int)ClipFragDatas.size(), (i + 1) * blockSize);
-
-			//		for (int vidx = begin; vidx < end; vidx += 3)
-			//		{
-			//			Varyings A, B, C;
-
-			//			A = ClipFragDatas[vidx];
-			//			B = ClipFragDatas[vidx + 1];
-			//			C = ClipFragDatas[vidx + 2];
-
-			//			auto a = ComputeScreenPos(A.positionCS);
-			//			auto b = ComputeScreenPos(B.positionCS);
-			//			auto c = ComputeScreenPos(C.positionCS);
-			//			int minx = std::max(0, std::min(WIDTH, (int)std::min(a.x(), std::min(b.x(), c.x()))));
-			//			int miny = std::max(0, std::min(HEIGHT, (int)std::min(a.y(), std::min(b.y(), c.y()))));
-			//			int maxx = std::min(WIDTH, std::max(0, (int)std::max(a.x(), std::max(b.x(), c.x()))));
-			//			int maxy = std::min(HEIGHT, std::max(0, (int)std::max(a.y(), std::max(b.y(), c.y()))));
-
-			//			for (int x = minx; x <= maxx; x++)
-			//			{
-			//				for (int y = miny; y <= maxy; y++)
-			//				{
-
-			//					//三角插值
-			//					Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
-			//					//像素在三角形内
-			//					if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
-			//					{
-			//						//插值出深度
-			//						float depth;
-			//						if (!model->IsSkyBox())/////////////////////////////////////todo
-			//						{
-			//							depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
-			//						}
-			//						else
-			//						{
-			//							depth = 1.0f;
-			//						}
-
-			//						float bdepth = frameBuffer->GetZ(x, y);
-			//						//深度测试
-			//						if (depth > bdepth)
-			//						{
-			//							continue;
-			//						}
-
-
-			//						float alpha = u.x() / A.positionCS.w();
-			//						float beta = u.y() / B.positionCS.w();
-			//						float gamma = u.z() / C.positionCS.w();
-			//						float zn = 1 / (alpha + beta + gamma);
-
-			//						Varyings tmpdata;
-			//						tmpdata.positionWS = zn * (alpha * A.positionWS + beta * B.positionWS + gamma * C.positionWS);
-			//						if (!model->IsSkyBox())
-			//						{
-			//							tmpdata.positionCS = zn * (alpha * A.positionCS + beta * B.positionCS + gamma * C.positionCS);
-			//							tmpdata.normalWS = zn * (alpha * A.normalWS + beta * B.normalWS + gamma * C.normalWS);
-			//							tmpdata.tangentWS = zn * (alpha * A.tangentWS + beta * B.tangentWS + gamma * C.tangentWS);
-			//							tmpdata.binormalWS = zn * (alpha * A.binormalWS + beta * B.binormalWS + gamma * C.binormalWS);
-			//							tmpdata.uv = zn * (alpha * A.uv + beta * B.uv + gamma * C.uv);
-			//						}
-			//						
-			//						//运行片元着色器 
-			//						auto finalColor = currentShader->Frag(tmpdata);
-			//						DrawPoint(frameBuffer, x, y, finalColor);
-			//						SetZ(frameBuffer, x, y, depth);
-			//						//frameBuffer->SetZ(x, y, depth);
-			//					}
-			//				}
-			//			}
-			//		}
-
-			//		});
-			//}
-
-			//for (int i = 0; i < blockNum; i++)
-			//{
-			//	th[i].join();
-			//}
-		
-
-			
 		}
 	}
 	//写回数据
 	LoadBufferDeviceToHost();
+EXIT:
 	//释放GPU内存中FrameBuffer数据
 	CudaFreeBufferData();
 }

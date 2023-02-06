@@ -81,15 +81,41 @@ static inline Eigen::Vector3f ImportanceSampleGGX(Eigen::Vector2f Xi, Eigen::Vec
 	return sampleVec.normalized();
 }
 
+Texture* CubeMapLU(CubeMap* cubeMap, int idx)
+{
+	Texture* tmp = &cubeMap->px;
+	switch (idx)
+	{
+	case 0:
+		break;
+	case 1:
+		tmp = &cubeMap->nx;
+		break;
+	case 2:
+		tmp = &cubeMap->py;
+		break;
+	case 3: 
+		tmp = &cubeMap->ny;
+		break;
+	case 4:
+		tmp = &cubeMap->pz;
+		break;
+	case 5:
+		tmp = &cubeMap->nz;
+		break;
+	}
+	return tmp;
+}
+
 /*
 * 根据CubeMap计算辐射度纹理
 */
-static inline CubeMap* GenerateIrradianceMap(CubeMap* cubeMap)
+static inline CubeMap GenerateIrradianceMap(CubeMap* cubeMap)
 {
 	//创建辐射度CubeMap
 	const int irSize = 64;
 	const float PI = acos(-1);
-	CubeMap* irradianceMap = new CubeMap(irSize, irSize);
+	CubeMap irradianceMap = CubeMap(irSize, irSize);
 	int ids0 = 0, ids1 = 0, ids2 = 0, ids3 = 0, ids4 = 0, ids5 = 0;
 	//遍历CubeMap的每个纹理
 	for (int facei = 0; facei < 6; facei++)
@@ -124,7 +150,7 @@ static inline CubeMap* GenerateIrradianceMap(CubeMap* cubeMap)
 				}
 				irradiance = PI * irradiance * (1.f / numSamples);
 				Eigen::Vector4f irr(irradiance.x(), irradiance.y(), irradiance.z(), 1);
-				irradianceMap->m_Textures[facei].SetData(Eigen::Vector2f(1.f * x / irSize, 1.f * y / irSize), irr);
+				CubeMapLU(&irradianceMap, facei)->SetData(Eigen::Vector2f(1.f * x / irSize, 1.f * y / irSize), irr);
 			}
 		}
 	}
@@ -132,10 +158,10 @@ static inline CubeMap* GenerateIrradianceMap(CubeMap* cubeMap)
 }
 
 //计算预滤波环境贴图
-static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int levels)
+static inline std::vector<CubeMap>* GeneratePrefilterMap(CubeMap* cubeMap, int levels)
 {
 	const int maxLevels = 4;
-	std::vector<CubeMap*>* prefilterMaps = new std::vector<CubeMap*>();
+	std::vector<CubeMap>* prefilterMaps = new std::vector<CubeMap>();
 	int maxSize = 128;
 	ThreadPool threadPool(4);
 	levels = std::max(maxLevels, levels);
@@ -187,12 +213,12 @@ static inline std::vector<CubeMap*>* GeneratePrefilterMap(CubeMap* cubeMap, int 
 						}
 						prefilterColor /= totalWeight;
 						Eigen::Vector4f pcolor(prefilterColor.x(), prefilterColor.y(), prefilterColor.z(), 1);
-						preMap->m_Textures[facei].SetData(Eigen::Vector2f(1.f * x / size, 1.f * y / size), pcolor);
+						CubeMapLU(preMap, facei)->SetData(Eigen::Vector2f(1.f * x / size, 1.f * y / size), pcolor);
 					}
 				}
 				});
 		}
-		prefilterMaps->push_back(preMap);
+		prefilterMaps->push_back(*preMap);
 	}
 	return prefilterMaps;
 }

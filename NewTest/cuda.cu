@@ -2,8 +2,12 @@
 #include "Model.h"
 #include "Dense"
 #include "thrust/extrema.h"
+#include "PBR.cuh"
 //#include "device_atomic_functions.hpp"
 //FrameBuffer cudaBuffer;
+
+__device__ CubeMap* cudaPrefilterMaps = nullptr;
+CubeMap* hostPrefilterMaps = nullptr;
 
 __device__ Eigen::Vector4f LambertFrag(Varyings i, DataTruck* dataTruck, FrameBuffer* frameBuffer);
 
@@ -105,16 +109,6 @@ __global__ void SkyBoxVert(Attributes* vertDatas, Varyings* fragDatas, DataTruck
 	fragDatas[idx] = o;
 }
 
-//__global__ void test()
-//{
-//	printf("test ");
-//}
-
-//__device__ void testt(int x, int y)
-//{
-//	x = x + y;
-//}
-
 __device__ Eigen::Vector4f LambertFrag(Varyings i, DataTruck* dataTruck, FrameBuffer* frameBuffer)
 {
 	auto mainLight = dataTruck->mainLight;
@@ -160,23 +154,88 @@ __device__ Eigen::Vector4f ShadowMapFrag(Varyings i, DataTruck* dataTruck, Frame
 	return finalColor;
 }
 
+__device__ Eigen::Vector4f PBRFrag(Varyings i, DataTruck* dataTruck, FrameBuffer* frameBuffer)
+{
+	//获取 texture
+	Texture* albedoTex = &dataTruck->textures[0];
+	Texture* normalTex = &dataTruck->textures[1];
+	Texture* roughnessTex = &dataTruck->textures[2];
+	Texture* metallicTex = &dataTruck->textures[3];
+	Texture* occlusionTex = &dataTruck->textures[4];
+	Texture* emissionTex = &dataTruck->textures[5];
+	//采样
+	Eigen::Vector3f albedo = Tex2D(albedoTex, i.uv).head(3);
+	float roughness = Tex2D(roughnessTex, i.uv).x();
+	float metallic = Tex2D(metallicTex, i.uv).x();
+	float ao = Tex2D(occlusionTex, i.uv).x();
+	Eigen::Vector3f emission = Tex2D(emissionTex, i.uv).head(3);
+
+	//计算TBN
+	Eigen::Matrix3f tbnMatrix;
+	tbnMatrix << i.tangentWS.x(), i.binormalWS.x(), i.normalWS.x(),
+		i.tangentWS.y(), i.binormalWS.y(), i.normalWS.y(),
+		i.tangentWS.z(), i.binormalWS.z(), i.normalWS.z();
+	//获得法线纹理中法线数据
+	Eigen::Vector3f bumpTS = UnpackNormal(normalTex, i.uv);
+	Eigen::Vector3f bumpWS = (tbnMatrix * bumpTS).normalized();
+
+	Eigen::Vector3f worldPos = i.positionWS.head(3);
+	Eigen::Vector3f viewDir = (dataTruck->camera.m_Position - worldPos).normalized();
+
+	//计算Fresnel项
+	Eigen::Vector3f F0(0.04f, 0.04f, 0.04f);
+	F0 = F0 + (albedo - F0) * metallic;
+	Eigen::Vector3f F = FresnelSchlickRoughness(bumpWS, viewDir, F0, roughness);
+	Eigen::Vector3f Kd = Eigen::Vector3f(1.f, 1.f, 1.f) - F;
+
+	Eigen::Vector3f irradiance = CubeMapGetData(&dataTruck->iblMap.irradianceMap,bumpWS).head(3);
+	//diffuse
+	Eigen::Vector3f diffuse = Vec3Mul(Vec3Mul(Kd, irradiance), albedo);
+
+	//specular
+	Eigen::Vector3f r = (2.f * viewDir.dot(bumpWS) * bumpWS - viewDir).normalized();
+	float nDotv = bumpWS.dot(viewDir);
+	Eigen::Vector2f lutuv(nDotv, roughness);
+	Eigen::Vector3f lut = Tex2D(&dataTruck->iblMap.LUT, lutuv).head(3);
+	Eigen::Vector3f specular = F0 * lut.x() + Eigen::Vector3f(lut.y(), lut.y(), lut.y());
+	int level = roughness * dataTruck->iblMap.level;
+	Eigen::Vector3f prefilter = CubeMapGetData(&cudaPrefilterMaps[level], r).head(3);
+	specular = Vec3Mul(specular, prefilter);
+
+	Eigen::Vector3f fincol = (diffuse + specular) * ao + emission;
+
+	Eigen::Vector4f finalColor(fincol.x(), fincol.y(), fincol.z(), 1);
+	return finalColor;
+}
+
+__device__ Eigen::Vector4f SkyBoxFrag(Varyings i, DataTruck* dataTruck, FrameBuffer* frameBuffer)
+{
+	CubeMap cubeMap = dataTruck->cubeMap;
+	//采样CubeMap
+	Eigen::Vector4f finalColor = CubeMapGetData(&cubeMap, i.positionWS.head(3).normalized());
+	return finalColor;
+}
+
 __global__ void CaculatePixel(FrameBuffer frameBuffer, Varyings* fragDatas, DataTruck* dataTruck, int shaderID,  Varyings* vertA, Varyings* vertB, Varyings* vertC, int x0, int y0, int w, int h)
 {
 	const int x = x0 + blockIdx.x * blockDim.x + threadIdx.x;
 	const int y = y0 + blockIdx.y * blockDim.y + threadIdx.y;
-	//printf("vertAadd = %p vertBadd = %p vertCadd = %p vertA(%lf, %lf, %lf) vertB(%lf, %lf, %lf) vertC(%lf, %lf, %lf)\n", &vertA, &vertB, &vertC, vertA->positionCS.x(), vertA->positionCS.y(), vertA->positionCS.z(), vertB->positionCS.x(), vertB->positionCS.y(), vertB->positionCS.z(), vertC->positionCS.x(), vertC->positionCS.y(), vertC->positionCS.z());
 
 	auto a = ComputeScreenPos(&frameBuffer, vertA->positionCS);
 	auto b = ComputeScreenPos(&frameBuffer, vertB->positionCS);
 	auto c = ComputeScreenPos(&frameBuffer, vertC->positionCS);
 
-	//printf("a(%lf, %lf, %lf) b(%lf, %lf, %lf)  c(%lf, %lf, %lf)\n", a.x(), a.y(), a.z(), b.x(), b.y(), b.z(), c.x(), c.y(), c.z());
 
 	Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
 
 	if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
 	{
 		float depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
+
+		if (shaderID == SKYBOX_SHADER)
+		{
+			depth = 1.f;
+		}
 
 		if (depth > GetZ(&frameBuffer, x, y))
 		{
@@ -209,6 +268,12 @@ __global__ void CaculatePixel(FrameBuffer frameBuffer, Varyings* fragDatas, Data
 		case SHADOWMAP_SHADER:
 			finalColor = ShadowMapFrag(tmpdata, dataTruck, &frameBuffer);
 			break;
+		case PBR_SHADER:
+			finalColor = PBRFrag(tmpdata, dataTruck, &frameBuffer);
+			break;
+		case SKYBOX_SHADER:
+			finalColor = SkyBoxFrag(tmpdata, dataTruck, &frameBuffer);
+			break;
 		};
 
 		DrawPoint(&frameBuffer, x, y, finalColor);
@@ -228,8 +293,6 @@ __global__ void CaculateTrangle(FrameBuffer frameBuffer, Varyings* fragDatas, Da
 	auto vertA = fragDatas[idx * 3];
 	auto vertB = fragDatas[idx * 3 + 1];
 	auto vertC = fragDatas[idx * 3 + 2];
-
-
 
 	auto a = ComputeScreenPos(&frameBuffer, vertA.positionCS);
 	auto b = ComputeScreenPos(&frameBuffer, vertB.positionCS);
@@ -255,59 +318,6 @@ __global__ void CaculateTrangle(FrameBuffer frameBuffer, Varyings* fragDatas, Da
 	{
 		printf("CaculatePixel Failed! : %s\n", cudaGetErrorString(cudaStatus));
 	}
-
-
-	//for (int x = minx; x <= maxx; x++)
-	//{
-	//	for (int y = miny; y <= maxy; y++)
-	//	{
-	//		//三角插值
-	//		Eigen::Vector3f u = barycentric(Eigen::Vector2f(a.x(), a.y()), Eigen::Vector2f(b.x(), b.y()), Eigen::Vector2f(c.x(), c.y()), Eigen::Vector2f(x, y));
-	//		//像素在三角形内
-	//		if (u.x() >= 0 && u.y() >= 0 && u.z() >= 0)
-	//		{
-	//			//ii++;
-	//			//插值出深度
-	//			float depth;
-	//			depth = u.x() * a.z() + u.y() * b.z() + u.z() * c.z();
-
-	//			/*int writeindepth = depth;
-	//			atomicMin(&writeindepth, (int)GetZ(&dataTruck->shadowMap, x, y));*/
-	//			
-	//			//Z-Test
-	//			if (depth > GetZ(&frameBuffer, x, y))
-	//			{
-	//				continue;
-	//			}
-	//			SetZ(&frameBuffer, x, y, depth);
-
-	//			float alpha = u.x() / vertA.positionCS.w();
-	//			float beta = u.y() / vertB.positionCS.w();
-	//			float gamma = u.z() / vertC.positionCS.w();
-	//			float zn = 1 / (alpha + beta + gamma);
-
-	//			//插值
-	//			Varyings tmpdata;
-	//			tmpdata.positionWS = zn * (alpha * vertA.positionWS + beta * vertB.positionWS + gamma * vertC.positionWS);
-	//			tmpdata.positionCS = zn * (alpha * vertA.positionCS + beta * vertB.positionCS + gamma * vertC.positionCS);
-	//			tmpdata.normalWS = zn * (alpha * vertA.normalWS + beta * vertB.normalWS + gamma * vertC.normalWS);
-	//			tmpdata.tangentWS = zn * (alpha * vertA.tangentWS + beta * vertB.tangentWS + gamma * vertC.tangentWS);
-	//			tmpdata.binormalWS = zn * (alpha * vertA.binormalWS + beta * vertB.binormalWS + gamma * vertC.binormalWS);
-	//			tmpdata.uv = zn * (alpha * vertA.uv + beta * vertB.uv + gamma * vertC.uv);
-
-	//			//运行片元着色器 
-	//			auto finalColor = LambertFrag(tmpdata, dataTruck, &frameBuffer);
-	//			//printf("color = %lf %lf %lf %lf\n", finalColor.x(), finalColor.y(), finalColor.z(), finalColor.w());
-	//			//if (depth == GetZ(&frameBuffer, x, y))
-	//			//{
-	//				DrawPoint(&frameBuffer, x, y, finalColor);
-	//			//}
-	//			
-	//			//printf("depth = %lf zBuffer = %lf\n", depth, GetZ(&frameBuffer, x, y));
-	//		}
-	//	}
-	//}
-
 }
 
 /*
@@ -321,7 +331,6 @@ cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>
 	Attributes* cudaVertDatas = nullptr;
 	Varyings* cudaFragDatas = nullptr;
 	DataTruck* cudaDataTruck = nullptr;
-	//int* cudaVertNum = nullptr;
 	Texture* cudatmptextures = nullptr;
 
 	const int threadNum = 192;
@@ -392,17 +401,6 @@ cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>
 			fprintf(stderr, "cudaMemcpy failed! cudaDataTruck");
 			goto Error;
 		}
-
-		////vertNum
-		//cudaStatus = cudaMalloc((void**)&cudaVertNum, sizeof(int));
-		//cudaStatus = cudaMemcpy(cudaVertNum, &vertNum, sizeof(int), cudaMemcpyHostToDevice);
-
-		//cudaStatus = cudaGetLastError();
-		//if (cudaStatus != cudaSuccess)
-		//{
-		//	printf("cudaFailed vertNum : %s", cudaGetErrorString(cudaStatus));
-		//	goto Error;
-		//}
 	}
 
 	//运行Kernel函数
@@ -448,7 +446,6 @@ Error:
 	cudaFree(cudaFragDatas);
 	cudaFree(cudaDataTruck);
 	cudaFree(cudatmptextures);
-	//cudaFree(cudaVertNum);
 	return cudaStatus;
 }
 /*
@@ -467,7 +464,6 @@ cudaError_t FragKernel(FrameBuffer frameBuffer, std::vector<Varyings>* fragDatas
 	const int threadNum = 192;
 	const int kernelLimit = 192 * 7;
 	int trangleNum = fragDatas->size() / 3;
-	//int blockNum = trangleNum / threadNum + (trangleNum % threadNum != 0);
 	int blockNum = kernelLimit / threadNum;
 	int tnum = 0;
 
@@ -532,28 +528,22 @@ Error:
 	return cudaStatus;
 }
 
+cudaError_t LoadPrefilterMaps(std::vector<CubeMap>* prefilterMaps)
+{
+	if (prefilterMaps == nullptr)////
+		return cudaSuccess;
 
+	cudaError_t cudaStatus;
 
+	cudaMalloc((void**)&hostPrefilterMaps, prefilterMaps->size() * sizeof(CubeMap));
+	cudaMemcpy(hostPrefilterMaps, prefilterMaps->data(), prefilterMaps->size() * sizeof(CubeMap), cudaMemcpyHostToDevice);
+	cudaMemcpyToSymbol(cudaPrefilterMaps, &hostPrefilterMaps, sizeof(CubeMap*));
 
-//cudaError_t LoadFrameBuffer(FrameBuffer* frameBuffer)
-//{
-//	cudaError_t cudaStatus;
-//
-//	cudaMalloc((void**)&cudaBuffer, sizeof(FrameBuffer));
-//	cudaMemcpy(cudaBuffer, frameBuffer, sizeof(FrameBuffer), cudaMemcpyHostToDevice);
-//
-//	cudaStatus = cudaGetLastError();
-//	if (cudaStatus != cudaSuccess)
-//	{
-//		printf("cudaDisplay Failed : %s", cudaGetErrorString(cudaStatus));
-//		goto Error;
-//	}
-//
-//Error:
-//	return cudaStatus;
-//}
-//
-//void CudaFreeFrameBuffer()
-//{
-//	cudaFree(cudaBuffer);
-//}
+	cudaStatus = cudaGetLastError();
+	if (cudaStatus != cudaSuccess)
+	{
+		printf("LoadPrefilterMapsDeviceToHostFailed : %s", cudaGetErrorString(cudaStatus));
+	}
+	return cudaStatus;
+}
+

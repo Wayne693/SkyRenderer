@@ -1,5 +1,4 @@
 #include "Draw.h"
-
 #include "DataPool.h"
 
 
@@ -9,14 +8,11 @@ __device__ void DrawPoint(FrameBuffer* frameBuffer, float x, float y, Eigen::Vec
 	auto height = frameBuffer->m_Height;
 	color *= 255;
 
-
 	int pos = (height - y - 1) * width + x;
 	if (x >= 0 && x < width && y >= 0 && y < height && pos >= 0 && pos < height * width)
 	{
-	/*	CudaSet();*/
 		CudaSetBufferData(frameBuffer->m_ColorBufferID, pos, Vector4fToColor(normalColor(color)));
 	}
-	//frameBuffer->SetColor(x, y, Vector4fToColor(normalColor(color)));
 }
 
 __device__ void SetZ(FrameBuffer* frameBuffer, int x, int y, float depth)

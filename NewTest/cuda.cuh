@@ -13,10 +13,8 @@ cudaError_t VertKernel(std::vector<Attributes>* vertDatas, std::vector<Varyings>
 
 cudaError_t FragKernel(FrameBuffer frameBuffer, std::vector<Varyings>* fragDatas, DataTruck* dataTruck, int shaderID);
 
-////加载FrameBuffer数据(每帧加载)
-//cudaError_t LoadFrameBuffer(FrameBuffer* frameBuffer);
-//
-////释放FrameBuffer数据(每帧释放)
-//void CudaFreeFrameBuffer();
+//加载预滤波环境贴图
+cudaError_t LoadPrefilterMaps(std::vector<CubeMap>* prefilterMaps);
+
 
  

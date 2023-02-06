@@ -465,6 +465,7 @@
     <ClInclude Include="GLFW\include\GLFW\glfw3native.h" />
     <ClInclude Include="GlobalSettings.h" />
     <ClInclude Include="GlobalSettingWindowLoop.h" />
+    <ClInclude Include="PBR.cuh" />
     <ClInclude Include="imGui\imconfig.h" />
     <ClInclude Include="imGui\imgui.h" />
     <ClInclude Include="imGui\imgui_impl_glfw.h" />
@@ -523,6 +524,7 @@
     </CudaCompile>
     <CudaCompile Include="Draw.cu" />
     <CudaCompile Include="DataPool.cu" />
+    <CudaCompile Include="PBR.cu" />
     <None Include="cuda.cuh" />
     <None Include="Eigen\Dense" />
     <None Include="GLFW\lib-vc2022\glfw3.dll" />

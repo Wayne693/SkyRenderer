@@ -50,7 +50,8 @@ public:
 
 	Texture(std::string fileName);
 	Texture(int width,int height);
-	~Texture();
+	Texture();
+
 	void SetTilling(Eigen::Vector2f);
 	void SetOffset(Eigen::Vector2f);
 	void SetData(Eigen::Vector2f uv, Eigen::Vector4f color);
@@ -68,12 +69,11 @@ class CubeMap
 {
 public:
 	//px nx py ny pz nz
-	std::vector<Texture> m_Textures;
+	Texture px, nx, py, ny, pz, nz;
 
 	CubeMap(std::vector<std::string> fileNames);
 	CubeMap(int width, int height);
 	CubeMap();
-	~CubeMap();
 	void SetData(Eigen::Vector3f vector, Eigen::Vector4f col);
 	Eigen::Vector4f GetData(Eigen::Vector3f vector);
 };

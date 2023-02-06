@@ -21,12 +21,12 @@ extern const int HEIGHT;
 struct iblMap
 {
 	//漫反射辐照度贴图，由GenerateIrradianceMap预处理获得
-	CubeMap* irradianceMap;
+	CubeMap irradianceMap;
 	//预滤波环境贴图
 	int level;
-	std::vector<CubeMap*>* PrefilterMaps;
+	std::vector<CubeMap>* PrefilterMaps;
 	//LUT
-	Texture* LUT;
+	Texture LUT;
 };
 
 struct DataTruck
@@ -47,6 +47,7 @@ struct DataTruck
 	int HEIGHT;
 	iblMap iblMap;
 	
+
 	/*
 	* 每个model更新
 	*/
