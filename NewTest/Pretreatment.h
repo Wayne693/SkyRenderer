@@ -162,7 +162,7 @@ static inline std::vector<CubeMap>* GeneratePrefilterMap(CubeMap* cubeMap, int l
 {
 	const int maxLevels = 4;
 	std::vector<CubeMap>* prefilterMaps = new std::vector<CubeMap>();
-	int maxSize = 128;
+	int maxSize = 256;
 	ThreadPool threadPool(4);
 	levels = std::max(maxLevels, levels);
 

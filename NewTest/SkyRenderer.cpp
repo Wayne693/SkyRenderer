@@ -19,15 +19,14 @@
 #include "GlobalSettings.h"
 #include "Pretreatment.h"
 #include "DataPool.h"
-//#include "cuda.cuh"
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
 #endif
 #include <GLFW/glfw3.h>
 
-const int WIDTH = 1280;
-const int HEIGHT = 720;
+const int WIDTH = 1920;
+const int HEIGHT = 1080;
 Scene* mainScene;
 
 static void glfw_error_callback(int error, const char* description)
@@ -48,13 +47,12 @@ void InitSceneDiablo(Scene* mainScene)
 	ShadowMapShader* shadowShader = new ShadowMapShader;
 	diabloMesh->SetCommonShader(LAMBERT_SHADER);
 	diabloMesh->SetShadowShader(SHADOWMAP_SHADER);
-	diabloMesh->m_CommonShader = lambertShader;//todo
-	diabloMesh->m_ShadowShader = shadowShader;//todo
 	Texture* diabloDiffuse = new Texture("OBJs\\diablo3_pose_diffuse.tga");
 	Texture* diabloNormal = new Texture("OBJs\\diablo3_pose_nm_tangent.tga");
 	diabloMesh->AddTexture(diabloDiffuse);
 	diabloMesh->AddTexture(diabloNormal);
 	mainScene->AddModel(diabloModel);
+
 	fileName = "OBJs\\floor.obj";
 	Mesh* floorMesh = new Mesh(fileName);
 	Model* floor = new Model();
@@ -64,8 +62,6 @@ void InitSceneDiablo(Scene* mainScene)
 	floor->AddMesh(floorMesh);
 	floorMesh->SetCommonShader(LAMBERT_SHADER);
 	floorMesh->SetShadowShader(SHADOWMAP_SHADER);
-	floorMesh->m_CommonShader = lambertShader;//todo
-	floorMesh->m_ShadowShader = shadowShader;//todo
 	Texture* floorDiffuse = new Texture("OBJs\\floor_diffuse.tga");
 	Texture* floorNormal = new Texture("OBJs\\floor_nm_tangent.tga");
 	floorMesh->AddTexture(floorDiffuse);
@@ -112,8 +108,6 @@ void InitSceneHelmet(Scene* mainScene)
 
 	PBRShader* pbrShader = new PBRShader;
 	helmetMesh->SetCommonShader(PBR_SHADER);
-	//helmetMesh->m_CommonShader = pbrShader;//todo
-	//ShadowMapShader* shadowMapShader = new ShadowMapShader;
 	helmetMesh->SetShadowShader(NONE);
 	helmet->SetTranslation(Eigen::Vector3f(0, 0, 3.56));
 	helmet->SetRotation(Eigen::Vector3f(220, 97.5, -87.5));
@@ -126,10 +120,8 @@ void InitSceneHelmet(Scene* mainScene)
 	skyBox->SetTranslation(Eigen::Vector3f(0, 0, 0));
 	skyBox->SetIsSkyBox(true);
 	skyBox->AddMesh(skyBoxMesh);
-	//SkyBoxShader* skyBoxShader = new SkyBoxShader;
 	skyBoxMesh->SetCommonShader(SKYBOX_SHADER);
 	skyBoxMesh->SetShadowShader(NONE);
-	//skyBoxMesh->m_CommonShader = skyBoxShader;
 	std::vector<std::string> cubemapFiles
 	{
 		"OBJs\\DOOMright.png",
@@ -146,7 +138,6 @@ void InitSceneHelmet(Scene* mainScene)
 	dataTruck.iblMap.level = 2;
 	fileName = "OBJs\\LUT.png";
 	dataTruck.iblMap.LUT = Texture(fileName);
-	//skyBoxMesh->SetCubeMap(irrdance);
 	skyBoxMesh->SetCubeMap(cubeMap);
 	mainScene->AddModel(skyBox);
 
@@ -197,8 +188,8 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	mainScene = new Scene;
-	//InitSceneDiablo(mainScene);
-	InitSceneHelmet(mainScene);
+	InitSceneDiablo(mainScene);
+	//InitSceneHelmet(mainScene);
 
 	
 	//最终渲染到屏幕上的FrameBuffer
@@ -234,17 +225,24 @@ int main()
 
 		Eigen::Vector3f lightMatrixVP;
 
-		//clock_t begin = clock();
+		clock_t beginRender = clock();
+		clock_t beginShadowRender = clock();
+		
 		//渲染阴影
 		if (GlobalSettings::GetInstance()->settings.drawShadow)
 		{
 			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
 		}
-		
+		clock_t endShadowRender = clock();
+		printf("Render Shadow Time = %lf\n", difftime(endShadowRender, beginShadowRender));
+		clock_t beginCommonRender = clock();
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
-		//clock_t end = clock();
-		//printf("diff time = %lf\n", difftime(end, begin));
+		clock_t endCommonRender = clock();
+		printf("Render Common Time = %lf\n", difftime(endCommonRender, beginCommonRender));
+		
+		clock_t endRender = clock();
+		printf("Render Total Time = %lf\n", difftime(endRender, beginRender));
 
 		ImTextureID imguiId = (ImTextureID)renderTexture;
 		if (GlobalSettings::GetInstance()->settings.debug)

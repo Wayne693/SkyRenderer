@@ -305,7 +305,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 
 	//加载FrameBuffer数据到GPU内存
 	LoadBufferData(BufferData(), BufferOffset());
-	//LoadFrameBuffer(frameBuffer);
 
 	auto models = mainScene->GetModels();
 	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)

@@ -71,13 +71,11 @@ static inline void StatusWindowLoop(Scene* mainScene)
 						Eigen::Vector2f tmp = currentTex.GetTilling();
 						float tilling[2] = { tmp.x(),tmp.y() };
 						ImGui::DragFloat2("tilling", tilling, 0.01);
-						//ImGui::PopID();
 						tmp = Eigen::Map<Eigen::Vector2f>(tilling);
 						currentTex.SetTilling(tmp);
 
 						tmp = currentTex.GetOffset();
 						float offset[2] = { tmp.x(),tmp.y() };
-						//ImGui::PushID(idxt);
 						ImGui::DragFloat2("offset", offset, 0.01);
 						tmp = Eigen::Map<Eigen::Vector2f>(offset);
 						currentTex.SetOffset(tmp);

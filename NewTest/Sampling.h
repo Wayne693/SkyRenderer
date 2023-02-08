@@ -137,6 +137,27 @@ __device__ static float GetZ(FrameBuffer* buffer, int x, int y)
 	return 1;
 }
 
+__device__ static bool ZTestAutomic(FrameBuffer* buffer, float depth, int x, int y)
+{
+	auto height = buffer->m_Height;
+	auto width = buffer->m_Width;
+
+	int pos = (height - y - 1) * width + x;
+	if (x >= 0 && x < width && y >= 0 && y < height && pos >= 0 && pos < height * width)
+	{
+		//float rtdepth = 
+
+		////printf("rtdepth = %lf input_depth = %lf\n", rtdepth, depth);
+
+		//if (rtdepth == depth)
+		//{
+		//	return true;
+		//}
+		return depth == MinZAutomic(buffer->m_ZBufferID, pos, depth);
+	}
+	return false;
+}
+
 //²ÉÑùCubeMap
 __device__ 
 inline Eigen::Vector4f CubeMapGetData(CubeMap* cubeMap, Eigen::Vector3f dir)

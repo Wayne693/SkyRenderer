@@ -29,6 +29,8 @@ __device__ void CudaSetRawData(int id, int pos, uint32_t color);
 //处理FrameBuffer数据函数
  std::vector<uint32_t>* BufferData();
 
+ __device__ float MinZAutomic(int id, int pos, float depth);
+
  std::vector<int>* BufferOffset();
 
  int AddBufferData(uint32_t* rawData, int size);//

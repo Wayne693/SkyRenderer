@@ -9,6 +9,9 @@
 __device__ CubeMap* cudaPrefilterMaps = nullptr;
 CubeMap* hostPrefilterMaps = nullptr;
 
+__device__ int* mutex;
+
+
 __device__ Eigen::Vector4f LambertFrag(Varyings i, DataTruck* dataTruck, FrameBuffer* frameBuffer);
 
 //三角重心插值，返回1-u-v,u,v
@@ -237,11 +240,17 @@ __global__ void CaculatePixel(FrameBuffer frameBuffer, Varyings* fragDatas, Data
 			depth = 1.f;
 		}
 
-		if (depth > GetZ(&frameBuffer, x, y))
+	/*	if (depth > GetZ(&frameBuffer, x, y))
 		{
 			return;
 		}
-		SetZ(&frameBuffer, x, y, depth);
+		SetZ(&frameBuffer, x, y, depth);*/
+
+		if (!ZTestAutomic(&frameBuffer, depth, x, y))
+		{
+			return;
+		}
+
 		float alpha = u.x() / vertA->positionCS.w();
 		float beta = u.y() / vertB->positionCS.w();
 		float gamma = u.z() / vertC->positionCS.w();
@@ -276,8 +285,19 @@ __global__ void CaculatePixel(FrameBuffer frameBuffer, Varyings* fragDatas, Data
 			break;
 		};
 
-		DrawPoint(&frameBuffer, x, y, finalColor);
-		
+		if (depth == GetZ(&frameBuffer, x, y))
+		{
+			DrawPoint(&frameBuffer, x, y, finalColor);
+		}
+		/*if (ZTestAutomic(&frameBuffer, depth, x, y))
+		{
+			DrawPoint(&frameBuffer, x, y, finalColor);
+		}*/
+
+		/*else
+		{
+			DrawPoint(&frameBuffer, x, y, Eigen::Vector4f(1, 0, 0, 1));
+		}*/
 	}
 }
 

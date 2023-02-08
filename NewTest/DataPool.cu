@@ -59,6 +59,21 @@ __host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int po
 	std::fill_n(dstData, size, val);
 }
 
+ __device__ float fatomicMin(uint32_t* addr, float value)
+ {
+	 uint32_t old = *addr, assumed;
+	 //printf("*up* addr = %lf value = %lf\n", __int_as_float(*addr), value);
+	 //if (old <= value) return old;
+	 do
+	 {
+		 assumed = old;
+		 old = atomicCAS(addr, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
+		 //printf("%")
+	 } while (old != assumed);
+	 //printf("*down* addr = %lf old = %lf\n", __int_as_float(*addr), __int_as_float(old));
+	 return __int_as_float(*addr);
+ }
+
 //high-level API
 //处理纹理数据函数
  int AddTextureData(uint32_t* rawData, int size)
@@ -130,6 +145,11 @@ uint32_t GetBufferData(int id, int pos)
 __device__ uint32_t CudaGetBufferData(int id, int pos)
 {
 	return GetData(cudaBufData, cudaBufOffset, id, pos);
+}
+
+__device__ float MinZAutomic(int id, int pos, float depth)
+{
+	return fatomicMin(cudaBufData + cudaBufOffset[id] + pos, depth);
 }
 
 uint32_t* GetBuffer(int id)
