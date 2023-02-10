@@ -151,7 +151,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="Draw.h" />
     <ClInclude Include="Eigen\src\Cholesky\LDLT.h" />
     <ClInclude Include="Eigen\src\Cholesky\LLT.h" />
     <ClInclude Include="Eigen\src\Cholesky\LLT_LAPACKE.h" />
@@ -499,13 +498,8 @@
     <ClCompile Include="imGui\imgui_impl_opengl2.cpp" />
     <ClCompile Include="imGui\imgui_tables.cpp" />
     <ClCompile Include="imGui\imgui_widgets.cpp" />
-    <ClCompile Include="LambertShader.cpp" />
     <ClCompile Include="mikktspace.c" />
     <ClCompile Include="Model.cpp" />
-    <ClCompile Include="NormalMapShader.cpp" />
-    <ClCompile Include="PBRShader.cpp" />
-    <ClCompile Include="ShadowMapShader.cpp" />
-    <ClCompile Include="SkyBoxShader.cpp" />
     <ClCompile Include="SkyRenderer.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Scene.cpp" />
@@ -522,9 +516,9 @@
     <CudaCompile Include="cuda.cu">
       <FileType>Document</FileType>
     </CudaCompile>
-    <CudaCompile Include="Draw.cu" />
     <CudaCompile Include="DataPool.cu" />
     <CudaCompile Include="PBR.cu" />
+    <CudaCompile Include="Sampling.cu" />
     <None Include="cuda.cuh" />
     <None Include="Eigen\Dense" />
     <None Include="GLFW\lib-vc2022\glfw3.dll" />

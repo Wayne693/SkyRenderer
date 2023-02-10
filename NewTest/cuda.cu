@@ -3,13 +3,12 @@
 #include "Dense"
 #include "thrust/extrema.h"
 #include "PBR.cuh"
-//#include "device_atomic_functions.hpp"
-//FrameBuffer cudaBuffer;
+#include "Sampling.h"
+#include "LowLevelAPI.h"
+//#include "Draw.h"
 
 __device__ CubeMap* cudaPrefilterMaps = nullptr;
 CubeMap* hostPrefilterMaps = nullptr;
-
-__device__ int* mutex;
 
 
 __device__ Eigen::Vector4f LambertFrag(Varyings i, DataTruck* dataTruck, FrameBuffer* frameBuffer);
@@ -240,12 +239,6 @@ __global__ void CaculatePixel(FrameBuffer frameBuffer, Varyings* fragDatas, Data
 			depth = 1.f;
 		}
 
-	/*	if (depth > GetZ(&frameBuffer, x, y))
-		{
-			return;
-		}
-		SetZ(&frameBuffer, x, y, depth);*/
-
 		if (!ZTestAutomic(&frameBuffer, depth, x, y))
 		{
 			return;
@@ -289,15 +282,6 @@ __global__ void CaculatePixel(FrameBuffer frameBuffer, Varyings* fragDatas, Data
 		{
 			DrawPoint(&frameBuffer, x, y, finalColor);
 		}
-		/*if (ZTestAutomic(&frameBuffer, depth, x, y))
-		{
-			DrawPoint(&frameBuffer, x, y, finalColor);
-		}*/
-
-		/*else
-		{
-			DrawPoint(&frameBuffer, x, y, Eigen::Vector4f(1, 0, 0, 1));
-		}*/
 	}
 }
 
@@ -482,7 +466,7 @@ cudaError_t FragKernel(FrameBuffer frameBuffer, std::vector<Varyings>* fragDatas
 	auto tmpDataTruck = *dataTruck;
 	
 	const int threadNum = 192;
-	const int kernelLimit = 192 * 7;
+	const int kernelLimit = 1920;
 	int trangleNum = fragDatas->size() / 3;
 	int blockNum = kernelLimit / threadNum;
 	int tnum = 0;

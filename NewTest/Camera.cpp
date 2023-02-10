@@ -130,7 +130,7 @@ Eigen::Matrix4f Camera::GetOrthoVPMatrix()
 	return m_OrthoMtx * m_ViewMtx;
 }
 
-//每帧更新
+//计算视锥体8个顶点的世界坐标
 void Camera::CalculateVisualCone()
 {
 	m_VisualCone.clear();

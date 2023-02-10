@@ -2,7 +2,6 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
-#include "Draw.h"
 #include "Model.h"
 #include "Camera.h"
 #include "Scene.h"
@@ -13,6 +12,7 @@
 #include <math.h>
 #include <iostream>
 #include <thread>
+#include "LowLevelAPI.h"
 #include "StatusWindowLoop.h"
 #include "RenderLoop.h"
 #include "GlobalSettingWindowLoop.h"
@@ -25,8 +25,8 @@
 #endif
 #include <GLFW/glfw3.h>
 
-const int WIDTH = 1920;
-const int HEIGHT = 1080;
+const int WIDTH = 1280;
+const int HEIGHT = 720;
 Scene* mainScene;
 
 static void glfw_error_callback(int error, const char* description)
@@ -43,8 +43,6 @@ void InitSceneDiablo(Scene* mainScene)
 	Model* diabloModel = new Model();
 	diabloModel->SetRotation(Eigen::Vector3f(0, 160, 1));
 	diabloModel->AddMesh(diabloMesh);
-	LambertShader* lambertShader = new LambertShader;
-	ShadowMapShader* shadowShader = new ShadowMapShader;
 	diabloMesh->SetCommonShader(LAMBERT_SHADER);
 	diabloMesh->SetShadowShader(SHADOWMAP_SHADER);
 	Texture* diabloDiffuse = new Texture("OBJs\\diablo3_pose_diffuse.tga");
@@ -105,8 +103,6 @@ void InitSceneHelmet(Scene* mainScene)
 	Texture* helmetEmission = new Texture(fileName);
 	helmetMesh->AddTexture(helmetEmission);
 	
-
-	PBRShader* pbrShader = new PBRShader;
 	helmetMesh->SetCommonShader(PBR_SHADER);
 	helmetMesh->SetShadowShader(NONE);
 	helmet->SetTranslation(Eigen::Vector3f(0, 0, 3.56));
@@ -146,15 +142,15 @@ void InitSceneHelmet(Scene* mainScene)
 	mainScene->AddCamera(mainCamera);
 }
 
-int main()
+GLFWwindow* UIInit()
 {
 	// Setup window
 	glfwSetErrorCallback(glfw_error_callback);
 	if (!glfwInit())
-		return 1;
+		return nullptr;
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Sky Renderer", NULL, NULL);
 	if (window == NULL)
-		return 1;
+		return nullptr;
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1); // Enable vsync
 
@@ -173,12 +169,40 @@ int main()
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL2_Init();
 
+	return window;
+}
+
+void CleanUp(GLFWwindow* window)
+{
+	// Cleanup
+	ImGui_ImplOpenGL2_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	glfwDestroyWindow(window);
+	glfwTerminate();
+}
+
+//将 data 加载到GPU内存
+void LoadData()
+{
+	auto datap = TexData();
+	auto offsetp = Offset();
+	//纹理原始数据(RGBA)
+	LoadTextureData(datap, offsetp);
+	//预滤波
+	LoadPrefilterMaps(dataTruck.iblMap.PrefilterMaps);
+}
+
+int main()
+{
+	GLFWwindow* window = UIInit();
+
 	// 窗口状态
 	bool show_global_window = true;
 	bool show_status_window = true;
 	//背景颜色
 	ImVec4 clear_color = ImVec4(0, 0, 0, 1.00f);
-
 
 	GLuint renderTexture;
 	glGenTextures(1, &renderTexture);//生成纹理数量，索引
@@ -191,17 +215,13 @@ int main()
 	InitSceneDiablo(mainScene);
 	//InitSceneHelmet(mainScene);
 
-	
+	LoadData();
+
 	//最终渲染到屏幕上的FrameBuffer
 	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
 	//shadowMap
 	FrameBuffer* shadowMap = new FrameBuffer(WIDTH ,HEIGHT , Vector4fToColor(black));
 
-	//将texture raw data 加载到GPU内存
-	auto datap = RawData();
-	auto offsetp = Offset();
-	LoadTextureData(datap, offsetp);
-	LoadPrefilterMaps(dataTruck.iblMap.PrefilterMaps);
 	// Main loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -217,33 +237,20 @@ int main()
 		{
 			StatusWindowLoop(mainScene);
 		}
-
+		//绘制设置窗口
 		if (show_global_window)
 		{
 			GlobalSettingWindowLoop();
 		}
 
-		Eigen::Vector3f lightMatrixVP;
-
-		clock_t beginRender = clock();
-		clock_t beginShadowRender = clock();
-		
 		//渲染阴影
 		if (GlobalSettings::GetInstance()->settings.drawShadow)
 		{
 			RenderLoop(shadowMap, shadowMap, mainScene, RENDER_SHADOW);
 		}
-		clock_t endShadowRender = clock();
-		printf("Render Shadow Time = %lf\n", difftime(endShadowRender, beginShadowRender));
-		clock_t beginCommonRender = clock();
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
-		clock_t endCommonRender = clock();
-		printf("Render Common Time = %lf\n", difftime(endCommonRender, beginCommonRender));
 		
-		clock_t endRender = clock();
-		printf("Render Total Time = %lf\n", difftime(endRender, beginRender));
-
 		ImTextureID imguiId = (ImTextureID)renderTexture;
 		if (GlobalSettings::GetInstance()->settings.debug)
 		{
@@ -276,13 +283,7 @@ int main()
 		shadowMap->Clear(Vector4fToColor(black));
 	}
 
-	// Cleanup
-	ImGui_ImplOpenGL2_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
-
-	glfwDestroyWindow(window);
-	glfwTerminate();
+	CleanUp(window);
 
 	return 0;
 }

@@ -2,7 +2,6 @@
 #include <vector>
 #include <string>
 #include "LowLevelData.h"
-#include "Draw.h"
 
 
 class Shader;
@@ -89,9 +88,6 @@ public:
 	CubeMap* m_CubeMap;
 	int m_ShadowShaderID;
 	int m_CommonShaderID;
-
-	Shader* m_ShadowShader;
-	Shader* m_CommonShader;
 
 	Mesh(std::string filePath);
 	void SetShadowShader(int shaderID);

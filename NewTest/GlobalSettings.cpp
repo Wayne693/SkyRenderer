@@ -2,12 +2,12 @@
 
 GlobalSettings::GlobalSettings()
 {
-	settings.blinnPhong = false;
-	settings.drawLine = false;
-	settings.lambert = false;
-	settings.drawShadow = true;
+	//settings.blinnPhong = false;
+	//settings.drawLine = false;
+	//settings.lambert = false;
+	settings.drawShadow = false;
 	settings.debug = false;
-	settings.skyBox = true;
+	//settings.skyBox = true;
 }
 
 GlobalSettings::~GlobalSettings()

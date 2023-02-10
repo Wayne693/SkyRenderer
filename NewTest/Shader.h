@@ -1,22 +1,15 @@
 #pragma once
-#include "LowLevelAPI.h"
 #include "LowLevelData.h"
 #include "vector"
-#include "Scene.h"
 #include "FrameBuffer.h"
-#include "Sampling.h"
-#include <iostream>
+#include "Scene.h"
+
 
 #define NONE -1
 #define LAMBERT_SHADER 0
 #define PBR_SHADER 1
 #define SHADOWMAP_SHADER 2
 #define SKYBOX_SHADER 3
-
-extern const int WIDTH;
-extern const int HEIGHT;
-//数据传输结构体
-//用于RenderLoop与Shader之间数据传输
 
 struct iblMap
 {
@@ -29,11 +22,11 @@ struct iblMap
 	Texture LUT;
 };
 
+//数据传输结构体
+//用于RenderLoop与Shader之间数据传输
 struct DataTruck
 {
-	/*
-	* 每帧更新
-	*/
+	//每帧更新
 	Eigen::Matrix4f matrixVP;
 	Eigen::Vector3f lightDirTS;
 	Eigen::Matrix4f lightMatrixVP;
@@ -47,59 +40,11 @@ struct DataTruck
 	int HEIGHT;
 	iblMap iblMap;
 	
-
-	/*
-	* 每个model更新
-	*/
+	//每个model更新
 	Eigen::Matrix4f matrixM;
 
-	/*
-	* 每个mesh更新
-	*/
+	//每个mesh更新
 	Texture* textures;
 	int texNum;
 	CubeMap cubeMap;
-};
-
-class Shader
-{
-public:
-	DataTruck* dataTruck;
-	virtual Varyings Vert(Attributes vertex) = 0;
-	virtual Eigen::Vector4f Frag(Varyings input) = 0;
-};
-
-class LambertShader : public Shader
-{
-public:
-	virtual Varyings Vert(Attributes vertex);
-	virtual Eigen::Vector4f Frag(Varyings input);
-};
-
-class NormalMapShader : public Shader
-{
-public:
-	virtual Varyings Vert(Attributes vertex);
-	virtual Eigen::Vector4f Frag(Varyings input);
-};
-
-class ShadowMapShader : public Shader
-{
-public:
-	virtual Varyings Vert(Attributes vertex);
-	virtual Eigen::Vector4f Frag(Varyings input);
-};
-
-class PBRShader : public Shader
-{
-public:
-	virtual Varyings Vert(Attributes vertex);
-	virtual Eigen::Vector4f Frag(Varyings input);
-};
-
-class SkyBoxShader : public Shader
-{
-public:
-	virtual Varyings Vert(Attributes vertex);
-	virtual Eigen::Vector4f Frag(Varyings input);
 };

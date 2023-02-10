@@ -62,15 +62,10 @@ __host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int po
  __device__ float fatomicMin(uint32_t* addr, float value)
  {
 	 uint32_t old = *addr, assumed;
-	 //printf("*up* addr = %lf value = %lf\n", __int_as_float(*addr), value);
-	 //if (old <= value) return old;
-	 do
-	 {
+	 do{
 		 assumed = old;
 		 old = atomicCAS(addr, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
-		 //printf("%")
 	 } while (old != assumed);
-	 //printf("*down* addr = %lf old = %lf\n", __int_as_float(*addr), __int_as_float(old));
 	 return __int_as_float(*addr);
  }
 
@@ -86,7 +81,7 @@ __host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int po
 	return -1;
 }
 
- std::vector<uint32_t>* RawData()
+ std::vector<uint32_t>* TexData()
 {
 	return &textureRawData;
 }
@@ -96,22 +91,22 @@ __host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int po
 	return &textureOffset;
 }
 
-uint32_t GetRawData(int id, int pos)
+uint32_t GetTexData(int id, int pos)
 {
 	return GetData(textureRawData.data(), textureOffset.data(), id, pos);
 }
 
-__device__ uint32_t CudaGetRawData(int id, int pos)
+__device__ uint32_t CudaGetTexData(int id, int pos)
 {
 	return GetData(cudaTexData, cudaTexOffset, id, pos);
 }
 
-void SetRawData(int id, int pos, uint32_t color)
+void SetTexData(int id, int pos, uint32_t color)
 {
 	SetData(textureRawData.data(), textureOffset.data(), id, pos, color);
 }
 
-__device__ void CudaSetRawData(int id, int pos, uint32_t color)
+__device__ void CudaSetTexData(int id, int pos, uint32_t color)
 {
 	SetData(cudaTexData, cudaTexOffset, id, pos, color);
 }

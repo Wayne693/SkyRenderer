@@ -18,6 +18,6 @@ public:
 	unsigned int width();
 	unsigned int height();
 
-	//将ColorBuffer清空为clearColor,将ZBuffer重置为1
+	//将ColorBuffer清空为clearColor,将ZBuffer重置为clearColor
 	void Clear(unsigned int clearColor);
 };

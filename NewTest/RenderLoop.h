@@ -4,14 +4,13 @@
 #include "imgui_impl_opengl2.h"
 #include "Scene.h"
 #include "Shader.h"
+#include "DataPool.h"
 #include "Sampling.h"
 #include "cuda.cuh"
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
-#include <thread>
 #include <queue>
-#include <mutex>
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -247,7 +246,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 	dataTruck.shadowMap = *shadowMap;
 
 
-	if (renderConfig == RENDER_SHADOW)
+	if (renderConfig == RENDER_SHADOW)// todo fix
 	{
 		Eigen::Vector3f sCameraLookat = mainLight.direction.normalized();
 
@@ -344,19 +343,12 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 
 			//顶点着色
 			VertCal(mesh, model->GetModelMatrix(), currentShaderID);
-			
 			//背面剔除
 			CullBack(mesh, model->IsSkyBox());
-			//clock_t c1 = clock();
 			//齐次坐标裁剪
 			HomoClip();
-			//clock_t c2 = clock();
-			//printf("%lf\n", difftime(c2, c1));
-			//clock_t c1 = clock();
 			//光栅化&像素着色
 			FragKernel(*frameBuffer, &ClipFragDatas, &dataTruck, currentShaderID);
-			//clock_t c2 = clock();
-			//printf("%lf\n", difftime(c2, c1));
 		}
 	}
 	//写回数据

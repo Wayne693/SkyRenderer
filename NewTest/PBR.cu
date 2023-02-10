@@ -1,7 +1,6 @@
 #include "PBR.cuh"
 #include "thrust/extrema.h"
 
-//#define PI = acos(-1);
 
 
 float NDFGGXTR(Eigen::Vector3f n, Eigen::Vector3f h, float roughness)

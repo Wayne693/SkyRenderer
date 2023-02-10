@@ -76,6 +76,9 @@
     <Filter Include="源文件\SourceCode\PBR">
       <UniqueIdentifier>{37762847-007c-42ee-832f-0d6a3af22ad4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\SourceCode\Sampling">
+      <UniqueIdentifier>{91e8036b-74ae-453e-b790-5a66d28bfb70}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -1044,9 +1047,6 @@
     <ClInclude Include="Camera.h">
       <Filter>源文件\Data\Object\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Draw.h">
-      <Filter>源文件\SourceCode\Draw</Filter>
-    </ClInclude>
     <ClInclude Include="FrameBuffer.h">
       <Filter>源文件\Data\FrameBuffer</Filter>
     </ClInclude>
@@ -1086,14 +1086,14 @@
     <ClInclude Include="LowLevelData.h">
       <Filter>源文件\Data</Filter>
     </ClInclude>
-    <ClInclude Include="Sampling.h">
-      <Filter>源文件\SourceCode</Filter>
-    </ClInclude>
     <ClInclude Include="DataPool.h">
       <Filter>源文件\Data\DataPool</Filter>
     </ClInclude>
     <ClInclude Include="PBR.cuh">
       <Filter>源文件\SourceCode\PBR</Filter>
+    </ClInclude>
+    <ClInclude Include="Sampling.h">
+      <Filter>源文件\SourceCode\Sampling</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1130,23 +1130,8 @@
     <ClCompile Include="StatusWindowLoop.h">
       <Filter>源文件\SourceCode\UI\WindowsLoop</Filter>
     </ClCompile>
-    <ClCompile Include="NormalMapShader.cpp">
-      <Filter>源文件\Data\Shader</Filter>
-    </ClCompile>
-    <ClCompile Include="LambertShader.cpp">
-      <Filter>源文件\Data\Shader</Filter>
-    </ClCompile>
-    <ClCompile Include="ShadowMapShader.cpp">
-      <Filter>源文件\Data\Shader</Filter>
-    </ClCompile>
     <ClCompile Include="GlobalSettings.cpp">
       <Filter>源文件\SourceCode\GlobalSettings</Filter>
-    </ClCompile>
-    <ClCompile Include="PBRShader.cpp">
-      <Filter>源文件\Data\Shader</Filter>
-    </ClCompile>
-    <ClCompile Include="SkyBoxShader.cpp">
-      <Filter>源文件\Data\Shader</Filter>
     </ClCompile>
     <ClCompile Include="mikktspace.c">
       <Filter>源文件\ThirdParty\Mikk</Filter>
@@ -1184,14 +1169,14 @@
     <CudaCompile Include="cuda.cu">
       <Filter>源文件\SourceCode\cuda</Filter>
     </CudaCompile>
-    <CudaCompile Include="Draw.cu">
-      <Filter>源文件\SourceCode\Draw</Filter>
-    </CudaCompile>
     <CudaCompile Include="DataPool.cu">
       <Filter>源文件\Data\DataPool</Filter>
     </CudaCompile>
     <CudaCompile Include="PBR.cu">
       <Filter>源文件\SourceCode\PBR</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Sampling.cu">
+      <Filter>源文件\SourceCode\Sampling</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

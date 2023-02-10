@@ -8,10 +8,10 @@ static inline void GlobalSettingWindowLoop()
 	ImGui::Begin("GlobalSettings");
 	ImGui::Checkbox("Shadow", &(gs->GetInstance()->settings.drawShadow));
 	ImGui::SameLine();
-	ImGui::Checkbox("Specular", &(gs->GetInstance()->settings.blinnPhong));
+	//ImGui::Checkbox("Specular", &(gs->GetInstance()->settings.blinnPhong));
 	//ImGui::SameLine();
 	ImGui::Checkbox("Debug", &(gs->GetInstance()->settings.debug));
-	ImGui::SameLine();
-	ImGui::Checkbox("SkyBox", &(gs->GetInstance()->settings.skyBox));
+	//ImGui::SameLine();
+	//ImGui::Checkbox("SkyBox", &(gs->GetInstance()->settings.skyBox));
 	ImGui::End();
 }

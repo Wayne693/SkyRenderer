@@ -5,9 +5,9 @@
 #include "mikktspace.h"
 #include "DataPool.h"
 #include "Sampling.h"
+#include "Draw.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-//#include "stb_image.h"
 #include "Stb_image/stb_image.h"
 
 //Model
@@ -193,6 +193,7 @@ void GetTexcoord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const in
 	fvTexcOut[0] = uv.x();
 	fvTexcOut[1] = uv.y();
 }
+
 void SetTSpace(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert)
 {
 	VIData* vidata = (VIData*)pContext->m_pUserData;
@@ -224,7 +225,7 @@ void SetTSpace(const SMikkTSpaceContext* pContext, const float fvTangent[], cons
 * Mesh
 * 加载时将数据处理为VertData和IndexData
 */
-Mesh::Mesh(std::string fileName)
+Mesh::Mesh(std::string fileName)// todo 拆分
 {
 	std::ifstream in;
 	in.open(fileName.c_str(), std::ifstream::in);
@@ -390,7 +391,6 @@ Texture::Texture(std::string fileName)
 {
 	auto rawdata = (uint32_t*)stbi_load(fileName.c_str(), &m_Width, &m_Height, &m_Channel, 4);//load texture
 	m_ID = AddTextureData(rawdata, m_Width * m_Height);
-	//printf("%d\n", textureRawData.size());
 	m_Tilling = Eigen::Vector2f(1, 1);
 	m_Offset = Eigen::Vector2f(0, 0);
 }
@@ -403,7 +403,6 @@ Texture::Texture(int width, int height)
 	m_Offset = Eigen::Vector2f(0, 0);
 	m_Width = width;
 	m_Height = height;
-	//assert(!m_RawBuffer);
 }
 
 Texture::Texture()
@@ -430,7 +429,7 @@ void Texture::SetData(Eigen::Vector2f uv, Eigen::Vector4f color)
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
 	{
 		color *= 255;
-		SetRawData(m_ID, pos, Vector4fToColor(color));
+		SetTexData(m_ID, pos, Vector4fToColor(color));
 	}
 }
 
@@ -450,7 +449,7 @@ Eigen::Vector4f Texture::GetData(int x, int y)
 	int pos = (m_Height - y - 1) * m_Width + x;
 	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
 	{
-		uint32_t n = GetRawData(m_ID, pos);
+		uint32_t n = GetTexData(m_ID, pos);
 		uint8_t mask = 255;
 		Eigen::Vector4f data(n & mask, (n >> 8) & mask, (n >> 16) & mask, (n >> 24) & mask);
 		data /= 255.f;
