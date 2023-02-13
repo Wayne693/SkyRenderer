@@ -1,14 +1,11 @@
 #include "Model.h"
+#include "mikktspace.h"
+#include "DataPool.h"
 #include <fstream>
 #include <map>
 #include <iostream>
-#include "mikktspace.h"
-#include "LowLevelAPI.h"
-#include "DataPool.h"
-#include "Sampling.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "Stb_image/stb_image.h"
+
 
 //Model
 Model::Model()
@@ -34,7 +31,6 @@ void Model::SetScale(Eigen::Vector3f scale)
 {
 	m_Scale = scale;
 }
-
 
 
 void Model::SetIsSkyBox(bool flag)
@@ -115,6 +111,7 @@ std::vector<Eigen::Vector4f> positions;
 std::vector<Eigen::Vector2f> texcoords;
 std::vector<Eigen::Vector3f> normals;
 std::map<Face, int> mp;
+int faceNum = 0;
 
 //实现计算切线的接口
 struct VIData
@@ -122,7 +119,6 @@ struct VIData
 	std::vector<Attributes>* vertDatas;
 	std::vector<Face>* indexDatas;
 };
-int faceNum = 0;
 int GetNumFaces(const SMikkTSpaceContext* pContext)
 {
 	return faceNum;
@@ -193,7 +189,6 @@ void GetTexcoord(const SMikkTSpaceContext* pContext, float fvTexcOut[], const in
 	fvTexcOut[0] = uv.x();
 	fvTexcOut[1] = uv.y();
 }
-
 void SetTSpace(const SMikkTSpaceContext* pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert)
 {
 	VIData* vidata = (VIData*)pContext->m_pUserData;
@@ -221,11 +216,49 @@ void SetTSpace(const SMikkTSpaceContext* pContext, const float fvTangent[], cons
 	}
 }
 
+void InitMeshContainer()
+{
+	positions.clear();
+	texcoords.clear();
+	normals.clear();
+	mp.clear();
+	faceNum = 0;
+}
+
+//计算切线数据
+void CaculateTangent(Mesh* mesh)
+{
+	SMikkTSpaceContext tancon;
+	VIData vidata;
+	SMikkTSpaceInterface ssi;
+	vidata.vertDatas = &mesh->m_VertexData;
+	vidata.indexDatas = &mesh->m_IndexData;
+	tancon.m_pUserData = &vidata;
+	ssi.m_getNumFaces = GetNumFaces;
+	ssi.m_getNumVerticesOfFace = GetNumVerts;
+	ssi.m_getPosition = GetPosition;
+	ssi.m_getNormal = GetNormal;
+	ssi.m_getTexCoord = GetTexcoord;
+	ssi.m_setTSpaceBasic = SetTSpace;
+	ssi.m_setTSpace = nullptr;
+	tancon.m_pInterface = &ssi;
+	genTangSpaceDefault(&tancon);
+}
+
+void VertAssembling(Attributes* vert, int a, int b, int c)
+{
+	vert->positionOS = positions[a - 1];
+	vert->uv = texcoords[b - 1];
+	vert->normalOS = normals[c - 1];
+}
+
+
+
 /*
 * Mesh
 * 加载时将数据处理为VertData和IndexData
 */
-Mesh::Mesh(std::string fileName)// todo 拆分
+Mesh::Mesh(std::string fileName)
 {
 	std::ifstream in;
 	in.open(fileName.c_str(), std::ifstream::in);
@@ -233,14 +266,11 @@ Mesh::Mesh(std::string fileName)// todo 拆分
 	{
 		std::cout << "Load Model Fail!" << std::endl;
 	}
-	positions.clear();
-	texcoords.clear();
-	normals.clear();
-	mp.clear();
+
 	std::string line;
 	int num;
 	int cnt = 0;
-	faceNum = 0;
+	InitMeshContainer();
 	//将obj文件中数据处理好
 	while (!in.eof())
 	{
@@ -273,17 +303,9 @@ Mesh::Mesh(std::string fileName)// todo 拆分
 			assert(num == 9);
 			Attributes vertA, vertB, vertC;
 
-			vertA.positionOS = positions[x0 - 1];
-			vertA.uv = texcoords[y0 - 1];
-			vertA.normalOS = normals[z0 - 1];
-
-			vertB.positionOS = positions[x1 - 1];
-			vertB.uv = texcoords[y1 - 1];
-			vertB.normalOS = normals[z1 - 1];
-
-			vertC.positionOS = positions[x2 - 1];
-			vertC.uv = texcoords[y2 - 1];
-			vertC.normalOS = normals[z2 - 1];
+			VertAssembling(&vertA, x0, y0, z0);
+			VertAssembling(&vertB, x1, y1, z1);
+			VertAssembling(&vertC, x2, y2, z2);
 
 			Face tmpA(x0 - 1, y0 - 1, z0 - 1);
 			Face trangle(0, 0, 0);
@@ -315,24 +337,7 @@ Mesh::Mesh(std::string fileName)// todo 拆分
 			faceNum++;
 		}
 	}
-	//计算切线数据
-	{
-		SMikkTSpaceContext tancon;
-		VIData vidata;
-		SMikkTSpaceInterface ssi;
-		vidata.vertDatas = &m_VertexData;
-		vidata.indexDatas = &m_IndexData;
-		tancon.m_pUserData = &vidata;
-		ssi.m_getNumFaces = GetNumFaces;
-		ssi.m_getNumVerticesOfFace = GetNumVerts;
-		ssi.m_getPosition = GetPosition;
-		ssi.m_getNormal = GetNormal;
-		ssi.m_getTexCoord = GetTexcoord;
-		ssi.m_setTSpaceBasic = SetTSpace;
-		ssi.m_setTSpace = nullptr;
-		tancon.m_pInterface = &ssi;
-		genTangSpaceDefault(&tancon);
-	}
+	CaculateTangent(this);
 }
 
 void Mesh::SetShadowShader(int shaderID)
@@ -386,199 +391,3 @@ CubeMap* Mesh::GetCubeMap()
 	return m_CubeMap;
 }
 
-//Texture
-Texture::Texture(std::string fileName)
-{
-	auto rawdata = (uint32_t*)stbi_load(fileName.c_str(), &m_Width, &m_Height, &m_Channel, 4);//load texture
-	m_ID = AddTextureData(rawdata, m_Width * m_Height);
-	m_Tilling = Eigen::Vector2f(1, 1);
-	m_Offset = Eigen::Vector2f(0, 0);
-}
-
-Texture::Texture(int width, int height)
-{
-	auto rawdata = (uint32_t*)malloc(sizeof(uint32_t) * width * height);
-	m_ID = AddTextureData(rawdata, width * height);
-	m_Tilling = Eigen::Vector2f(1, 1);
-	m_Offset = Eigen::Vector2f(0, 0);
-	m_Width = width;
-	m_Height = height;
-}
-
-Texture::Texture()
-{
-
-}
-
-void Texture::SetTilling(Eigen::Vector2f tilling)
-{
-	m_Tilling = tilling;
-}
-
-void Texture::SetOffset(Eigen::Vector2f offset)
-{
-	m_Offset = offset;
-}
-//(0~1)->(0~255)
-void Texture::SetData(Eigen::Vector2f uv, Eigen::Vector4f color)
-{
-	int x = (int)(uv.x() * m_Width);
-	int y = (int)(uv.y() * m_Height);
-
-	int pos = (m_Height - y - 1) * m_Width + x;
-	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
-	{
-		color *= 255;
-		SetTexData(m_ID, pos, Vector4fToColor(color));
-	}
-}
-
-int Texture::width()
-{
-	return m_Width;
-}
-
-int Texture::height()
-{
-	return m_Height;
-}
-
-//(0~255)->(0~1)
-Eigen::Vector4f Texture::GetData(int x, int y)
-{
-	int pos = (m_Height - y - 1) * m_Width + x;
-	if (x >= 0 && x < m_Width && y >= 0 && y < m_Height && pos >= 0 && pos < m_Width * m_Height)
-	{
-		uint32_t n = GetTexData(m_ID, pos);
-		uint8_t mask = 255;
-		Eigen::Vector4f data(n & mask, (n >> 8) & mask, (n >> 16) & mask, (n >> 24) & mask);
-		data /= 255.f;
-		return data;
-	}
-	return Eigen::Vector4f(0, 0, 0, 0);
-}
-
-//repeat
-Eigen::Vector4f Texture::GetData(Eigen::Vector2f uv)
-{
-	int x = (int)(uv.x() * m_Width);
-	int y = (int)(uv.y() * m_Height);
-	if (x > 0)
-	{
-		x = x % m_Width;
-	}
-	else if (x < 0)
-	{
-		x = m_Width + x % m_Width;
-	}
-
-	if (y > 0)
-	{
-		y = y % m_Height;
-	}
-	else if (y < 0)
-	{
-		y = m_Height + y % m_Height;
-	}
-
-	return GetData(x, y);
-}
-
-Eigen::Vector2f Texture::GetTilling()
-{
-	return m_Tilling;
-}
-
-Eigen::Vector2f Texture::GetOffset()
-{
-	return m_Offset;
-}
-
-//Cube Map
-CubeMap::CubeMap(std::vector<std::string> fileNames)
-{
-	if (fileNames.size() != 6)
-	{
-		printf("Create CubeMap Failed : SizeError");
-		return;
-	}
-	px = Texture(fileNames[0]);
-	nx = Texture(fileNames[1]);
-	py = Texture(fileNames[2]);
-	ny = Texture(fileNames[3]);
-	pz = Texture(fileNames[4]);
-	nz = Texture(fileNames[5]);
-}
-
-CubeMap::CubeMap(int width, int height)
-{
-	px = Texture(width, height);
-	nx = Texture(width, height);
-	py = Texture(width, height);
-	ny = Texture(width, height);
-	pz = Texture(width, height);
-	nz = Texture(width, height);
-}
-
-CubeMap::CubeMap()
-{
-}
-
-
-
-
-void CubeMap::SetData(Eigen::Vector3f direction, Eigen::Vector4f col)
-{
-	Eigen::Vector2f uv;
-	int idx = selectCubeMapFace(direction, &uv);
-	Texture* tmp = &px;
-	switch (idx)
-	{
-	case 0:
-		break;
-	case 1:
-		tmp = &nx;
-		break;
-	case 2:
-		tmp = &py;
-		break;
-	case 3:
-		tmp = &ny;
-		break;
-	case 4:
-		tmp = &pz;
-		break;
-	case 5:
-		tmp = &nz;
-		break;
-	}
-	tmp->SetData(uv, col);
-}
-
-Eigen::Vector4f CubeMap::GetData(Eigen::Vector3f direction)
-{
-	Eigen::Vector2f uv;
-	int idx = selectCubeMapFace(direction, &uv);
-	Texture* tmp = &px;
-	switch (idx)
-	{
-	case 0:
-		break;
-	case 1:
-		tmp = &nx;
-		break;
-	case 2:
-		tmp = &py;
-		break;
-	case 3:
-		tmp = &ny;
-		break;
-	case 4:
-		tmp = &pz;
-		break;
-	case 5:
-		tmp = &nz;
-		break;
-	}
-	return tmp->GetData(uv);
-}

@@ -2,23 +2,13 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl2.h"
-#include "Model.h"
-#include "Camera.h"
-#include "Scene.h"
-#include "Shader.h"
-#include <stdio.h>
-#include <unordered_map>
-#include <map>
 #include <math.h>
 #include <iostream>
-#include <thread>
-#include "LowLevelAPI.h"
 #include "StatusWindowLoop.h"
 #include "RenderLoop.h"
 #include "GlobalSettingWindowLoop.h"
 #include "GlobalSettings.h"
 #include "Pretreatment.h"
-#include "DataPool.h"
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -28,7 +18,11 @@
 const int WIDTH = 1280;
 const int HEIGHT = 720;
 Scene* mainScene;
-
+// 窗口状态
+bool show_global_window = true;
+bool show_status_window = true;
+//背景颜色
+ImVec4 clear_color = ImVec4(0, 0, 0, 1.00f);
 static void glfw_error_callback(int error, const char* description)
 {
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -102,7 +96,7 @@ void InitSceneHelmet(Scene* mainScene)
 	fileName = "OBJs\\helmet_emission.tga";
 	Texture* helmetEmission = new Texture(fileName);
 	helmetMesh->AddTexture(helmetEmission);
-	
+
 	helmetMesh->SetCommonShader(PBR_SHADER);
 	helmetMesh->SetShadowShader(NONE);
 	helmet->SetTranslation(Eigen::Vector3f(0, 0, 3.56));
@@ -198,12 +192,6 @@ int main()
 {
 	GLFWwindow* window = UIInit();
 
-	// 窗口状态
-	bool show_global_window = true;
-	bool show_status_window = true;
-	//背景颜色
-	ImVec4 clear_color = ImVec4(0, 0, 0, 1.00f);
-
 	GLuint renderTexture;
 	glGenTextures(1, &renderTexture);//生成纹理数量，索引
 	glBindTexture(GL_TEXTURE_2D, renderTexture);//将纹理设置为TEXTURE2D
@@ -220,7 +208,7 @@ int main()
 	//最终渲染到屏幕上的FrameBuffer
 	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
 	//shadowMap
-	FrameBuffer* shadowMap = new FrameBuffer(WIDTH ,HEIGHT , Vector4fToColor(black));
+	FrameBuffer* shadowMap = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
 
 	// Main loop
 	while (!glfwWindowShouldClose(window))
@@ -250,7 +238,7 @@ int main()
 		}
 		//渲染流程
 		RenderLoop(displayBuffer, shadowMap, mainScene, RENDER_BY_PASS);
-		
+
 		ImTextureID imguiId = (ImTextureID)renderTexture;
 		if (GlobalSettings::GetInstance()->settings.debug)
 		{
@@ -263,7 +251,7 @@ int main()
 		ImDrawList* drawList = ImGui::GetBackgroundDrawList();
 		drawList->AddImage(imguiId, ImVec2(0, 0), ImVec2(WIDTH, HEIGHT));
 
-		
+
 		// Rendering
 		ImGui::Render();
 		int display_w, display_h;
@@ -277,13 +265,11 @@ int main()
 
 		glfwMakeContextCurrent(window);
 		glfwSwapBuffers(window);
-		
+
 		//数据清空
 		displayBuffer->Clear(Vector4fToColor(black));
 		shadowMap->Clear(Vector4fToColor(black));
 	}
-
 	CleanUp(window);
-
 	return 0;
 }

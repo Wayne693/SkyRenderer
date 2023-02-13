@@ -6,7 +6,7 @@
 #include "Shader.h"
 #include "DataPool.h"
 #include "Sampling.h"
-#include "cuda.cuh"
+#include "rasterize.cuh"
 #include <stdio.h>
 #include <math.h>
 #include <iostream>

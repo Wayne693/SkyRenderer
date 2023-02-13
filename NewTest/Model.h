@@ -1,11 +1,8 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "LowLevelData.h"
-
-
-class Shader;
-
+#include "Texture.h"
+#include "Dense"
 
 //一个三角三个顶点的索引
 struct Face
@@ -33,48 +30,22 @@ struct Face
 	}
 };
 
-
-//纹理
-class Texture
+struct Attributes
 {
-public:
-	int m_Width;
-	int m_Height;
-	int m_ID;
-
-	int m_Channel;
-	Eigen::Vector2f m_Tilling;
-	Eigen::Vector2f m_Offset;
-
-
-	Texture(std::string fileName);
-	Texture(int width,int height);
-	Texture();
-
-	void SetTilling(Eigen::Vector2f);
-	void SetOffset(Eigen::Vector2f);
-	void SetData(Eigen::Vector2f uv, Eigen::Vector4f color);
-
-	int width();
-	int height();
-	Eigen::Vector4f GetData(int x, int y);
-	Eigen::Vector4f GetData(Eigen::Vector2f uv);
-	Eigen::Vector2f GetTilling();
-	Eigen::Vector2f GetOffset();
+	Eigen::Vector4f positionOS;
+	Eigen::Vector3f normalOS;
+	Eigen::Vector4f tangentOS;//tangent(x,y,z) binormalsign(w)
+	Eigen::Vector2f uv;
 };
 
-//Cube Map
-class CubeMap
+struct Varyings
 {
-public:
-	//px nx py ny pz nz
-	Texture px, nx, py, ny, pz, nz;
-
-	CubeMap(std::vector<std::string> fileNames);
-	CubeMap(int width, int height);
-	CubeMap();
-	void SetData(Eigen::Vector3f vector, Eigen::Vector4f col);
-	Eigen::Vector4f GetData(Eigen::Vector3f vector);
+	Eigen::Vector4f positionWS;
+	Eigen::Vector4f positionCS;
+	Eigen::Vector3f normalWS;
+	Eigen::Vector3f tangentWS;//tangent(x,y,z)
+	Eigen::Vector3f binormalWS;
+	Eigen::Vector2f uv;
 };
 
 //网格体

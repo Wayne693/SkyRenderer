@@ -1,5 +1,4 @@
 ﻿#pragma once
-
 #include "imgui.h"
 #include "Dense"
 #include "Scene.h"

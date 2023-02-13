@@ -1,11 +1,8 @@
-#include "cuda.cuh"
-#include "Model.h"
+#include "rasterize.cuh"
 #include "Dense"
 #include "thrust/extrema.h"
 #include "PBR.cuh"
 #include "Sampling.h"
-#include "LowLevelAPI.h"
-//#include "Draw.h"
 
 __device__ CubeMap* cudaPrefilterMaps = nullptr;
 CubeMap* hostPrefilterMaps = nullptr;

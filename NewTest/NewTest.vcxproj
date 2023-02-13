@@ -473,8 +473,6 @@
     <ClInclude Include="imGui\imstb_rectpack.h" />
     <ClInclude Include="imGui\imstb_textedit.h" />
     <ClInclude Include="imGui\imstb_truetype.h" />
-    <ClInclude Include="LowLevelAPI.h" />
-    <ClInclude Include="LowLevelData.h" />
     <ClInclude Include="mikktspace.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="NewTest.h" />
@@ -487,6 +485,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Pretreatment.h" />
     <ClInclude Include="DataPool.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
@@ -504,6 +503,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="StatusWindowLoop.h" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NewTest.rc" />
@@ -513,13 +513,13 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="cuda.cu">
+    <CudaCompile Include="rasterize.cu">
       <FileType>Document</FileType>
     </CudaCompile>
     <CudaCompile Include="DataPool.cu" />
     <CudaCompile Include="PBR.cu" />
     <CudaCompile Include="Sampling.cu" />
-    <None Include="cuda.cuh" />
+    <None Include="rasterize.cuh" />
     <None Include="Eigen\Dense" />
     <None Include="GLFW\lib-vc2022\glfw3.dll" />
   </ItemGroup>

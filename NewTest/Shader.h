@@ -1,8 +1,8 @@
 #pragma once
-#include "LowLevelData.h"
 #include "vector"
 #include "FrameBuffer.h"
 #include "Scene.h"
+#include "Texture.h"
 
 
 #define NONE -1
@@ -23,7 +23,6 @@ struct iblMap
 };
 
 //数据传输结构体
-//用于RenderLoop与Shader之间数据传输
 struct DataTruck
 {
 	//每帧更新

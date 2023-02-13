@@ -31,9 +31,6 @@
     <Filter Include="源文件\Data\FrameBuffer">
       <UniqueIdentifier>{853d83af-b6fa-4cb7-a152-b1901ded1a0e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\SourceCode\Draw">
-      <UniqueIdentifier>{b391f8fa-6d17-44e2-8253-2a4ca40c24f4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="源文件\SourceCode\GlobalSettings">
       <UniqueIdentifier>{b80aee5e-ad83-41bc-8b4d-182ab2fba36b}</UniqueIdentifier>
     </Filter>
@@ -67,9 +64,6 @@
     <Filter Include="源文件\SourceCode\UI\WindowsLoop">
       <UniqueIdentifier>{9755dcae-e772-48a1-8728-9adaaeca8958}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\SourceCode\cuda">
-      <UniqueIdentifier>{81d8351b-9e78-466a-b5ca-980190a4e68b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="源文件\Data\DataPool">
       <UniqueIdentifier>{ffc63aea-1f3d-41df-a5a9-d4042e9bd827}</UniqueIdentifier>
     </Filter>
@@ -78,6 +72,12 @@
     </Filter>
     <Filter Include="源文件\SourceCode\Sampling">
       <UniqueIdentifier>{91e8036b-74ae-453e-b790-5a66d28bfb70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data\Object\Texture">
+      <UniqueIdentifier>{152e346d-fa7f-4a06-803b-ea3488e8f6f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\Rasterize">
+      <UniqueIdentifier>{81d8351b-9e78-466a-b5ca-980190a4e68b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1080,12 +1080,6 @@
     <ClInclude Include="ThreadPool.h">
       <Filter>源文件\SourceCode\ThreadPool</Filter>
     </ClInclude>
-    <ClInclude Include="LowLevelAPI.h">
-      <Filter>源文件\SourceCode</Filter>
-    </ClInclude>
-    <ClInclude Include="LowLevelData.h">
-      <Filter>源文件\Data</Filter>
-    </ClInclude>
     <ClInclude Include="DataPool.h">
       <Filter>源文件\Data\DataPool</Filter>
     </ClInclude>
@@ -1094,6 +1088,9 @@
     </ClInclude>
     <ClInclude Include="Sampling.h">
       <Filter>源文件\SourceCode\Sampling</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>源文件\Data\Object\Texture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1139,6 +1136,9 @@
     <ClCompile Include="SkyRenderer.cpp">
       <Filter>源文件\SourceCode</Filter>
     </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>源文件\Data\Object\Texture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NewTest.rc">
@@ -1156,8 +1156,8 @@
   <ItemGroup>
     <None Include="GLFW\lib-vc2022\glfw3.dll" />
     <None Include="Eigen\Dense" />
-    <None Include="cuda.cuh">
-      <Filter>源文件\SourceCode\cuda</Filter>
+    <None Include="rasterize.cuh">
+      <Filter>源文件\SourceCode\Rasterize</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -1166,8 +1166,8 @@
     <Library Include="GLFW\lib-vc2022\glfw3dll.lib" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="cuda.cu">
-      <Filter>源文件\SourceCode\cuda</Filter>
+    <CudaCompile Include="rasterize.cu">
+      <Filter>源文件\SourceCode\Rasterize</Filter>
     </CudaCompile>
     <CudaCompile Include="DataPool.cu">
       <Filter>源文件\Data\DataPool</Filter>

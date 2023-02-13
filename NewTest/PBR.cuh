@@ -1,7 +1,6 @@
 #pragma once
 #include <iostream>
 #include <Dense>
-#include "LowLevelData.h"
 #include "cuda_runtime.h"
 
 

@@ -3,7 +3,6 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "Shader.h"
-//#include "DataPool.h"
 
 
 __host__ __device__ Eigen::Vector3f barycentric(Eigen::Vector2f A, Eigen::Vector2f B, Eigen::Vector2f C, Eigen::Vector2f P);
