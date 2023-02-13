@@ -4,7 +4,6 @@
 #include "Scene.h"
 #include "Texture.h"
 
-
 #define NONE -1
 #define LAMBERT_SHADER 0
 #define PBR_SHADER 1

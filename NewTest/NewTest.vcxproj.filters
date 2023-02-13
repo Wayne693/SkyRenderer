@@ -55,9 +55,6 @@
     <Filter Include="源文件\SourceCode\RenderLoop">
       <UniqueIdentifier>{966b8346-f8c5-44dc-b648-966125d9e486}</UniqueIdentifier>
     </Filter>
-    <Filter Include="源文件\Data\Shader">
-      <UniqueIdentifier>{1aacec75-7ce8-41fd-8c48-74e19309bdfc}</UniqueIdentifier>
-    </Filter>
     <Filter Include="源文件\SourceCode\UI">
       <UniqueIdentifier>{13614ffa-878e-454a-b912-64bca28c150b}</UniqueIdentifier>
     </Filter>
@@ -78,6 +75,12 @@
     </Filter>
     <Filter Include="源文件\SourceCode\Rasterize">
       <UniqueIdentifier>{81d8351b-9e78-466a-b5ca-980190a4e68b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\Data\DataTruck">
+      <UniqueIdentifier>{1aacec75-7ce8-41fd-8c48-74e19309bdfc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\SourceCode\Shader">
+      <UniqueIdentifier>{c7fe192a-07dc-4a43-baac-0baa781439cc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1062,8 +1065,8 @@
     <ClInclude Include="Stb_image\stb_image.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Shader.h">
-      <Filter>源文件\Data\Shader</Filter>
+    <ClInclude Include="DataTruck.h">
+      <Filter>源文件\Data\DataTruck</Filter>
     </ClInclude>
     <ClInclude Include="GlobalSettings.h">
       <Filter>源文件\SourceCode\GlobalSettings</Filter>
@@ -1091,6 +1094,9 @@
     </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>源文件\Data\Object\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.cuh">
+      <Filter>源文件\SourceCode\Shader</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1133,7 +1139,7 @@
     <ClCompile Include="mikktspace.c">
       <Filter>源文件\ThirdParty\Mikk</Filter>
     </ClCompile>
-    <ClCompile Include="SkyRenderer.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>源文件\SourceCode</Filter>
     </ClCompile>
     <ClCompile Include="Texture.cpp">
@@ -1177,6 +1183,9 @@
     </CudaCompile>
     <CudaCompile Include="Sampling.cu">
       <Filter>源文件\SourceCode\Sampling</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Shader.cu">
+      <Filter>源文件\SourceCode\Shader</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

@@ -1,9 +1,5 @@
 #pragma once
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl2.h"
-#include "Scene.h"
-#include "Shader.h"
+#include "DataTruck.h"
 #include "DataPool.h"
 #include "Sampling.h"
 #include "rasterize.cuh"
@@ -20,13 +16,12 @@
 extern const int WIDTH;
 extern const int HEIGHT;
 const int ERRORNUM = 1e-5;
+
 //模型空间左手系
 //世界空间左手系
 //观察空间右手系
 //裁剪空间左手系
 //屏幕空间左手系
-
-
 
 enum ClipPlane
 {
@@ -51,8 +46,6 @@ enum RenderConfig
 
 //RenderLoop拥有的dataTruck对象
 DataTruck dataTruck;
-
-
 
 std::vector<Varyings> FragDatas;		//经顶点着色后的顶点数据
 std::queue<Varyings> ClipQueue;			//裁剪后的顶点数据
@@ -225,81 +218,87 @@ void CullBack(Mesh* mesh, bool IsSkyBox)
 	}
 }
 
+void CaculateLightMatrixVP(Light mainLight, Camera* camera)
+{
+	Eigen::Vector3f sCameraLookat = mainLight.direction.normalized();
+
+	Eigen::Vector3f asixY(0, 1, 0);
+	Eigen::Vector3f sCameraAsixX = sCameraLookat.cross(asixY).normalized();
+	Eigen::Vector3f sCameraUp = sCameraAsixX.cross(sCameraLookat).normalized();
+	std::vector<Eigen::Vector3f> visualCone = *camera->GetVisualCone();
+
+	Camera sCamera = *camera;
+	sCamera.SetLookAt(sCameraLookat);
+	sCamera.SetUp(sCameraUp);
+	sCamera.UpdateViewMatrix();
+
+	Eigen::Matrix4f matrixV = sCamera.GetViewMatrix();
+	float minx, maxx, miny, maxy, minz, maxz;
+	//transform visual cone from worldspace to lightspace
+	for (int i = 0; i < visualCone.size(); i++)
+	{
+		visualCone[i] = matrixV.block(0, 0, 3, 3) * visualCone[i];
+		if (i == 0)
+		{
+			minx = visualCone[i].x();
+			maxx = minx;
+			miny = visualCone[i].y();
+			maxy = miny;
+			minz = visualCone[i].z();
+			maxz = minz;
+		}
+		else
+		{
+			minx = std::min(minx, visualCone[i].x());
+			maxx = std::max(maxx, visualCone[i].x());
+			miny = std::min(miny, visualCone[i].y());
+			maxy = std::max(maxy, visualCone[i].y());
+			minz = std::min(minz, visualCone[i].z());
+			maxz = std::max(maxz, visualCone[i].z());
+		}
+	}
+	Eigen::Vector4f center((minx + maxx) / 2, (miny + maxy) / 2, (minz + maxz) / 2, 1);
+	center = matrixV.inverse() * center;
+	center = center / center.w();
+	sCamera.SetSize((maxy - miny) / 2);
+	sCamera.SetAspect((maxx - minx) / (maxy - miny));
+	auto cminz = minz;
+	minz = -maxz;
+	maxz = -cminz;
+	sCamera.SetFarPlane(maxz);
+	sCamera.SetNearPlane(minz);
+	sCamera.SetPosition(center.head(3) - sCameraLookat * ((maxz - minz) / 2 + minz));
+	sCamera.UpdateOrthoVPMatrix();
+	auto matrixVP = sCamera.GetOrthoVPMatrix();
+	//将lightMatrixVP赋值给dataTruck，供后面的渲染使用
+	dataTruck.lightMatrixVP = matrixVP;
+}
+
 
 static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, Scene* mainScene, RenderConfig renderConfig)
 {
-	auto camera = (*mainScene->GetCameras())[0];//目前只有一个相机
+	//单相机
+	auto camera = (*mainScene->GetCameras())[0];
+	Light mainLight = mainScene->GetLight();
 
 	//将Global Data载入dataTruck
-	dataTruck.camera = *camera;
-	camera->UpdateVPMatrix();
-	camera->CalculateVisualCone();
-	dataTruck.matrixVP = camera->GetVPMatrix();
-	Light mainLight = mainScene->GetLight();
-	dataTruck.mainLight = mainLight;
-	dataTruck.WIDTH = WIDTH;
-	dataTruck.HEIGHT = HEIGHT;
+	{
+		dataTruck.camera = *camera;
+		dataTruck.matrixVP = camera->GetVPMatrix();
+		dataTruck.mainLight = mainLight;
+		dataTruck.WIDTH = WIDTH;
+		dataTruck.HEIGHT = HEIGHT;
+		dataTruck.shadowMap = *shadowMap;
+	}
 	
 
 	int currentShaderID = -1;
+	camera->UpdateVPMatrix();
 
-	dataTruck.shadowMap = *shadowMap;
-
-
-	if (renderConfig == RENDER_SHADOW)// todo fix
+	if (renderConfig == RENDER_SHADOW)
 	{
-		Eigen::Vector3f sCameraLookat = mainLight.direction.normalized();
-
-		Eigen::Vector3f asixY(0, 1, 0);
-		Eigen::Vector3f sCameraAsixX = sCameraLookat.cross(asixY).normalized();
-		Eigen::Vector3f sCameraUp = sCameraAsixX.cross(sCameraLookat).normalized();
-		std::vector<Eigen::Vector3f> visualCone = *camera->GetVisualCone();
-
-		Camera sCamera = *camera;
-		sCamera.SetLookAt(sCameraLookat);
-		sCamera.SetUp(sCameraUp);
-		sCamera.UpdateViewMatrix();
-
-		Eigen::Matrix4f matrixV = sCamera.GetViewMatrix();
-		float minx, maxx, miny, maxy, minz, maxz;
-		//transform visual cone from worldspace to lightspace
-		for (int i = 0; i < visualCone.size(); i++)
-		{
-			visualCone[i] = matrixV.block(0, 0, 3, 3) * visualCone[i];
-			if (i == 0)
-			{
-				minx = visualCone[i].x();
-				maxx = minx;
-				miny = visualCone[i].y();
-				maxy = miny;
-				minz = visualCone[i].z();
-				maxz = minz;
-			}
-			else
-			{
-				minx = std::min(minx, visualCone[i].x());
-				maxx = std::max(maxx, visualCone[i].x());
-				miny = std::min(miny, visualCone[i].y());
-				maxy = std::max(maxy, visualCone[i].y());
-				minz = std::min(minz, visualCone[i].z());
-				maxz = std::max(maxz, visualCone[i].z());
-			}
-		}
-		Eigen::Vector4f center((minx + maxx) / 2, (miny + maxy) / 2, (minz + maxz) / 2, 1);
-		center = matrixV.inverse() * center;
-		center = center / center.w();
-		sCamera.SetSize((maxy - miny) / 2);
-		sCamera.SetAspect((maxx - minx) / (maxy - miny));
-		auto cminz = minz;
-		minz = -maxz;
-		maxz = -cminz;
-		sCamera.SetFarPlane(maxz);
-		sCamera.SetNearPlane(minz);
-		sCamera.SetPosition(center.head(3) - sCameraLookat * ((maxz - minz) / 2 + minz));
-		sCamera.UpdateOrthoVPMatrix();
-		auto matrixVP = sCamera.GetOrthoVPMatrix();
-		//将lightMatrixVP赋值给dataTruck，供后面的渲染使用
-		dataTruck.lightMatrixVP = matrixVP;
+		camera->CalculateVisualCone();
+		CaculateLightMatrixVP(mainLight, camera);
 	}
 
 	//加载FrameBuffer数据到GPU内存
@@ -326,7 +325,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			{
 				dataTruck.cubeMap = *mesh->GetCubeMap();
 			}
-			
 
 			if (renderConfig == RENDER_SHADOW)
 			{
@@ -351,7 +349,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			FragKernel(*frameBuffer, &ClipFragDatas, &dataTruck, currentShaderID);
 		}
 	}
-	//写回数据
+	//数据写回DataPool
 	LoadBufferDeviceToHost();
 EXIT:
 	//释放GPU内存中FrameBuffer数据

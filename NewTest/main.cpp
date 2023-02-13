@@ -5,6 +5,7 @@
 #include <math.h>
 #include <iostream>
 #include "StatusWindowLoop.h"
+#include "Shader.cuh"
 #include "RenderLoop.h"
 #include "GlobalSettingWindowLoop.h"
 #include "GlobalSettings.h"
@@ -30,111 +31,9 @@ static void glfw_error_callback(int error, const char* description)
 
 //初始化场景
 //经验光照模型
-void InitSceneDiablo(Scene* mainScene)
-{
-	std::string fileName("OBJs\\diablo3_pose.obj");
-	Mesh* diabloMesh = new Mesh(fileName);
-	Model* diabloModel = new Model();
-	diabloModel->SetRotation(Eigen::Vector3f(0, 160, 1));
-	diabloModel->AddMesh(diabloMesh);
-	diabloMesh->SetCommonShader(LAMBERT_SHADER);
-	diabloMesh->SetShadowShader(SHADOWMAP_SHADER);
-	Texture* diabloDiffuse = new Texture("OBJs\\diablo3_pose_diffuse.tga");
-	Texture* diabloNormal = new Texture("OBJs\\diablo3_pose_nm_tangent.tga");
-	diabloMesh->AddTexture(diabloDiffuse);
-	diabloMesh->AddTexture(diabloNormal);
-	mainScene->AddModel(diabloModel);
-
-	fileName = "OBJs\\floor.obj";
-	Mesh* floorMesh = new Mesh(fileName);
-	Model* floor = new Model();
-	floor->SetTranslation(Eigen::Vector3f(0, -0.12, 2));
-	floor->SetTranslation(Eigen::Vector3f(0, 0, 4.360));
-	floor->SetScale(Eigen::Vector3f(1.33f, 1, 1.33f));
-	floor->AddMesh(floorMesh);
-	floorMesh->SetCommonShader(LAMBERT_SHADER);
-	floorMesh->SetShadowShader(SHADOWMAP_SHADER);
-	Texture* floorDiffuse = new Texture("OBJs\\floor_diffuse.tga");
-	Texture* floorNormal = new Texture("OBJs\\floor_nm_tangent.tga");
-	floorMesh->AddTexture(floorDiffuse);
-	floorMesh->AddTexture(floorNormal);
-	mainScene->AddModel(floor);
-
-	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
-	mainScene->AddCamera(mainCamera);
-
-	Light mainLight;
-	mainLight.direction = Eigen::Vector3f(0, -0.930f, 1);
-	mainLight.color = Eigen::Vector4f(1, 1, 1, 1);
-	mainLight.intensity = 1.5f;
-	mainScene->SetLight(mainLight);
-
-}
+void InitSceneDiablo(Scene* mainScene);
 //PBR/IBL/SkyBox
-void InitSceneHelmet(Scene* mainScene)
-{
-	//helmet
-	std::string fileName("OBJs\\helmet.obj");
-	Mesh* helmetMesh = new Mesh(fileName);
-	Model* helmet = new Model();
-	helmet->AddMesh(helmetMesh);
-	fileName = "OBJs\\helmet_albedo.tga";
-	Texture* helmetAlbedo = new Texture(fileName);
-	helmetMesh->AddTexture(helmetAlbedo);
-	fileName = "OBJs\\helmet_normal.tga";
-	Texture* helmetNormal = new Texture(fileName);
-	helmetMesh->AddTexture(helmetNormal);
-	fileName = "OBJs\\helmet_roughness.tga";
-	Texture* helmetRoughness = new Texture(fileName);
-	helmetMesh->AddTexture(helmetRoughness);
-	fileName = "OBJs\\helmet_metallic.tga";
-	Texture* helmetMetallic = new Texture(fileName);
-	helmetMesh->AddTexture(helmetMetallic);
-	fileName = "OBJs\\helmet_occlusion.tga";
-	Texture* helmetOcclusion = new Texture(fileName);
-	helmetMesh->AddTexture(helmetOcclusion);
-	fileName = "OBJs\\helmet_emission.tga";
-	Texture* helmetEmission = new Texture(fileName);
-	helmetMesh->AddTexture(helmetEmission);
-
-	helmetMesh->SetCommonShader(PBR_SHADER);
-	helmetMesh->SetShadowShader(NONE);
-	helmet->SetTranslation(Eigen::Vector3f(0, 0, 3.56));
-	helmet->SetRotation(Eigen::Vector3f(220, 97.5, -87.5));
-	mainScene->AddModel(helmet);
-
-	//skyBox
-	fileName = "OBJs\\SkyBox.obj";
-	Mesh* skyBoxMesh = new Mesh(fileName);
-	Model* skyBox = new Model;
-	skyBox->SetTranslation(Eigen::Vector3f(0, 0, 0));
-	skyBox->SetIsSkyBox(true);
-	skyBox->AddMesh(skyBoxMesh);
-	skyBoxMesh->SetCommonShader(SKYBOX_SHADER);
-	skyBoxMesh->SetShadowShader(NONE);
-	std::vector<std::string> cubemapFiles
-	{
-		"OBJs\\DOOMright.png",
-		"OBJs\\DOOMleft.png",
-		"OBJs\\DOOMtop.png",
-		"OBJs\\DOOMbottom.png",
-		"OBJs\\DOOMfront.png",
-		"OBJs\\DOOMback.png"
-	};
-	CubeMap* cubeMap = new CubeMap(cubemapFiles);
-	//将预处理好的irradianceMap设置给dataTruck
-	dataTruck.iblMap.irradianceMap = GenerateIrradianceMap(cubeMap);
-	dataTruck.iblMap.PrefilterMaps = GeneratePrefilterMap(cubeMap, 2);
-	dataTruck.iblMap.level = 2;
-	fileName = "OBJs\\LUT.png";
-	dataTruck.iblMap.LUT = Texture(fileName);
-	skyBoxMesh->SetCubeMap(cubeMap);
-	mainScene->AddModel(skyBox);
-
-	//Camera
-	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 50, 1.f * WIDTH / HEIGHT);
-	mainScene->AddCamera(mainCamera);
-}
+void InitSceneHelmet(Scene* mainScene);
 
 GLFWwindow* UIInit()
 {
@@ -272,4 +171,110 @@ int main()
 	}
 	CleanUp(window);
 	return 0;
+}
+
+void InitSceneDiablo(Scene* mainScene)
+{
+	std::string fileName("OBJs\\diablo3_pose.obj");
+	Mesh* diabloMesh = new Mesh(fileName);
+	Model* diabloModel = new Model();
+	diabloModel->SetRotation(Eigen::Vector3f(0, 160, 1));
+	diabloModel->AddMesh(diabloMesh);
+	diabloMesh->SetCommonShader(LAMBERT_SHADER);
+	diabloMesh->SetShadowShader(SHADOWMAP_SHADER);
+	Texture* diabloDiffuse = new Texture("OBJs\\diablo3_pose_diffuse.tga");
+	Texture* diabloNormal = new Texture("OBJs\\diablo3_pose_nm_tangent.tga");
+	diabloMesh->AddTexture(diabloDiffuse);
+	diabloMesh->AddTexture(diabloNormal);
+	mainScene->AddModel(diabloModel);
+
+	fileName = "OBJs\\floor.obj";
+	Mesh* floorMesh = new Mesh(fileName);
+	Model* floor = new Model();
+	floor->SetTranslation(Eigen::Vector3f(0, -0.12, 2));
+	floor->SetTranslation(Eigen::Vector3f(0, 0, 4.360));
+	floor->SetScale(Eigen::Vector3f(1.33f, 1, 1.33f));
+	floor->AddMesh(floorMesh);
+	floorMesh->SetCommonShader(LAMBERT_SHADER);
+	floorMesh->SetShadowShader(SHADOWMAP_SHADER);
+	Texture* floorDiffuse = new Texture("OBJs\\floor_diffuse.tga");
+	Texture* floorNormal = new Texture("OBJs\\floor_nm_tangent.tga");
+	floorMesh->AddTexture(floorDiffuse);
+	floorMesh->AddTexture(floorNormal);
+	mainScene->AddModel(floor);
+
+	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
+	mainScene->AddCamera(mainCamera);
+
+	Light mainLight;
+	mainLight.direction = Eigen::Vector3f(0, -0.930f, 1);
+	mainLight.color = Eigen::Vector4f(1, 1, 1, 1);
+	mainLight.intensity = 1.5f;
+	mainScene->SetLight(mainLight);
+
+}
+
+void InitSceneHelmet(Scene* mainScene)
+{
+	//helmet
+	std::string fileName("OBJs\\helmet.obj");
+	Mesh* helmetMesh = new Mesh(fileName);
+	Model* helmet = new Model();
+	helmet->AddMesh(helmetMesh);
+	fileName = "OBJs\\helmet_albedo.tga";
+	Texture* helmetAlbedo = new Texture(fileName);
+	helmetMesh->AddTexture(helmetAlbedo);
+	fileName = "OBJs\\helmet_normal.tga";
+	Texture* helmetNormal = new Texture(fileName);
+	helmetMesh->AddTexture(helmetNormal);
+	fileName = "OBJs\\helmet_roughness.tga";
+	Texture* helmetRoughness = new Texture(fileName);
+	helmetMesh->AddTexture(helmetRoughness);
+	fileName = "OBJs\\helmet_metallic.tga";
+	Texture* helmetMetallic = new Texture(fileName);
+	helmetMesh->AddTexture(helmetMetallic);
+	fileName = "OBJs\\helmet_occlusion.tga";
+	Texture* helmetOcclusion = new Texture(fileName);
+	helmetMesh->AddTexture(helmetOcclusion);
+	fileName = "OBJs\\helmet_emission.tga";
+	Texture* helmetEmission = new Texture(fileName);
+	helmetMesh->AddTexture(helmetEmission);
+
+	helmetMesh->SetCommonShader(PBR_SHADER);
+	helmetMesh->SetShadowShader(NONE);
+	helmet->SetTranslation(Eigen::Vector3f(0, 0, 3.56));
+	helmet->SetRotation(Eigen::Vector3f(220, 97.5, -87.5));
+	mainScene->AddModel(helmet);
+
+	//skyBox
+	fileName = "OBJs\\SkyBox.obj";
+	Mesh* skyBoxMesh = new Mesh(fileName);
+	Model* skyBox = new Model;
+	skyBox->SetTranslation(Eigen::Vector3f(0, 0, 0));
+	skyBox->SetIsSkyBox(true);
+	skyBox->AddMesh(skyBoxMesh);
+	skyBoxMesh->SetCommonShader(SKYBOX_SHADER);
+	skyBoxMesh->SetShadowShader(NONE);
+	std::vector<std::string> cubemapFiles
+	{
+		"OBJs\\DOOMright.png",
+		"OBJs\\DOOMleft.png",
+		"OBJs\\DOOMtop.png",
+		"OBJs\\DOOMbottom.png",
+		"OBJs\\DOOMfront.png",
+		"OBJs\\DOOMback.png"
+	};
+	CubeMap* cubeMap = new CubeMap(cubemapFiles);
+	//将预处理好的irradianceMap设置给dataTruck
+	dataTruck.iblMap.irradianceMap = GenerateIrradianceMap(cubeMap);
+	dataTruck.iblMap.PrefilterMaps = GeneratePrefilterMap(cubeMap, 2);
+	dataTruck.iblMap.level = 2;
+	fileName = "OBJs\\LUT.png";
+	dataTruck.iblMap.LUT = Texture(fileName);
+	skyBoxMesh->SetCubeMap(cubeMap);
+	mainScene->AddModel(skyBox);
+
+	//Camera
+	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 50, 1.f * WIDTH / HEIGHT);
+	mainScene->AddCamera(mainCamera);
 }
