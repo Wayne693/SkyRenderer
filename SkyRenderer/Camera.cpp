@@ -1,9 +1,8 @@
 #include "Camera.h"
 
-Camera::Camera(Eigen::Vector3f position, Eigen::Vector3f lookat, Eigen::Vector3f up, float near, float far, float fov, float aspect) :
+Camera::Camera(Eigen::Vector3f position, Eigen::Vector3f lookat, float near, float far, float fov, float aspect) :
 	m_Position(position),
 	m_LookAt(lookat),
-	m_Up(up),
 	m_Near(near),
 	m_Far(far),
 	m_Fov(fov),
@@ -24,11 +23,6 @@ void Camera::SetPosition(Eigen::Vector3f position)
 void Camera::SetLookAt(Eigen::Vector3f lookAt)
 {
 	m_LookAt = lookAt;
-}
-
-void Camera::SetUp(Eigen::Vector3f up)
-{
-	m_Up = up;
 }
 
 void Camera::SetNearPlane(float near)
@@ -60,19 +54,22 @@ void Camera::UpdateViewMatrix()
 {
 	Eigen::Matrix4f linerTrans;
 	Eigen::Vector3f lookAt = m_LookAt.normalized();
-	Eigen::Vector3f up = m_Up.normalized();
-	Eigen::Vector3f asixX = lookAt.cross(up);
+	Eigen::Vector3f UP = Eigen::Vector3f(0, 1, 0);
+	Eigen::Vector3f asixY;
+	Eigen::Vector3f asixX = lookAt.cross(UP);
+	asixY = asixX.cross(lookAt);
 	linerTrans << asixX.x(), asixX.y(), asixX.z(), 0,
-		up.x(), up.y(), up.z(), 0,
+		asixY.x(), asixY.y(), asixY.z(), 0,
 		-lookAt.x(), -lookAt.y(), -lookAt.z(), 0,
 		0, 0, 0, 1;
-	
+
 	Eigen::Matrix4f translation;
 	translation << 1, 0, 0, -m_Position.x(),
 		0, 1, 0, -m_Position.y(),
 		0, 0, 1, -m_Position.z(),
 		0, 0, 0, 1;
-	m_ViewMtx =  linerTrans * translation;
+	m_ViewMtx = linerTrans * translation;
+	m_AsixY = asixY;
 }
 
 void Camera::UpdateProjectionMatrix()
@@ -138,8 +135,8 @@ void Camera::CalculateVisualCone()
 	float halfFov = m_Fov * pi / 360.0;
 
 	Eigen::Vector3f toNear = m_Near * m_LookAt.normalized();
-	Eigen::Vector3f toTop = m_Near * tan(halfFov) * m_Up.normalized();
-	Eigen::Vector3f toRight = m_Aspect * m_Near * tan(halfFov) * m_LookAt.cross(m_Up).normalized();
+	Eigen::Vector3f toTop = m_Near * tan(halfFov) * m_AsixY.normalized();
+	Eigen::Vector3f toRight = m_Aspect * m_Near * tan(halfFov) * m_LookAt.cross(m_AsixY).normalized();
 	Eigen::Vector3f nearPos = m_Position + toNear;
 
 	m_VisualCone.push_back(nearPos + toTop + toRight);//NearTopRight
@@ -148,8 +145,8 @@ void Camera::CalculateVisualCone()
 	m_VisualCone.push_back(nearPos - toTop - toRight);//NearBottomleft
 
 	Eigen::Vector3f toFar = m_Far * m_LookAt.normalized();
-	toTop = m_Far * tan(halfFov) * m_Up.normalized();
-	toRight = m_Aspect * m_Far * tan(halfFov) * m_LookAt.cross(m_Up).normalized();
+	toTop = m_Far * tan(halfFov) * m_AsixY.normalized();
+	toRight = m_Aspect * m_Far * tan(halfFov) * m_LookAt.cross(m_AsixY).normalized();
 	Eigen::Vector3f farPos = m_Position + toFar;
 
 	m_VisualCone.push_back(farPos + toTop + toRight);//farTopRight
@@ -172,11 +169,6 @@ Eigen::Vector3f Camera::GetPosition()
 Eigen::Vector3f Camera::GetLookAt()
 {
 	return m_LookAt;
-}
-
-Eigen::Vector3f Camera::GetUp()
-{
-	return m_Up;
 }
 
 float Camera::GetNearPlane()
