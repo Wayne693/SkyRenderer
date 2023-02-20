@@ -7,8 +7,8 @@
 //处理纹理数据函数
  int AddTextureData(uint32_t* rawData, int size);
 
- std::vector<uint32_t>* TexData();
- std::vector<int>* Offset();
+ const std::vector<uint32_t>* TexData();
+ const std::vector<int>* Offset();
 
 uint32_t GetTexData(int id, int pos);
 void SetTexData(int id, int pos, uint32_t color);
@@ -37,7 +37,7 @@ void ClearBuffer(int id, int size, uint32_t color);
 void ClearBuffer(int id, int size, float color);
 
 //将主存数据拷贝到显存
-cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* offset);
+cudaError_t LoadTextureData(const std::vector<uint32_t>* rawData,const std::vector<int>* offset);
 cudaError_t LoadBufferData(std::vector<uint32_t>* rawData, std::vector<int>* offset);
 void CudaFreeBufferData();
 

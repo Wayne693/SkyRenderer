@@ -10,6 +10,7 @@
 #include "GlobalSettingWindowLoop.h"
 #include "GlobalSettings.h"
 #include "Pretreatment.h"
+#include "Utility.h"
 
 #ifdef __APPLE__
 #define GL_SILENCE_DEPRECATION
@@ -35,35 +36,7 @@ void InitSceneDiablo(Scene* mainScene);
 //PBR/IBL/SkyBox
 void InitSceneHelmet(Scene* mainScene);
 
-GLFWwindow* UIInit()
-{
-	// Setup window
-	glfwSetErrorCallback(glfw_error_callback);
-	if (!glfwInit())
-		return nullptr;
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Sky Renderer", NULL, NULL);
-	if (window == NULL)
-		return nullptr;
-	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1); // Enable vsync
-
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-	//ImGui::StyleColorsLight();
-
-	// Setup Platform/Renderer backends
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL2_Init();
-
-	return window;
-}
+GLFWwindow* UIInit();
 
 void CleanUp(GLFWwindow* window)
 {
@@ -87,16 +60,38 @@ void LoadData()
 	LoadPrefilterMaps(dataTruck.iblMap.PrefilterMaps);
 }
 
-int main()
+GLuint GLInit()
 {
-	GLFWwindow* window = UIInit();
-
 	GLuint renderTexture;
 	glGenTextures(1, &renderTexture);//生成纹理数量，索引
 	glBindTexture(GL_TEXTURE_2D, renderTexture);//将纹理设置为TEXTURE2D
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	return renderTexture;
+}
+
+void Rendering(GLFWwindow* window)
+{
+	// Rendering
+	ImGui::Render();
+	int display_w, display_h;
+	glfwGetFramebufferSize(window, &display_w, &display_h);
+	glViewport(0, 0, display_w, display_h);
+	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+
+	ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+
+	glfwMakeContextCurrent(window);
+	glfwSwapBuffers(window);
+}
+
+int main()
+{
+	GLFWwindow* window = UIInit();
+	GLuint renderTexture = GLInit();
 
 	mainScene = new Scene;
 	InitSceneDiablo(mainScene);
@@ -151,19 +146,7 @@ int main()
 		drawList->AddImage(imguiId, ImVec2(0, 0), ImVec2(WIDTH, HEIGHT));
 
 
-		// Rendering
-		ImGui::Render();
-		int display_w, display_h;
-		glfwGetFramebufferSize(window, &display_w, &display_h);
-		glViewport(0, 0, display_w, display_h);
-		glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-
-		ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
-
-		glfwMakeContextCurrent(window);
-		glfwSwapBuffers(window);
+		Rendering(window);
 
 		//数据清空
 		displayBuffer->Clear(Vector4fToColor(black));
@@ -277,4 +260,34 @@ void InitSceneHelmet(Scene* mainScene)
 	//Camera
 	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 50, 1.f * WIDTH / HEIGHT);
 	mainScene->AddCamera(mainCamera);
+}
+
+GLFWwindow* UIInit()
+{
+	// Setup window
+	glfwSetErrorCallback(glfw_error_callback);
+	if (!glfwInit())
+		return nullptr;
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Sky Renderer", NULL, NULL);
+	if (window == NULL)
+		return nullptr;
+	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1); // Enable vsync
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsLight();
+
+	// Setup Platform/Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL2_Init();
+
+	return window;
 }

@@ -81,12 +81,12 @@ __host__ __device__  void SetData(uint32_t* rawData, int* offset, int id, int po
 	return -1;
 }
 
- std::vector<uint32_t>* TexData()
+const std::vector<uint32_t>* TexData()
 {
 	return &textureRawData;
 }
 
- std::vector<int>* Offset()
+const std::vector<int>* Offset()
 {
 	return &textureOffset;
 }
@@ -173,7 +173,7 @@ void ClearBuffer(int id, int size, float color)
 }
 
 
-cudaError_t LoadTextureData(std::vector<uint32_t>* rawData, std::vector<int>* offset)
+cudaError_t LoadTextureData(const std::vector<uint32_t>* rawData, const std::vector<int>* offset)
 {
 	cudaError_t cudaStatus;
 

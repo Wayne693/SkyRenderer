@@ -488,6 +488,7 @@
     <ClInclude Include="DataPool.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="ThreadPool.h" />
+    <ClInclude Include="Utility.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FrameBuffer.cpp" />

@@ -3,6 +3,7 @@
 #include "thrust/extrema.h"
 #include "Sampling.h"
 #include "Shader.cuh"
+#include "Utility.h"
 #include "device_launch_parameters.h"
 
 //三角重心插值，返回1-u-v,u,v

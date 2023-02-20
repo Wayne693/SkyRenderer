@@ -1,6 +1,7 @@
 #include "Texture.h"
 #include "DataPool.h"
 #include "Sampling.h"
+#include "Utility.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "Stb_image/stb_image.h"
@@ -149,7 +150,7 @@ CubeMap::CubeMap()
 void CubeMap::SetData(Eigen::Vector3f direction, Eigen::Vector4f col)
 {
 	Eigen::Vector2f uv;
-	int idx = selectCubeMapFace(direction, &uv);
+	int idx = SelectCubeMapFace(direction, &uv);
 	Texture* tmp = &px;
 	switch (idx)
 	{
@@ -177,7 +178,7 @@ void CubeMap::SetData(Eigen::Vector3f direction, Eigen::Vector4f col)
 Eigen::Vector4f CubeMap::GetData(Eigen::Vector3f direction)
 {
 	Eigen::Vector2f uv;
-	int idx = selectCubeMapFace(direction, &uv);
+	int idx = SelectCubeMapFace(direction, &uv);
 	Texture* tmp = &px;
 	switch (idx)
 	{

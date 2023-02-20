@@ -290,7 +290,8 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 		dataTruck.HEIGHT = HEIGHT;
 		dataTruck.shadowMap = *shadowMap;
 	}
-	
+	//加载FrameBuffer数据到GPU内存
+	LoadBufferData(BufferData(), BufferOffset());
 
 	int currentShaderID = -1;
 	camera->UpdateVPMatrix();
@@ -300,9 +301,6 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 		camera->CalculateVisualCone();
 		CaculateLightMatrixVP(mainLight, camera);
 	}
-
-	//加载FrameBuffer数据到GPU内存
-	LoadBufferData(BufferData(), BufferOffset());
 
 	auto models = mainScene->GetModels();
 	for (int modelIdx = 0; modelIdx < models->size(); modelIdx++)

@@ -1,8 +1,6 @@
 #include "PBR.cuh"
 #include "thrust/extrema.h"
 
-
-
 float NDFGGXTR(Eigen::Vector3f n, Eigen::Vector3f h, float roughness)
 {
 	const float PI = acos(-1);

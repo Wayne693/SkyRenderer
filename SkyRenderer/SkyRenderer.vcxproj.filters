@@ -1098,6 +1098,9 @@
     <ClInclude Include="Shader.cuh">
       <Filter>源文件\SourceCode\Shader</Filter>
     </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>源文件\SourceCode</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imGui\imgui.cpp">

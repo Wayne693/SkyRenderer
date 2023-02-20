@@ -4,6 +4,7 @@
 #include "PBR.cuh"
 #include "Sampling.h"
 #include "device_launch_parameters.h"
+#include "Utility.h"
 
 __device__ CubeMap* cudaPrefilterMaps = nullptr;
 CubeMap* hostPrefilterMaps = nullptr;
