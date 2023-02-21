@@ -50,7 +50,7 @@ void CleanUp(GLFWwindow* window)
 }
 
 //将 data 加载到GPU内存
-void LoadData()
+void LoadTexData()
 {
 	auto datap = TexData();
 	auto offsetp = Offset();
@@ -97,7 +97,7 @@ int main()
 	InitSceneDiablo(mainScene);
 	//InitSceneHelmet(mainScene);
 
-	LoadData();
+	LoadTexData();
 
 	//最终渲染到屏幕上的FrameBuffer
 	FrameBuffer* displayBuffer = new FrameBuffer(WIDTH, HEIGHT, Vector4fToColor(black));
@@ -186,7 +186,7 @@ void InitSceneDiablo(Scene* mainScene)
 	floorMesh->AddTexture(floorNormal);
 	mainScene->AddModel(floor);
 
-	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
+	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), 0.3f, 6.20f, 50, 1.f * WIDTH / HEIGHT);
 	mainScene->AddCamera(mainCamera);
 
 	Light mainLight;
@@ -258,7 +258,7 @@ void InitSceneHelmet(Scene* mainScene)
 	mainScene->AddModel(skyBox);
 
 	//Camera
-	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), Eigen::Vector3f(0, 1, 0), 0.3f, 100, 50, 1.f * WIDTH / HEIGHT);
+	Camera* mainCamera = new Camera(Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 0, 1), 0.3f, 100, 50, 1.f * WIDTH / HEIGHT);
 	mainScene->AddCamera(mainCamera);
 }
 
