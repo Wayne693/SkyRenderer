@@ -64,20 +64,19 @@ static inline void StatusWindowLoop(Scene* mainScene)
 					auto textures = (*meshP)[idxm]->GetTextures();
 					for (int idxt = 0; idxt < textures->size(); idxt++)
 					{
-						Texture currentTex = (*textures)[idxt];
+						Texture* currentTex = &(*textures)[idxt];
 						ImGui::PushID(idxt);
 						ImGui::Text("texture %d", idxt + 1);
-						Eigen::Vector2f tmp = currentTex.GetTilling();
+						Eigen::Vector2f tmp = currentTex->GetTilling();
 						float tilling[2] = { tmp.x(),tmp.y() };
 						ImGui::DragFloat2("tilling", tilling, 0.01);
 						tmp = Eigen::Map<Eigen::Vector2f>(tilling);
-						currentTex.SetTilling(tmp);
-
-						tmp = currentTex.GetOffset();
+						currentTex->SetTilling(tmp);
+						tmp = currentTex->GetOffset();
 						float offset[2] = { tmp.x(),tmp.y() };
 						ImGui::DragFloat2("offset", offset, 0.01);
 						tmp = Eigen::Map<Eigen::Vector2f>(offset);
-						currentTex.SetOffset(tmp);
+						currentTex->SetOffset(tmp);
 
 						ImGui::PopID();
 					}
@@ -107,12 +106,6 @@ static inline void StatusWindowLoop(Scene* mainScene)
 				ImGui::DragFloat3("lookat", lookat, 0.01);
 				tmp = Eigen::Map<Eigen::Vector3f>(lookat);
 				camera->SetLookAt(tmp);
-
-				tmp = camera->GetUp();
-				float up[3] = { tmp.x(),tmp.y(),tmp.z() };
-				ImGui::DragFloat3("up", up, 0.01);
-				tmp = Eigen::Map<Eigen::Vector3f>(up);
-				camera->SetUp(tmp);
 
 				float tmpf = camera->GetNearPlane();
 				ImGui::DragFloat("NearPlane", &tmpf, 0.1);

@@ -229,7 +229,6 @@ void CaculateLightMatrixVP(Light mainLight, Camera* camera)
 
 	Camera sCamera = *camera;
 	sCamera.SetLookAt(sCameraLookat);
-	sCamera.SetUp(sCameraUp);
 	sCamera.UpdateViewMatrix();
 
 	Eigen::Matrix4f matrixV = sCamera.GetViewMatrix();
@@ -319,6 +318,7 @@ static inline void RenderLoop(FrameBuffer* frameBuffer, FrameBuffer* shadowMap, 
 			auto mesh = (*meshes)[meshIdx];
 			dataTruck.textures = mesh->GetTextures()->data();
 			dataTruck.texNum = mesh->GetTextures()->size();
+
 			if (mesh->m_CubeMap != nullptr)
 			{
 				dataTruck.cubeMap = *mesh->GetCubeMap();
