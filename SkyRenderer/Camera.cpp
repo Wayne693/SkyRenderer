@@ -62,6 +62,7 @@ void Camera::UpdateViewMatrix()
 	Eigen::Vector3f lookAt = m_LookAt.normalized();
 	Eigen::Vector3f up = m_Up.normalized();
 	Eigen::Vector3f asixX = lookAt.cross(up);
+	up = asixX.cross(lookAt);
 	linerTrans << asixX.x(), asixX.y(), asixX.z(), 0,
 		up.x(), up.y(), up.z(), 0,
 		-lookAt.x(), -lookAt.y(), -lookAt.z(), 0,
@@ -73,6 +74,7 @@ void Camera::UpdateViewMatrix()
 		0, 0, 1, -m_Position.z(),
 		0, 0, 0, 1;
 	m_ViewMtx =  linerTrans * translation;
+	m_Up = up;
 }
 
 void Camera::UpdateProjectionMatrix()

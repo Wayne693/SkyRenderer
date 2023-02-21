@@ -94,8 +94,8 @@ int main()
 	GLuint renderTexture = GLInit();
 
 	mainScene = new Scene;
-	InitSceneDiablo(mainScene);
-	//InitSceneHelmet(mainScene);
+	//InitSceneDiablo(mainScene);
+	InitSceneHelmet(mainScene);
 
 	LoadData();
 
@@ -250,8 +250,8 @@ void InitSceneHelmet(Scene* mainScene)
 	CubeMap* cubeMap = new CubeMap(cubemapFiles);
 	//将预处理好的irradianceMap设置给dataTruck
 	dataTruck.iblMap.irradianceMap = GenerateIrradianceMap(cubeMap);
-	dataTruck.iblMap.PrefilterMaps = GeneratePrefilterMap(cubeMap, 2);
-	dataTruck.iblMap.level = 2;
+	dataTruck.iblMap.PrefilterMaps = GeneratePrefilterMap(cubeMap, 4);
+	dataTruck.iblMap.level = 4;
 	fileName = "OBJs\\LUT.png";
 	dataTruck.iblMap.LUT = Texture(fileName);
 	skyBoxMesh->SetCubeMap(cubeMap);
