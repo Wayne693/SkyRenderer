@@ -94,8 +94,8 @@ int main()
 	GLuint renderTexture = GLInit();
 
 	mainScene = new Scene;
-	//InitSceneDiablo(mainScene);
-	InitSceneHelmet(mainScene);
+	InitSceneDiablo(mainScene);
+	//InitSceneHelmet(mainScene);
 
 	LoadData();
 
